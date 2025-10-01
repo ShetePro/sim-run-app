@@ -1,7 +1,6 @@
 import {
   DarkTheme,
   DefaultTheme,
-  NavigationContainer,
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
@@ -11,8 +10,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import "../styles/global.css";
-
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Appearance } from "react-native";
 import { SessionProvider } from "@/components/SessionProvider";
 import Toast from "react-native-toast-message";
@@ -36,12 +37,16 @@ export default function RootLayout() {
     setColorScheme(() => theme.colorScheme);
   });
   const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
-    PoppinsBold: require("../assets/fonts/Poppins-Bold.ttf"),
-    PoppinsSemiBold: require("../assets/fonts/Poppins-SemiBold.ttf"),
+    // SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    // PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
+    // PoppinsBold: require("../assets/fonts/Poppins-Bold.ttf"),
+    // PoppinsSemiBold: require("../assets/fonts/Poppins-SemiBold.ttf"),
+    LexendRegular: require("../assets/fonts/Lexend-Regular.ttf"),
+    LexendBold: require("../assets/fonts/Lexend-Bold.ttf"),
+    LexendSemiBold: require("../assets/fonts/Lexend-SemiBold.ttf"),
   });
-  const insets = useSafeAreaInsets()
+
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
