@@ -26,6 +26,7 @@ export default function TabBar({
   useEffect(() => {
     console.log(theme, "theme toggle");
   }, [theme]);
+  const isCenter = false;
   const [dimensions, setDimension] = useState({ height: 100, width: 300 });
   const colors = useThemeColor();
   const wrapPositionX = useSharedValue(0);
@@ -43,8 +44,8 @@ export default function TabBar({
   }
   const tabWidth = dimensions.width;
   const tabHeight = dimensions.height;
-  const tabRadius = tabHeight / 2;
-  const clipRadius = tabRadius;
+  const tabRadius = 0;
+  const clipRadius = tabHeight / 2;
   const clipBorderRadius = 5;
   function getTabBarItems() {
     const tabs = state.routes.map((route, index) => {
@@ -148,17 +149,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     justifyContent: "center",
-    bottom: 20,
-    marginHorizontal: 20,
+    bottom: 0,
+    // marginHorizontal: 20,
   },
   tabBar: {
     position: "relative",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: 35,
+    // borderRadius: 35,
     flex: 1,
     paddingVertical: 15,
+    paddingBottom: 25,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 10,

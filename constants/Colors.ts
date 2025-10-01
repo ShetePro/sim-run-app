@@ -31,9 +31,9 @@ export const Colors = {
       icon: "#9BA1A6",
       tabIconDefault: "#9BA1A6",
       tabIconSelected: tintColorDark,
-      background: COLORS.black,
-      tabBackground: "#353636",
-      active: COLORS.white,
+      background: "rgb(18,32,23)",
+      tabBackground: "rgba(18,32,23,0.8)",
+      active: "#38e07b",
       cardBackground: "#353636"
     },
   },

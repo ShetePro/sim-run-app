@@ -29,6 +29,7 @@ import "@/utils/i18n";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
   Appearance.addChangeListener((theme) => {

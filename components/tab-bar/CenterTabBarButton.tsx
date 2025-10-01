@@ -5,13 +5,14 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function CenterTabBarButton() {
   const colors = useThemeColor();
+  const theme = useColorScheme()
   function goRun() {
     router.replace("/(views)/run");
   }
   return (
     <Pressable style={styles.centerWarp} onPress={goRun}>
-      <View style={[styles.centerButton, { backgroundColor: colors.active }]}>
-        <MaterialCommunityIcons name="run-fast" size={24} color={colors.background} />
+      <View style={[styles.centerButton, { backgroundColor: "#13c95e" }]}>
+        <MaterialCommunityIcons name="run-fast" size={24} color={theme === 'dark' ? 'white' : colors.active} />
       </View>
     </Pressable>
   );
