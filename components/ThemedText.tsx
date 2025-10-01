@@ -19,17 +19,19 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
+  className,
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor().text;
 
-  return <Text style={[{ color }, styles[type], style]} {...rest} />;
+  return <Text className={className} style={[{ color }, styles[type], style]} {...rest} />;
 }
 
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: "LexendBold",
   },
   defaultSemiBold: {
     fontSize: 16,
