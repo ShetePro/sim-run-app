@@ -16,12 +16,14 @@ import {
 import CenterTabBarButton from "@/components/tab-bar/CenterTabBarButton";
 import Svg, { Path } from "react-native-svg";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import {useTranslation} from "react-i18next";
 
 export default function TabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
+  const {t} = useTranslation()
   const theme = useColorScheme();
   useEffect(() => {
     console.log(theme, "theme toggle");
@@ -49,14 +51,7 @@ export default function TabBar({
   const clipBorderRadius = 5;
   function getTabBarItems() {
     const tabs = state.routes.map((route, index) => {
-      const { options } = descriptors[route.key];
-      const label =
-        options.tabBarLabel !== undefined
-          ? options.tabBarLabel
-          : options.title !== undefined
-            ? options.title
-            : route.name;
-
+      const label = t(`tabs.${route.name}`)
       const isFocused = state.index === index;
 
       const onPress = () => {
@@ -121,6 +116,7 @@ export default function TabBar({
            A ${clipRadius - 10} ${clipRadius - 10} 0,0,1 ${tabWidth / 2 - clipRadius + 10} 10
            A 10 10  0,0,0 ${tabWidth / 2 - clipRadius} 0
            L ${tabRadius} 0 z`}
+          stroke={"#1e293b"}
           fill={colors.tabBackground} // 背景颜色
         />
       </Svg>
