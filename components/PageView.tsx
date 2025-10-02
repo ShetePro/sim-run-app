@@ -1,5 +1,6 @@
 import React from "react";
 import { SafeAreaView, View, ViewStyle } from "react-native";
+import { ThemedView } from "@/components/ThemedView";
 
 export default function PageView({
   children,
@@ -14,12 +15,14 @@ export default function PageView({
     <>
       {safeArea ? (
         <SafeAreaView
-          style={{ flex: 1, boxSizing: "content", padding: 20, ...style }}
+          style={{ flex: 1, boxSizing: 'content', padding: 20, ...style }}
         >
-          {children}
+          <ThemedView style={{ flex: 1, ...style }}>{children}</ThemedView>
         </SafeAreaView>
       ) : (
-        <View style={style}>{children}</View>
+        <View className={'w-full h-full'}>
+          <ThemedView style={{ flex: 1, width: "100%", height: "100%", ...style }}>{children}</ThemedView>
+        </View>
       )}
     </>
   );

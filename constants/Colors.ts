@@ -32,7 +32,7 @@ export const Colors = {
       tabIconDefault: "#9BA1A6",
       tabIconSelected: tintColorDark,
       background: "rgb(18,32,23)",
-      tabBackground: "rgba(18,32,23,0.8)",
+      tabBackground: "rgba(18,32,23,1)",
       active: "#38e07b",
       cardBackground: "#353636"
     },
