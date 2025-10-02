@@ -4,6 +4,9 @@ import { initReactI18next } from "react-i18next";
 const resources = {
   en: {
     translation: {
+      common: {
+        today: 'today'
+      },
       tabs: {
         index: "Home",
         history: "History",
@@ -45,6 +48,9 @@ const resources = {
   },
   cn: {
     translation: {
+      common: {
+        today: '今天'
+      },
       tabs: {
         index: "首页",
         history: "记录",

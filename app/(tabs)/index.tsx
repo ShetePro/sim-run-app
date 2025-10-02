@@ -70,7 +70,7 @@ export default function HomeScreen() {
     );
   }
   return (
-    <PageView style={{ paddingBottom: 100 }}>
+    <PageView>
       <View style={{ flex: 1, padding: 10 }}>
         <UserAvatar />
         <View className={"flex flex-row mt-2 mb-2 gap-4"}>
@@ -91,11 +91,3 @@ export default function HomeScreen() {
     </PageView>
   );
 }
-
-const styles = StyleSheet.create({
-  avatar: {
-    width: 150,
-    height: 150,
-    borderRadius: 125,
-  },
-});
