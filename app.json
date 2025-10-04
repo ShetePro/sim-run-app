@@ -10,6 +10,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["location"]
+      },
       "bundleIdentifier": "com.anonymous.simrun"
     },
     "android": {
@@ -17,6 +20,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
       "package": "com.anonymous.simrun"
     },
     "updates": {
@@ -36,6 +45,13 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyCqTzctI9Fg1zun4ZB0mytOOD5K2o1owG4",
+          "androidGoogleMapsApiKey": "AIzaSyCqTzctI9Fg1zun4ZB0mytOOD5K2o1owG4"
         }
       ],
       "expo-secure-store"
