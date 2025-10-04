@@ -5,7 +5,8 @@ const resources = {
   en: {
     translation: {
       common: {
-        today: 'today'
+        today: "today",
+        time: "Time",
       },
       tabs: {
         index: "Home",
@@ -49,7 +50,8 @@ const resources = {
   cn: {
     translation: {
       common: {
-        today: '今天'
+        today: "今天",
+        time: "时间",
       },
       tabs: {
         index: "首页",
