@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": ["location"],
+        "NSLocationWhenInUseUsageDescription": "此应用需要您的位置来记录跑步路线。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "此应用需要您的位置来记录跑步路线，即使在后台运行也是如此。"
       },
       "bundleIdentifier": "com.anonymous.simrun"
     },
