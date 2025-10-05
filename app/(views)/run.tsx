@@ -1,36 +1,88 @@
-import { StyleSheet, SafeAreaView, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 
 import PageView from "@/components/PageView";
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Map from "@/components/map/Map";
+import { usePosition } from "@/hooks/usePosition";
+import { useEffect, useMemo, useState } from "react";
+import { secondFormatHours } from "@/utils/util";
 
+type RunDataType = {
+  distance: number;
+  time: number;
+  pace: number;
+  energy: number;
+};
+let updateRun: any | null = null;
 export default function RunIndexScreen() {
   const { t } = useTranslation();
+  const { location, startTracking } = usePosition();
   const router = useRouter();
-  const detailList = [
-    {
-      label: t("activity.pace"),
-      value: "7:30",
-      unit: "/" + t("activity.km"),
-    },
-    {
-      label: t("common.time"),
-      value: "20:00",
-    },
-    {
-      label: t("activity.energy"),
-      value: "350",
-      unit: t("activity.kcal"),
-    },
-  ];
+  const [runData, setRunData] = useState<RunDataType>({
+    distance: 0.0,
+    time: 0,
+    pace: 0,
+    energy: 0,
+  });
+  const detailList = useMemo(() => {
+    return [
+      {
+        label: t("activity.pace"),
+        value: secondFormatHours(runData.pace),
+        unit: "/" + t("activity.km"),
+      },
+      {
+        label: t("common.time"),
+        value: secondFormatHours(runData.time),
+      },
+      {
+        label: t("activity.energy"),
+        value: runData.energy,
+        unit: t("activity.kcal"),
+      },
+    ];
+  }, [runData]);
+
+  // 每秒更新一次数据
+  useEffect(() => {
+    startTracking();
+    if (updateRun) {
+      clearInterval(updateRun);
+    } else {
+      updateRun = setInterval(() => {
+        console.log("update run data");
+        setRunData((prev) => {
+          const newTime = prev.time + 1;
+          const newDistance = parseFloat(
+            (prev.distance + Math.random() * 0.01).toFixed(2),
+          );
+          return {
+            time: newTime,
+            distance: newDistance,
+            pace: newTime / newDistance,
+            energy: Math.floor(newDistance * 60),
+          };
+        });
+      }, 1000);
+    }
+    return () => clearInterval(updateRun);
+  }, []);
   function onBack() {
     router.replace("/(tabs)");
   }
   return (
     <PageView>
-      <View style={{ paddingBottom: 20, flex: 1, padding: 10, display: 'flex', flexDirection: 'column' }}>
+      <View
+        style={{
+          paddingBottom: 20,
+          flex: 1,
+          padding: 10,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <View>
           <ThemedText
             style={{
@@ -43,7 +95,7 @@ export default function RunIndexScreen() {
           </ThemedText>
           <View className={"flex flex-row items-end justify-center mt-2"}>
             <ThemedText style={{ fontSize: 96, lineHeight: 100 }}>
-              2.3
+              {runData.distance}
             </ThemedText>
             <ThemedText
               style={{ fontSize: 32, lineHeight: 38, marginBottom: 10 }}
@@ -75,7 +127,10 @@ export default function RunIndexScreen() {
             );
           })}
         </View>
-        <Map style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }} />
+        <Map
+          location={location}
+          style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
+        />
         <Pressable style={styles.finishButton} onPress={onBack}>
           <ThemedText
             style={{ color: "#fff", textAlign: "center", fontSize: 18 }}

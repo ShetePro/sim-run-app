@@ -122,7 +122,6 @@ export function NumberShrink(num: number | string, basic = 10000, unit = "万") 
   }
 }
 
-
 // 遍历获取className的节点
 export function getElementsByClassName(dom: any, className: string) {
   let results: any[] = [];
@@ -145,4 +144,16 @@ export function getElementsByClassName(dom: any, className: string) {
 
   traverse(dom);
   return results;
+}
+
+export function secondFormatHours(second: number) {
+  let minute: string | number = Math.floor(second / 60);
+  if (minute < 10) {
+    minute = "0" + minute;
+  }
+  second = Math.floor(second % 60);
+  if (second < 10) {
+    return `${minute}:0${second}`;
+  }
+  return `${minute}:${second}`;
 }
