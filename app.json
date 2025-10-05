@@ -38,6 +38,8 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      "expo-location",
       [
         "expo-splash-screen",
         {
@@ -46,15 +48,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ],
-      [
-        "react-native-maps",
-        {
-          "iosGoogleMapsApiKey": "AIzaSyCqTzctI9Fg1zun4ZB0mytOOD5K2o1owG4",
-          "androidGoogleMapsApiKey": "AIzaSyCqTzctI9Fg1zun4ZB0mytOOD5K2o1owG4"
-        }
-      ],
-      "expo-secure-store"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
