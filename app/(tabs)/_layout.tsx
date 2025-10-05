@@ -7,18 +7,23 @@ import TabBar from "@/components/tab-bar/TabBar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSession } from "@/components/SessionProvider";
 import { ThemedText } from "@/components/ThemedText";
-import { WithTranslation, withTranslation } from "react-i18next";
+import {
+  useTranslation,
+  WithTranslation,
+  withTranslation,
+} from "react-i18next";
 
-function TabLayout({ t }: WithTranslation) {
+function TabLayout() {
   const colors = useThemeColor();
-  const { session, isLoading } = useSession();
-  if (isLoading) {
-    return <ThemedText>Loading...</ThemedText>;
-  }
+  // const { session, isLoading } = useSession();
+  // if (isLoading) {
+  //   return <ThemedText>Loading...</ThemedText>;
+  // }
   // 判断是否登录
   // if (!session) {
   //   return <Redirect href="/SignIn" />;
   // }
+  const {t} = useTranslation("tabs")
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
@@ -27,7 +32,6 @@ function TabLayout({ t }: WithTranslation) {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        animation: "fade",
       }}
     >
       <Tabs.Screen
@@ -57,4 +61,4 @@ function TabLayout({ t }: WithTranslation) {
     </Tabs>
   );
 }
-export default withTranslation("tabs")(TabLayout);
+export default TabLayout;

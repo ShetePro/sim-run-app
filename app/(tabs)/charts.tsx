@@ -1,9 +1,10 @@
-import {View, Text, SafeAreaView} from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import PageView from "@/components/PageView";
 
 export default function ChartsScreen() {
   return (
-    <SafeAreaView>
-      <Text>chart</Text>
-    </SafeAreaView>
+    <PageView>
+      <ThemedText>chart</ThemedText>
+    </PageView>
   );
 }

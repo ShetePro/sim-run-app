@@ -60,9 +60,7 @@ export default function RootLayout() {
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <ThemeProvider value={theme}>
         <SessionProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Slot />
-          </Stack>
+          <Slot />
         </SessionProvider>
         <StatusBar style="auto" />
         <Toast topOffset={insets.top + 10} visibilityTime={2000} />
