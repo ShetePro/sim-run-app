@@ -157,3 +157,40 @@ export function secondFormatHours(second: number) {
   }
   return `${minute}:${second}`;
 }
+// 将角度转换为弧度
+export function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+/**
+ * 使用 Haversine 公式计算两个经纬度之间的距离
+ * @param startPoint 起点坐标 (latitude, longitude)
+ * @param endPoint 终点坐标 (latitude, longitude)
+ * @returns 距离，单位为米 (meters)
+ */
+export const haversineDistance = (
+  startPoint: LatLon,
+  endPoint: LatLon,
+): number => {
+  const R = 6371e3; // 地球半径，单位为米
+
+  const lat1 = toRadians(startPoint.latitude);
+  const lon1 = toRadians(startPoint.longitude);
+  const lat2 = toRadians(endPoint.latitude);
+  const lon2 = toRadians(endPoint.longitude);
+
+  const deltaLat = lat2 - lat1;
+  const deltaLon = lon2 - lon1;
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(deltaLon / 2) *
+      Math.sin(deltaLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  // 单位为米
+  return R * c;
+};
