@@ -19,3 +19,7 @@ type BrandType = {
   code?: string;
   remark?: string;
 };
+type LatLon = {
+  latitude: number;
+  longitude: number;
+};

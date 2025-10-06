@@ -5,72 +5,70 @@ import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Map from "@/components/map/Map";
-import { usePosition } from "@/hooks/usePosition";
+import { useRun } from "@/hooks/useRun";
 import { useEffect, useMemo, useState } from "react";
 import { secondFormatHours } from "@/utils/util";
+import { useTick } from "@/hooks/useTick";
 
 type RunDataType = {
-  distance: number;
   time: number;
   pace: number;
   energy: number;
 };
-let updateRun: any | null = null;
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking } = usePosition();
+  const { location, startTracking, distance } = useRun();
   const router = useRouter();
-  const [runData, setRunData] = useState<RunDataType>({
-    distance: 0.0,
-    time: 0,
-    pace: 0,
-    energy: 0,
-  });
+  const { seconds, startTimer, stopTimer } = useTick();
+  const [pace, setPace] = useState<string>("0:00");
+
+  useEffect(() => {
+    if (seconds % 10 === 0 && distance > 10) {
+      setPace(secondFormatHours(seconds / (distance / 1000)));
+    }
+  }, [seconds, distance]);
+
   const detailList = useMemo(() => {
-    return [
+    const data = [
       {
         label: t("activity.pace"),
-        value: secondFormatHours(runData.pace),
+        value: pace,
         unit: "/" + t("activity.km"),
       },
       {
         label: t("common.time"),
-        value: secondFormatHours(runData.time),
+        value: secondFormatHours(seconds),
       },
       {
         label: t("activity.energy"),
-        value: runData.energy,
+        value: Math.floor(10 * 70 * (seconds / 3600)),
         unit: t("activity.kcal"),
       },
     ];
-  }, [runData]);
 
-  // 每秒更新一次数据
-  useEffect(() => {
-    startTracking();
-    if (updateRun) {
-      clearInterval(updateRun);
-    } else {
-      updateRun = setInterval(() => {
-        console.log("update run data");
-        setRunData((prev) => {
-          const newTime = prev.time + 1;
-          const newDistance = parseFloat(
-            (prev.distance + Math.random() * 0.01).toFixed(2),
-          );
-          return {
-            time: newTime,
-            distance: newDistance,
-            pace: newTime / newDistance,
-            energy: Math.floor(newDistance * 60),
-          };
-        });
-      }, 1000);
-    }
-    return () => clearInterval(updateRun);
-  }, []);
+    return data.map((item) => {
+      return (
+        <View
+          className={"flex flex-col items-center justify-center flex-1"}
+          key={item.label}
+        >
+          <ThemedText style={{ color: "#F6F8F7" }}>{item.label}</ThemedText>
+          <ThemedText style={{ fontSize: 24, lineHeight: 40, marginTop: 5 }}>
+            {item.value}
+            <ThemedText style={{ fontSize: 16 }}>{item.unit}</ThemedText>
+          </ThemedText>
+        </View>
+      );
+    });
+  }, [distance, seconds, pace]);
   function onBack() {
+    stopTimer();
     router.replace("/(tabs)");
+  }
+  function onStart() {
+    startTracking();
+    startTimer();
+    console.log("开始跑步");
   }
   return (
     <PageView>
@@ -95,7 +93,7 @@ export default function RunIndexScreen() {
           </ThemedText>
           <View className={"flex flex-row items-end justify-center mt-2"}>
             <ThemedText style={{ fontSize: 96, lineHeight: 100 }}>
-              {runData.distance}
+              {(distance / 1000).toFixed(2)}
             </ThemedText>
             <ThemedText
               style={{ fontSize: 32, lineHeight: 38, marginBottom: 10 }}
@@ -108,36 +106,30 @@ export default function RunIndexScreen() {
           className={"flex flex-row justify-around mt-10 mb-2"}
           style={{ height: 80 }}
         >
-          {detailList.map((item) => {
-            return (
-              <View
-                className={"flex flex-col items-center justify-center"}
-                key={item.label}
-              >
-                <ThemedText style={{ color: "#F6F8F7" }}>
-                  {item.label}
-                </ThemedText>
-                <ThemedText
-                  style={{ fontSize: 24, lineHeight: 40, marginTop: 5 }}
-                >
-                  {item.value}{" "}
-                  <ThemedText style={{ fontSize: 16 }}>{item.unit}</ThemedText>
-                </ThemedText>
-              </View>
-            );
-          })}
+          {detailList}
         </View>
         <Map
           location={location}
           style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
         />
-        <Pressable style={styles.finishButton} onPress={onBack}>
-          <ThemedText
-            style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
-          >
-            结束跑步
-          </ThemedText>
-        </Pressable>
+        <View className={"flex flex-row gap-4 mt-4"}>
+          {seconds === 0 && (
+            <Pressable style={styles.startButton} onPress={onStart}>
+              <ThemedText
+                style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
+              >
+                开始
+              </ThemedText>
+            </Pressable>
+          )}
+          <Pressable style={styles.finishButton} onPress={onBack}>
+            <ThemedText
+              style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
+            >
+              结束
+            </ThemedText>
+          </Pressable>
+        </View>
       </View>
     </PageView>
   );
@@ -150,11 +142,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+  startButton: {
+    flex: 1,
+    marginTop: 20,
+    backgroundColor: "#32a211",
+    padding: 15,
+    borderRadius: 10,
+    height: 50,
+  },
   finishButton: {
+    flex: 1,
     marginTop: 20,
     backgroundColor: "#dc282d",
     padding: 15,
-    marginHorizontal: 10,
     borderRadius: 10,
     height: 50,
   },
