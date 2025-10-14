@@ -1,4 +1,4 @@
-import { StyleSheet, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable, Image } from "react-native";
 
 import PageView from "@/components/PageView";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,14 +10,10 @@ import { useEffect, useMemo, useState } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 
-type RunDataType = {
-  time: number;
-  pace: number;
-  energy: number;
-};
+
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, distance } = useRun();
+  const { location, startTracking, distance, heading } = useRun();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
   const [pace, setPace] = useState<string>("0:00");
@@ -110,6 +106,7 @@ export default function RunIndexScreen() {
         </View>
         <Map
           location={location}
+          heading={heading}
           style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
         />
         <View className={"flex flex-row gap-4 mt-4"}>
