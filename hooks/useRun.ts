@@ -3,13 +3,25 @@ import * as Location from "expo-location";
 import { Alert, Linking, Platform } from "react-native";
 import { LocationSubscription } from "expo-location";
 import { haversineDistance } from "@/utils/util";
+import { useRunDB } from "@/hooks/useSQLite";
+import { RunRecord } from "@/types/runType";
 
 export function useRun() {
+  const runData:RunRecord = {
+    date: Date.now(),
+    distance: 0,
+    time: 0,
+    pace: 0,
+    energy: 0,
+    points: [],
+    isFinish: 0
+  };
   const [location, setLocation] = useState<any>(null);
   const [distance, setDistance] = useState<number>(1);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [isTracking, setIsTracking] = useState(false);
+  const { addRun, updateRun } = useRunDB();
   let calcIndex = 0;
   const [locationSubscription, setLocationSubscription] =
     useState<LocationSubscription | null>(null);
@@ -119,6 +131,16 @@ export function useRun() {
     setIsTracking(true);
     setRoutePoints([]); // 开始新会话时清空路径
     simulateRun();
+    runData.id = await addRun({
+      date: new Date().getTime(),
+      distance: 0,
+      time: 0,
+      pace: 0,
+      energy: 0,
+      points: [],
+      isFinish: 0,
+    });
+    console.log("✅ 已保存跑步数据", runData);
 
     // const subscription = await Location.watchPositionAsync(
     //   {
@@ -144,8 +166,14 @@ export function useRun() {
       locationSubscription.remove();
       setLocationSubscription(null);
     }
-    setIsTracking(false);
-    console.log("跑步会话结束，总点数：", routePoints.length);
+    updateRun({
+      ...runData,
+      distance,
+      isFinish: 1,
+    }).then(() => {
+      setIsTracking(false);
+      console.log("跑步会话结束，总点数：", routePoints.length);
+    });
     // 在这里你可以将 routePoints 保存到本地或发送到服务器
   };
   // 4. 组件卸载时停止追踪
