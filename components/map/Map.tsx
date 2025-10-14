@@ -1,35 +1,72 @@
 import MapView, { Marker } from "react-native-maps";
-import { Animated, Image, StyleProp, View, ViewStyle } from "react-native";
-import * as Location from "expo-location";
-import { useEffect, useState, useRef } from "react";
+import { StyleProp, ViewStyle, Image } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ThemedText } from "@/components/ThemedText";
 
 function Map({
   style,
-  className,
+  heading,
   location,
 }: {
   style?: StyleProp<ViewStyle>;
   className?: string;
+  heading: number;
   location: { latitude: number; longitude: number } | null;
 }) {
   const mapRef = useRef<MapView>(null);
+  const [showMark, setShowMark] = useState<boolean>(false);
+  useEffect(() => {
+    console.log(location, "location 当前位置");
+    const isShowMark =
+      location && !(location.latitude === 0 && location.longitude === 0);
+    setShowMark(!!isShowMark);
+    mapRef.current?.animateCamera({
+      center: {
+        longitude: location?.longitude || 0,
+        latitude: location?.latitude || 0,
+      },
+      heading: heading ?? 0,
+      pitch: 45,
+      zoom: 20,
+    });
+  }, [location, heading]);
   if (!location) {
-    return <ThemedText>加载中...</ThemedText>;
+    return <ThemedText>获取位置中...</ThemedText>;
   }
+
   return (
     <MapView
       ref={mapRef}
       style={style}
+      provider={"google"}
       initialRegion={{
         latitude: location.latitude,
         longitude: location.longitude,
         latitudeDelta: 0.001,
         longitudeDelta: 0.001,
       }}
-      showsUserLocation={true}
+      showsUserLocation={false}
       followsUserLocation={true}
-    ></MapView>
+    >
+      {showMark && (
+        <Marker
+          coordinate={location}
+          tracksViewChanges={false}
+          anchor={{ x: 0.5, y: 0.5 }}
+          flat={true}
+          rotation={heading}
+        >
+          <Image
+            source={require("../../assets/images/map-position.png")}
+            style={{
+              width: 20,
+              height: 20,
+              transform: [{ rotate: `${heading}deg` }],
+            }}
+          />
+        </Marker>
+      )}
+    </MapView>
   );
 }
 
