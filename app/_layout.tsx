@@ -18,6 +18,8 @@ import { Appearance } from "react-native";
 import { SessionProvider } from "@/components/SessionProvider";
 import Toast from "react-native-toast-message";
 import "@/utils/i18n";
+import { SQLiteProvider } from "expo-sqlite";
+import { initializeSQLite } from "@/utils/sqlite";
 
 // const AppStack = () => (
 //   <>
@@ -58,13 +60,19 @@ export default function RootLayout() {
   }
   return (
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
-      <ThemeProvider value={theme}>
-        <SessionProvider>
-          <Slot />
-        </SessionProvider>
-        <StatusBar style="auto" />
-        <Toast topOffset={insets.top + 10} visibilityTime={2000} />
-      </ThemeProvider>
+      <SQLiteProvider
+        databaseName="simrun.db"
+        onInit={initializeSQLite}
+        useSuspense
+      >
+        <ThemeProvider value={theme}>
+          <SessionProvider>
+            <Slot />
+          </SessionProvider>
+          <StatusBar style="auto" />
+          <Toast topOffset={insets.top + 10} visibilityTime={2000} />
+        </ThemeProvider>
+      </SQLiteProvider>
     </SafeAreaProvider>
   );
 }
