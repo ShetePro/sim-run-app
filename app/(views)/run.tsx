@@ -9,7 +9,7 @@ import { useRun } from "@/hooks/useRun";
 import { useEffect, useMemo, useState } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
-
+import Countdown from "@/components/Countdown";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
@@ -17,6 +17,7 @@ export default function RunIndexScreen() {
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
   const [pace, setPace] = useState<string>("0:00");
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
@@ -62,12 +63,16 @@ export default function RunIndexScreen() {
     router.replace("/(tabs)");
   }
   function onStart() {
+    setShowCountdown(true);
+  }
+  function countdownFinish() {
+    setShowCountdown(false);
     startTracking();
     startTimer();
-    console.log("开始跑步");
   }
   return (
-    <PageView>
+    <PageView style={{ position: "relative" }}>
+      {showCountdown && <Countdown onFinish={countdownFinish} />}
       <View
         style={{
           paddingBottom: 20,
