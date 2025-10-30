@@ -14,18 +14,18 @@ export default function HomeScreen() {
     },
     {
       value: "54.3",
-      label: t("activity.km"),
+      label: t("unit.km"),
     },
     {
       value: "32",
-      label: t("activity.hours"),
+      label: t("unit.hours"),
     },
   ];
   const todayAns = [
     {
       label: t("activity.distance"),
       value: "4.2",
-      unit: t("activity.km"),
+      unit: t("unit.km"),
     },
     {
       label: t("activity.steps"),
@@ -35,12 +35,12 @@ export default function HomeScreen() {
     {
       label: t("activity.energy"),
       value: "350",
-      unit: t("activity.kcal"),
+      unit: t("unit.kcal"),
     },
     {
       label: t("activity.pace"),
       value: "6'30",
-      unit: "/" + t("activity.km"),
+      unit: "/" + t("unit.km"),
     },
   ];
   function totalItem(item: any) {

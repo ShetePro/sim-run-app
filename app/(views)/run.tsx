@@ -13,15 +13,15 @@ import Countdown from "@/components/Countdown";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, distance, heading } = useRun();
+  const { location, startTracking, stopTracking, distance, heading } = useRun();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
-  const [pace, setPace] = useState<string>("0:00");
+  const [pace, setPace] = useState<number>(0);
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
-      setPace(secondFormatHours(seconds / (distance / 1000)));
+      setPace(seconds / (distance / 1000));
     }
   }, [seconds, distance]);
 
@@ -29,8 +29,8 @@ export default function RunIndexScreen() {
     const data = [
       {
         label: t("activity.pace"),
-        value: pace,
-        unit: "/" + t("activity.km"),
+        value: secondFormatHours(pace),
+        unit: "/" + t("unit.km"),
       },
       {
         label: t("common.time"),
@@ -39,7 +39,7 @@ export default function RunIndexScreen() {
       {
         label: t("activity.energy"),
         value: Math.floor(10 * 70 * (seconds / 3600)),
-        unit: t("activity.kcal"),
+        unit: t("unit.kcal"),
       },
     ];
 
@@ -60,6 +60,11 @@ export default function RunIndexScreen() {
   }, [distance, seconds, pace]);
   function onBack() {
     stopTimer();
+    stopTracking({
+      time: seconds,
+      pace,
+      energy: Math.floor(10 * 70 * (seconds / 3600)),
+    })
     router.replace("/(tabs)");
   }
   function onStart() {
@@ -99,7 +104,7 @@ export default function RunIndexScreen() {
             <ThemedText
               style={{ fontSize: 32, lineHeight: 38, marginBottom: 10 }}
             >
-              {t("activity.km")}
+              {t("unit.km")}
             </ThemedText>
           </View>
         </View>
