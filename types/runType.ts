@@ -7,11 +7,12 @@ export type TrackPoint = {
 
 export type RunRecord = {
   id?: number;
-  date: number;
   distance: number;
   time: number;
   pace: number;
   energy: number;
-  points?: TrackPoint[];
   isFinish: 0 | 1;
+  points?: TrackPoint[];
+  startTime?: number;
+  endTime?: number;
 };

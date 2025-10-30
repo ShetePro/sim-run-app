@@ -6,6 +6,7 @@ const resources = {
     translation: {
       common: {
         today: "today",
+        yesterday: "yesterday",
         time: "Time",
       },
       tabs: {
@@ -40,10 +41,12 @@ const resources = {
         energy: "Energy",
         pace: "Pace",
         runs: "Runs",
-        hours: "Hours",
-        mi: "mi",
+      },
+      unit: {
         km: "km",
+        mi: "mi",
         kcal: "kcal",
+        hours: "Hours",
       },
     },
   },
@@ -51,6 +54,7 @@ const resources = {
     translation: {
       common: {
         today: "今天",
+        yesterday: "昨天",
         time: "时间",
       },
       tabs: {
@@ -84,9 +88,13 @@ const resources = {
         energy: "运动消耗",
         pace: "平均配速",
         runs: "跑步数",
-        km: "公里",
         hours: "总时长",
+      },
+      unit: {
         kcal: "千卡",
+        km: "公里",
+        mi: "米",
+        hours: "小时",
       },
     },
   },
