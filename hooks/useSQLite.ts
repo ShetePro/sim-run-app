@@ -7,10 +7,16 @@ export function useRunDB() {
   // 添加跑步记录 + 轨迹
   const addRun = async (run: RunRecord) => {
     const { lastInsertRowId } = await db.runAsync(
-      `INSERT INTO runs (date, distance, time, pace, energy) VALUES (?, ?, ?, ?, ?)`,
-      [run.date, run.distance, run.time, run.pace, run.energy],
+      `INSERT INTO runs (startTime, endTime, distance, time, pace, energy) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        run.startTime || null,
+        run.endTime || null,
+        run.distance,
+        run.time,
+        run.pace,
+        run.energy,
+      ],
     );
-
     await updateRunTrackPoints(lastInsertRowId, run.points || []);
     return lastInsertRowId;
   };
@@ -18,8 +24,15 @@ export function useRunDB() {
   const updateRun = async (run: RunRecord) => {
     if (!run.id) throw new Error("Run ID is required for update.");
     await db.runAsync(
-      `UPDATE runs SET date = ?, distance = ?, time = ?, pace = ?, energy = ? WHERE id = ?`,
-      [run.date, run.distance, run.time, run.pace, run.energy, run.id],
+      `UPDATE runs SET endTime = ?, distance = ?, time = ?, pace = ?, energy = ? WHERE id = ?`,
+      [
+        run.endTime || null,
+        run.distance,
+        run.time,
+        run.pace,
+        run.energy,
+        run.id,
+      ],
     );
     await updateRunTrackPoints(run.id, run.points || []);
   };

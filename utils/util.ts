@@ -194,3 +194,16 @@ export const haversineDistance = (
   // 单位为米
   return R * c;
 };
+
+/**
+ * 返回指定时间和现在相差的天数
+ * @param time timestamp
+ * @returns day
+ */
+export function diffDayNum(time: number) {
+  const date = dateFormat(time);
+  const target = dayjs(date);
+  const now = dayjs();
+
+  return now.diff(target, "day");
+}

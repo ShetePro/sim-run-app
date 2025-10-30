@@ -5,17 +5,16 @@ import { LocationSubscription } from "expo-location";
 import { haversineDistance } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
-
+const runData: RunRecord = {
+  startTime: Date.now(),
+  distance: 0,
+  time: 0,
+  pace: 0,
+  energy: 0,
+  points: [],
+  isFinish: 0,
+};
 export function useRun() {
-  const runData:RunRecord = {
-    date: Date.now(),
-    distance: 0,
-    time: 0,
-    pace: 0,
-    energy: 0,
-    points: [],
-    isFinish: 0
-  };
   const [location, setLocation] = useState<any>(null);
   const [distance, setDistance] = useState<number>(1);
   const [heading, setHeading] = useState<number>(0);
@@ -45,7 +44,6 @@ export function useRun() {
     let lon = point?.longitude || location.longitude;
     let index = 0;
     const interval = setInterval(() => {
-      console.log(lat);
       lat += 0.00003; // 每次增加一点纬度
       // lon += 0.0001; // 每次增加一点经度
       const newPoint = {
@@ -131,8 +129,9 @@ export function useRun() {
     setIsTracking(true);
     setRoutePoints([]); // 开始新会话时清空路径
     simulateRun();
+    console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
-      date: new Date().getTime(),
+      startTime: 1761280342000,
       distance: 0,
       time: 0,
       pace: 0,
@@ -161,15 +160,25 @@ export function useRun() {
     // setLocationSubscription(subscription);
   };
   // 3. 停止位置追踪
-  const stopTracking = () => {
+  const stopTracking = (data: {
+    time: number;
+    pace: number;
+    energy: number;
+  }) => {
+    if (!isTracking) return;
     if (locationSubscription) {
       locationSubscription.remove();
       setLocationSubscription(null);
     }
+    const { time, pace, energy } = data;
     updateRun({
-      ...runData,
+      id: runData.id,
+      time,
+      pace,
+      energy,
       distance,
       isFinish: 1,
+      endTime: Date.now(),
     }).then(() => {
       setIsTracking(false);
       console.log("跑步会话结束，总点数：", routePoints.length);

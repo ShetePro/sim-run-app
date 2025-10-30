@@ -5,11 +5,13 @@ export async function initializeSQLite(db: SQLiteDatabase) {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT,
+      startTime INTEGER,
+      endTime INTEGER,
       distance REAL,
       time INTEGER,
       pace REAL,
       energy INTEGER
+      isFinish INTEGER
     );
   `);
 
@@ -24,4 +26,18 @@ export async function initializeSQLite(db: SQLiteDatabase) {
       FOREIGN KEY (run_id) REFERENCES runs (id)
     );
   `);
+}
+async function dropAllTables(db: SQLiteDatabase) {
+  // 获取所有用户定义的表
+  const tables: { name: string }[] = await db.getAllAsync(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name NOT LIKE 'sqlite_%';
+  `);
+
+  for (const { name } of tables) {
+    await db.execAsync(`DROP TABLE IF EXISTS ${name};`);
+    console.log(`🗑 已删除表: ${name}`);
+  }
+
+  console.log("✅ 所有表已清空");
 }
