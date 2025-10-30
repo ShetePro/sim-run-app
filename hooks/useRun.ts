@@ -131,7 +131,7 @@ export function useRun() {
     simulateRun();
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
-      startTime: 1761280342000,
+      startTime: Date.now(),
       distance: 0,
       time: 0,
       pace: 0,
