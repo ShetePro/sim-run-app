@@ -6,7 +6,7 @@ export const COLORS = {
   dangerColor: "#e74c3c",
   infoColor: "#c0c0c0",
   black: '#292526',
-  white: '#fbfcfc'
+  white: '#f9fafb'
 };
 
 export const SIZES = {

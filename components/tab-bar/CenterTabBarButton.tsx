@@ -1,18 +1,20 @@
 import { View, StyleSheet, Pressable, useColorScheme } from "react-native";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function CenterTabBarButton() {
   const colors = useThemeColor();
-  const theme = useColorScheme()
+  const theme = useColorScheme();
   function goRun() {
     router.replace("/(views)/run");
   }
   return (
     <Pressable style={styles.centerWarp} onPress={goRun}>
-      <View style={[styles.centerButton, { backgroundColor: "#13c95e" }]}>
-        <MaterialCommunityIcons name="run-fast" size={24} color={theme === 'dark' ? 'white' : colors.active} />
+      <View
+        style={[styles.centerButton, { backgroundColor: colors.active, shadowColor: colors.active }]}
+      >
+        <MaterialCommunityIcons name="run-fast" size={24} color={"white"} />
       </View>
     </Pressable>
   );
@@ -26,16 +28,20 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: "50%",
-    padding: 5,
-    zIndex: 99,
+    padding: 2,
+    zIndex: 10,
   },
   centerButton: {
-    borderRadius: 25,
+    zIndex: 99,
+    borderRadius: 30,
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
-    boxShadow: '0 5 10 rgba(0, 0, 0, .5);'
+    boxShadow: "0 5 10 rgba(0, 0, 0, .5);",
+    shadowOffset: { width: 0, height: 8 }, // 阴影向下偏移 4px
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5, // Android 阴影
   },
 });

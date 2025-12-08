@@ -93,7 +93,7 @@ export default function TabBar({
     tabs.splice(
       center,
       0,
-      <View key={"center-empty"} style={{ marginHorizontal: 20 }}></View>,
+      <View key={"center-empty"} style={{ marginHorizontal: 20, backgroundColor: colors.tabBackground }}></View>,
     );
     return tabs;
   }
@@ -116,7 +116,7 @@ export default function TabBar({
            A ${clipRadius - 10} ${clipRadius - 10} 0,0,1 ${tabWidth / 2 - clipRadius + 10} 10
            A 10 10  0,0,0 ${tabWidth / 2 - clipRadius} 0
            L ${tabRadius} 0 z`}
-          stroke={"#1e293b"}
+          stroke={colors.tabBackground}
           fill={colors.tabBackground} // 背景颜色
         />
       </Svg>

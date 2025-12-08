@@ -26,13 +26,12 @@ export const Colors = {
     colors: {
       text: "#ECEDEE",
       textWeaken: "#525256",
-      // background: "#151718",
       tint: tintColorDark,
       icon: "#9BA1A6",
       tabIconDefault: "#9BA1A6",
       tabIconSelected: tintColorDark,
-      background: "rgb(18,32,23)",
-      tabBackground: "rgba(18,32,23,1)",
+      background: "rgba(15,23,42,1)",
+      tabBackground: "rgba(15,23,42,1)",
       active: "#38e07b",
       cardBackground: "#353636"
     },
