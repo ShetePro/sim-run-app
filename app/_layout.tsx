@@ -14,7 +14,7 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Appearance } from "react-native";
+import { Appearance, LogBox } from "react-native";
 import { SessionProvider } from "@/components/SessionProvider";
 import Toast from "react-native-toast-message";
 import "@/utils/i18n";
@@ -30,7 +30,7 @@ import { initializeSQLite } from "@/utils/sqlite";
 // );
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
+LogBox.ignoreLogs(['Require cycle: node_modules/victory']);
 export default function RootLayout() {
   // const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
@@ -59,6 +59,7 @@ export default function RootLayout() {
     return null;
   }
   return (
+
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <SQLiteProvider
         databaseName="simrun.db"
