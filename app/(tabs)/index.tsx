@@ -14,15 +14,14 @@ import { Image } from "expo-image";
 import {
   Ionicons,
   MaterialCommunityIcons,
-  FontAwesome5,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient"; // 需要安装 expo-linear-gradient
 import dayjs from "dayjs";
 import HomeDataCard from "@/components/card/HomeDataCard";
 import { TodayActivityCard } from "@/components/card/TodayActivityCard";
+import { useTranslation } from "react-i18next";
 
-// --- Mock Data: 模拟今日和历史数据 ---
 const HOME_DATA = {
   user: {
     name: "Alex",
@@ -60,6 +59,7 @@ const CARD_THEMES = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // 根据时间生成问候语
   const getGreeting = () => {
@@ -106,25 +106,26 @@ export default function HomeScreen() {
         {/* --- 3. 今日数据网格 --- */}
         <View className="px-5 flex-row flex-wrap justify-between mb-6">
           <HomeDataCard
-            label="运动时长"
+            label={t("home.duration")}
             value={HOME_DATA.today.duration}
             icon="timer-outline"
             colorHex="#3b82f6"
           />
           <HomeDataCard
-            label="消耗千卡"
+            label={t("home.calories")}
             value={HOME_DATA.today.calories}
+            unit="kcal"
             icon="flame"
             colorHex="#f97316"
           />
           <HomeDataCard
-            label="平均配速"
+            label={t("home.pace")}
             value={HOME_DATA.today.pace}
             icon="speedometer-outline"
             colorHex="#10b981"
           />
           <HomeDataCard
-            label="平均步频"
+            label={t("home.stepFrequency")}
             value={HOME_DATA.today.cadence}
             unit="spm"
             icon="footsteps-outline"
@@ -136,7 +137,7 @@ export default function HomeScreen() {
         <View className="px-5 mb-8">
           <QuickStartButton
             onPress={() => {
-              router.push('/(views)/run');
+              router.push("/(views)/run");
             }}
           />
         </View>
@@ -144,24 +145,24 @@ export default function HomeScreen() {
         {/* --- 5. 生涯累计数据 (Lifetime Stats) --- */}
         <View className="px-5 mb-6">
           <Text className="text-slate-800 dark:text-white font-bold text-lg mb-3">
-            生涯累计
+            {t('home.career')}
           </Text>
           <View className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex-row justify-between shadow-sm">
             <LifetimeItem
               value={HOME_DATA.lifetime.totalDistance}
-              label="总公里"
+              label={t("home.totalDistance")}
               unit="km"
             />
             <View className="w-[1px] h-8 bg-slate-100 dark:bg-slate-700 self-center" />
             <LifetimeItem
               value={HOME_DATA.lifetime.totalRuns}
-              label="总次数"
+              label={t("home.totalRuns")}
               unit=""
             />
             <View className="w-[1px] h-8 bg-slate-100 dark:bg-slate-700 self-center" />
             <LifetimeItem
               value={HOME_DATA.lifetime.totalHours}
-              label="总时长"
+              label={t("home.totalHours")}
               unit="h"
             />
           </View>
@@ -170,11 +171,11 @@ export default function HomeScreen() {
         <View className="px-5 mb-10">
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-slate-800 dark:text-white font-bold text-lg">
-              最近活动
+              {t('home.recentActivities')}
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/history")}>
               <Text className="text-indigo-500 text-sm font-medium">
-                查看全部
+                {t('home.showMore')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -213,15 +214,15 @@ export default function HomeScreen() {
 const LifetimeItem = ({ value, label, unit }: any) => (
   <View className="items-center flex-1">
     <Text className="text-lg font-extrabold text-slate-800 dark:text-white">
-      {value}
-      <Text className="text-xs font-normal text-slate-500 ml-0.5">{unit}</Text>
+      {value}&nbsp;
+      <Text className="text-xs font-normal text-slate-500 ml-1">{unit}</Text>
     </Text>
     <Text className="text-xs text-slate-400 mt-1">{label}</Text>
   </View>
 );
 const QuickStartButton = ({ onPress }: { onPress: () => void }) => {
   const [isPressed, setIsPressed] = React.useState(false);
-
+  const { t } = useTranslation();
   const START_COLOR = "#4f46e5";
   const END_COLOR = "#6366f1";
   const SHADOW_COLOR = "#6366f1";
@@ -260,7 +261,7 @@ const QuickStartButton = ({ onPress }: { onPress: () => void }) => {
             style={{ marginLeft: 3 }}
           />
         </View>
-        <Text style={styles.buttonText}>开始跑步</Text>
+        <Text style={styles.buttonText}>{t("home.startRun")}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );

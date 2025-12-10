@@ -1,6 +1,7 @@
 import { Dimensions, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface TodayActivityCardProps {
   todayData: {
@@ -11,6 +12,7 @@ interface TodayActivityCardProps {
 
 export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
   const { width } = Dimensions.get('window');
+  const {t} = useTranslation();
   const progress = Math.min(todayData.distance / todayData.goal, 1);
   const progressWidth = (width - 80) * progress;
   return (
@@ -21,7 +23,7 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
 
         <View className="flex-row justify-between items-start mb-2">
           <View className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">
-            <Text className="text-white text-xs font-bold">今日活动</Text>
+            <Text className="text-white text-xs font-bold">{t('home.todayActivity')}</Text>
           </View>
           <View className="flex-row items-center">
             <Ionicons
@@ -30,7 +32,7 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
               color="white"
               style={{ opacity: 0.8 }}
             />
-            <Text className="text-white/80 text-xs ml-1">24°C 舒适</Text>
+            <Text className="text-white/80 text-xs ml-1">24°C {t('weather.comfortable')}</Text>
           </View>
         </View>
 
@@ -44,7 +46,7 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
             </Text>
           </View>
           <Text className="text-indigo-200 text-sm mt-1">
-            目标完成度 {Math.round(progress * 100)}%
+            {t('home.completeness')} {Math.round(progress * 100)}%
           </Text>
         </View>
 
