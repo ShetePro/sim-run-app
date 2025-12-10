@@ -1,6 +1,7 @@
 import React from "react";
-import { SafeAreaView, View, ViewStyle } from "react-native";
+import { View, ViewStyle } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PageView({
   children,

@@ -1,26 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ImageBackground,
-  Dimensions,
-  Platform,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient"; // 需要安装 expo-linear-gradient
 import dayjs from "dayjs";
 import HomeDataCard from "@/components/card/HomeDataCard";
 import { TodayActivityCard } from "@/components/card/TodayActivityCard";
 import { useTranslation } from "react-i18next";
+import { useRunDB } from "@/hooks/useSQLite";
+import { TodayRunData } from "@/types/runType";
+import { getPaceLabel, secondFormatHours } from "@/utils/util";
 
 const HOME_DATA = {
   user: {
@@ -60,7 +58,30 @@ const CARD_THEMES = {
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { getTodayRunData } = useRunDB();
+  const [today, setToday] = useState<TodayRunData | null>(null);
 
+  useEffect(() => {
+    getTodayRunData().then((res) => {
+      console.log(res, "获取的今日数据");
+      const todayData: TodayRunData = {
+        distance: 0,
+        calories: 0,
+        duration: 0,
+        pace: 0,
+        steps: 0,
+      };
+      res.forEach((run, index) => {
+        todayData.distance += (run.distance + todayData.distance) / 1000;
+        todayData.calories += run.pace;
+        todayData.duration += run.time;
+      });
+      todayData.distance = Number(todayData.distance.toFixed(2));
+      todayData.calories = Math.ceil(todayData.calories);
+      todayData.pace = todayData.duration / 60 / todayData.distance;
+      setToday(todayData);
+    });
+  }, []);
   // 根据时间生成问候语
   const getGreeting = () => {
     const hour = dayjs().hour();
@@ -101,38 +122,39 @@ export default function HomeScreen() {
         </View>
 
         {/* --- 2. 今日核心卡片 --- */}
-        <TodayActivityCard todayData={HOME_DATA.today} />
+        {today && <TodayActivityCard todayData={today} />}
 
         {/* --- 3. 今日数据网格 --- */}
-        <View className="px-5 flex-row flex-wrap justify-between mb-6">
-          <HomeDataCard
-            label={t("home.duration")}
-            value={HOME_DATA.today.duration}
-            icon="timer-outline"
-            colorHex="#3b82f6"
-          />
-          <HomeDataCard
-            label={t("home.calories")}
-            value={HOME_DATA.today.calories}
-            unit="kcal"
-            icon="flame"
-            colorHex="#f97316"
-          />
-          <HomeDataCard
-            label={t("home.pace")}
-            value={HOME_DATA.today.pace}
-            icon="speedometer-outline"
-            colorHex="#10b981"
-          />
-          <HomeDataCard
-            label={t("home.stepFrequency")}
-            value={HOME_DATA.today.cadence}
-            unit="spm"
-            icon="footsteps-outline"
-            colorHex="#a855f7"
-          />
-        </View>
-
+        {today === null ? null : (
+          <View className="px-5 flex-row flex-wrap justify-between mb-6">
+            <HomeDataCard
+              label={t("home.duration")}
+              value={secondFormatHours(today.duration, true)}
+              icon="timer-outline"
+              colorHex="#3b82f6"
+            />
+            <HomeDataCard
+              label={t("home.calories")}
+              value={today.calories}
+              unit="kcal"
+              icon="flame"
+              colorHex="#f97316"
+            />
+            <HomeDataCard
+              label={t("home.pace")}
+              value={getPaceLabel(today.pace)}
+              icon="speedometer-outline"
+              colorHex="#10b981"
+            />
+            <HomeDataCard
+              label={t("home.stepFrequency")}
+              value={today.steps}
+              unit="spm"
+              icon="footsteps-outline"
+              colorHex="#a855f7"
+            />
+          </View>
+        )}
         {/* --- 4. 快捷开始按钮 (Main Action) --- */}
         <View className="px-5 mb-8">
           <QuickStartButton
@@ -145,7 +167,7 @@ export default function HomeScreen() {
         {/* --- 5. 生涯累计数据 (Lifetime Stats) --- */}
         <View className="px-5 mb-6">
           <Text className="text-slate-800 dark:text-white font-bold text-lg mb-3">
-            {t('home.career')}
+            {t("home.career")}
           </Text>
           <View className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex-row justify-between shadow-sm">
             <LifetimeItem
@@ -171,11 +193,11 @@ export default function HomeScreen() {
         <View className="px-5 mb-10">
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-slate-800 dark:text-white font-bold text-lg">
-              {t('home.recentActivities')}
+              {t("home.recentActivities")}
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/history")}>
               <Text className="text-indigo-500 text-sm font-medium">
-                {t('home.showMore')}
+                {t("home.showMore")}
               </Text>
             </TouchableOpacity>
           </View>

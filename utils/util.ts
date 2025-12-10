@@ -146,16 +146,19 @@ export function getElementsByClassName(dom: any, className: string) {
   return results;
 }
 
-export function secondFormatHours(second: number) {
+export function secondFormatHours(second: number, isHours = false) {
   let minute: string | number = Math.floor(second / 60);
+  let hours = minute >= 60 ? Math.floor(minute / 60) : "00";
+  minute = minute % 60;
   if (minute < 10) {
     minute = "0" + minute;
   }
   second = Math.floor(second % 60);
-  if (second < 10) {
-    return `${minute}:0${second}`;
+  if (isHours) {
+    return `${hours}:${minute}:${second < 10 ? `0${second}` : second}`;
   }
-  return `${minute}:${second}`;
+  minute = Number(minute) + 60 * Number(hours);
+  return `${minute < 10 ? "0" : ""}${minute}:${second < 10 ? `0${second}` : second}`;
 }
 // 将角度转换为弧度
 export function toRadians(degrees: number): number {
@@ -206,4 +209,11 @@ export function diffDayNum(time: number) {
   const now = dayjs();
 
   return now.diff(target, "day");
+}
+
+export function getPaceLabel(pace: number) {
+  if (pace === 0) return `0'00"`;
+  const minutes = Math.floor(pace);
+  const seconds = Math.round((pace - minutes) * 60);
+  return `${minutes}'${seconds < 10 ? `0${seconds}` : seconds}"`;
 }

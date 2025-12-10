@@ -1,9 +1,8 @@
-import { View, Text, SafeAreaView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
 import HistoryItem from "@/components/HistoryItem";
-import { ThemedView } from "@/components/ThemedView";
-import PageView from "@/components/PageView";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useEffect, useState } from "react";
 import { dateFormat, diffDayNum } from "@/utils/util";
@@ -77,5 +76,14 @@ export default function HistoryScreen() {
       );
     });
   }
-  return <PageView style={{ flex: 1, padding: 16 }}>{renderItem()}</PageView>;
+  return (
+    <SafeAreaView
+      className="flex-1 bg-gray-50 dark:bg-slate-900"
+      edges={["top"]}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1 pb-20 pl-5 pr-5">
+        {renderItem()}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }

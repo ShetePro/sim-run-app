@@ -16,3 +16,11 @@ export type RunRecord = {
   startTime?: number;
   endTime?: number;
 };
+
+export type TodayRunData = {
+  distance: number;
+  duration: number;
+  pace: number;
+  calories: number;
+  steps: number;
+}

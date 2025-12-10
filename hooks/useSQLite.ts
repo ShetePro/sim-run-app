@@ -1,5 +1,6 @@
 import { useSQLiteContext } from "expo-sqlite";
 import { RunRecord, TrackPoint } from "@/types/runType";
+import dayjs from "dayjs";
 
 export function useRunDB() {
   const db = useSQLiteContext();
@@ -74,5 +75,19 @@ export function useRunDB() {
     }
   };
 
-  return { addRun, getRuns, getTrackPoints, deleteRun, updateRun };
+  // get today's run data
+  const getTodayRunData = async (): Promise<RunRecord[]> => {
+    const todayDateString = dayjs().format("YYYY-MM-DD");
+    const startTime = new Date(`${todayDateString} 00:00:00`).getTime();
+    return await db.getAllAsync("SELECT * FROM runs WHERE endTime > ?;", [startTime]);
+  };
+
+  return {
+    addRun,
+    getRuns,
+    getTrackPoints,
+    deleteRun,
+    updateRun,
+    getTodayRunData,
+  };
 }
