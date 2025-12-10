@@ -121,19 +121,6 @@ export default function TabBar({
         />
       </Svg>
       <View style={{ ...styles.tabBar }} onLayout={onTabBarLayout}>
-        {/*<Animated.View*/}
-        {/*  style={[*/}
-        {/*    wrapAnimatedStyle,*/}
-        {/*    {*/}
-        {/*      position: "absolute",*/}
-        {/*      backgroundColor: COLORS.primaryColor,*/}
-        {/*      borderRadius: 30,*/}
-        {/*      marginHorizontal: 15,*/}
-        {/*      width: buttonWidth - 30,*/}
-        {/*      height: dimensions.height - 15,*/}
-        {/*    },*/}
-        {/*  ]}*/}
-        {/*></Animated.View>*/}
         {getTabBarItems()}
       </View>
     </View>
@@ -145,7 +132,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     justifyContent: "center",
-    bottom: 0,
+    bottom: -1,
     // marginHorizontal: 20,
   },
   tabBar: {
@@ -153,7 +140,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    // borderRadius: 35,
     flex: 1,
     paddingVertical: 15,
     paddingBottom: 25,
