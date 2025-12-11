@@ -79,7 +79,24 @@ export function useRunDB() {
   const getTodayRunData = async (): Promise<RunRecord[]> => {
     const todayDateString = dayjs().format("YYYY-MM-DD");
     const startTime = new Date(`${todayDateString} 00:00:00`).getTime();
-    return await db.getAllAsync("SELECT * FROM runs WHERE endTime > ?;", [startTime]);
+    return await db.getAllAsync("SELECT * FROM runs WHERE endTime > ?;", [
+      startTime,
+    ]);
+  };
+
+  const getRunLifeCount = async () => {
+    const runs = await getRuns();
+    const totalTime = await db.getFirstAsync<{ ["SUM(time)"]: number }>(
+      "SELECT SUM(time) FROM runs;",
+    );
+    const totalDistance = await db.getFirstAsync<{ ["SUM(distance)"]: number }>(
+      "SELECT SUM(distance) FROM runs;",
+    );
+    return {
+      totalRuns: runs.length,
+      totalHours: (totalTime?.["SUM(time)"] || 0) / 3600,
+      totalDistance: (totalDistance?.["SUM(distance)"] || 0) / 1000,
+    };
   };
 
   return {
@@ -89,5 +106,6 @@ export function useRunDB() {
     deleteRun,
     updateRun,
     getTodayRunData,
+    getRunLifeCount,
   };
 }

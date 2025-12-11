@@ -19,10 +19,11 @@ import { useTranslation } from "react-i18next";
 import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
 import { getPaceLabel, secondFormatHours } from "@/utils/util";
+import { LifeCountCard } from "@/components/card/LifeCountCard";
 
 const HOME_DATA = {
   user: {
-    name: "Alex",
+    name: "",
     avatar:
       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
   },
@@ -76,9 +77,10 @@ export default function HomeScreen() {
         todayData.calories += run.pace;
         todayData.duration += run.time;
       });
-      todayData.distance = Number(todayData.distance.toFixed(2));
-      todayData.calories = Math.ceil(todayData.calories);
-      todayData.pace = todayData.duration / 60 / todayData.distance;
+      const { distance, calories, duration } = todayData;
+      todayData.calories = Math.ceil(calories);
+      todayData.pace = distance < 10 ? 0 : duration / distance / 60;
+      todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
     });
   }, []);
@@ -104,7 +106,7 @@ export default function HomeScreen() {
             </Text>
             <View className="flex-row items-center">
               <Text className="text-3xl font-bold text-slate-800 dark:text-white mr-2">
-                {getGreeting()}, {HOME_DATA.user.name}
+                {getGreeting()}
               </Text>
               <MaterialCommunityIcons
                 name="hand-wave"
@@ -169,25 +171,7 @@ export default function HomeScreen() {
           <Text className="text-slate-800 dark:text-white font-bold text-lg mb-3">
             {t("home.career")}
           </Text>
-          <View className="bg-white dark:bg-slate-800 rounded-2xl p-5 flex-row justify-between shadow-sm">
-            <LifetimeItem
-              value={HOME_DATA.lifetime.totalDistance}
-              label={t("home.totalDistance")}
-              unit="km"
-            />
-            <View className="w-[1px] h-8 bg-slate-100 dark:bg-slate-700 self-center" />
-            <LifetimeItem
-              value={HOME_DATA.lifetime.totalRuns}
-              label={t("home.totalRuns")}
-              unit=""
-            />
-            <View className="w-[1px] h-8 bg-slate-100 dark:bg-slate-700 self-center" />
-            <LifetimeItem
-              value={HOME_DATA.lifetime.totalHours}
-              label={t("home.totalHours")}
-              unit="h"
-            />
-          </View>
+          <LifeCountCard className={"bg-white dark:bg-slate-800"} />
         </View>
 
         <View className="px-5 mb-10">
@@ -226,22 +210,12 @@ export default function HomeScreen() {
             </ImageBackground>
           </TouchableOpacity>
         </View>
-
         <View className="h-20" />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const LifetimeItem = ({ value, label, unit }: any) => (
-  <View className="items-center flex-1">
-    <Text className="text-lg font-extrabold text-slate-800 dark:text-white">
-      {value}&nbsp;
-      <Text className="text-xs font-normal text-slate-500 ml-1">{unit}</Text>
-    </Text>
-    <Text className="text-xs text-slate-400 mt-1">{label}</Text>
-  </View>
-);
 const QuickStartButton = ({ onPress }: { onPress: () => void }) => {
   const [isPressed, setIsPressed] = React.useState(false);
   const { t } = useTranslation();

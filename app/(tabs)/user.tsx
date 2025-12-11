@@ -12,6 +12,7 @@ import { Image } from "expo-image"; // 高性能图片组件
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
+import { LifeCountCard } from "@/components/card/LifeCountCard";
 
 // 模拟用户信息数据
 const USER_MOCK = {
@@ -75,23 +76,7 @@ export default function UserProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* 跑步核心数据 (Gamification) */}
-          <View className="flex-row justify-between bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl">
-            <StatItem
-              label="累计公里"
-              value={USER_MOCK.stats.totalDistance}
-              unit="km"
-            />
-            <View className="w-[1px] bg-slate-200 dark:bg-slate-600 h-8 self-center" />
-            <StatItem label="跑步次数" value={USER_MOCK.stats.totalRuns} />
-            <View className="w-[1px] bg-slate-200 dark:bg-slate-600 h-8 self-center" />
-            <StatItem
-              label="获得徽章"
-              value={USER_MOCK.stats.badges}
-              icon="medal-outline"
-            />
-          </View>
+          <LifeCountCard className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl" />
         </View>
 
         {/* --- 设置分组 1: 应用偏好 --- */}
@@ -192,41 +177,6 @@ export default function UserProfileScreen() {
     </SafeAreaView>
   );
 }
-
-// --- 子组件：统计项 ---
-const StatItem = ({
-  label,
-  value,
-  unit,
-  icon,
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-  icon?: any;
-}) => (
-  <View className="items-center flex-1">
-    <View className="flex-row items-end">
-      <Text className="text-xl font-bold text-slate-800 dark:text-white">
-        {value}
-      </Text>
-      {unit && (
-        <Text className="text-xs text-slate-500 mb-1 ml-0.5">{unit}</Text>
-      )}
-    </View>
-    <View className="flex-row items-center mt-1">
-      {icon && (
-        <Ionicons
-          name={icon}
-          size={10}
-          color="#64748B"
-          style={{ marginRight: 2 }}
-        />
-      )}
-      <Text className="text-xs text-slate-400 font-medium">{label}</Text>
-    </View>
-  </View>
-);
 
 // --- 子组件：菜单项 ---
 interface MenuItemProps {

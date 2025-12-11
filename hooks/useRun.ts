@@ -128,7 +128,7 @@ export function useRun() {
 
     setIsTracking(true);
     setRoutePoints([]); // 开始新会话时清空路径
-    simulateRun();
+    // simulateRun();
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
       startTime: Date.now(),
@@ -141,23 +141,24 @@ export function useRun() {
     });
     console.log("✅ 已保存跑步数据", runData);
 
-    // const subscription = await Location.watchPositionAsync(
-    //   {
-    //     accuracy: Location.Accuracy.High, // 高精度模式
-    //     timeInterval: 1000, // 每 1 秒更新一次
-    //     distanceInterval: 5, // 每移动 5 米更新一次
-    //   },
-    //   (locationUpdate) => {
-    //     const newPoint = {
-    //       latitude: locationUpdate.coords.latitude,
-    //       longitude: locationUpdate.coords.longitude,
-    //       timestamp: locationUpdate.timestamp,
-    //     };
-    //     setLocation(newPoint);
-    //     setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-    //   },
-    // );
-    // setLocationSubscription(subscription);
+    const subscription = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High, // 高精度模式
+        timeInterval: 1000, // 每 1 秒更新一次
+        distanceInterval: 5, // 每移动 5 米更新一次
+      },
+      (locationUpdate) => {
+        const newPoint = {
+          latitude: locationUpdate.coords.latitude,
+          longitude: locationUpdate.coords.longitude,
+          timestamp: locationUpdate.timestamp,
+        };
+        console.log("新位置点：", newPoint);
+        setLocation(newPoint);
+        setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
+      },
+    );
+    setLocationSubscription(subscription);
   };
   // 3. 停止位置追踪
   const stopTracking = (data: {
