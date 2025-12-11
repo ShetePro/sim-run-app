@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,6 +12,8 @@ import Animated, {
 interface CountdownProps {
   onFinish?: () => void;
 }
+
+const { width, height } = Dimensions.get("window");
 
 export default function Countdown({ onFinish }: CountdownProps) {
   const [count, setCount] = useState(3);
@@ -59,9 +61,11 @@ export default function Countdown({ onFinish }: CountdownProps) {
 
 const styles = StyleSheet.create({
   container: {
+    width,
+    height,
     position: "absolute",
-    width: "100%",
-    height: "100%",
+    left: 0,
+    top: 0,
     zIndex: 1000,
     justifyContent: "center",
     alignItems: "center",

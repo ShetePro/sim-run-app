@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 import Countdown from "@/components/Countdown";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ export default function RunIndexScreen() {
       time: seconds,
       pace,
       energy: Math.floor(10 * 70 * (seconds / 3600)),
-    })
+    });
     router.replace("/(tabs)");
   }
   function onStart() {
@@ -76,7 +77,10 @@ export default function RunIndexScreen() {
     startTimer();
   }
   return (
-    <PageView style={{ position: "relative" }}>
+    <SafeAreaView
+      className="flex-1 bg-gray-50 dark:bg-slate-900 pb-4 p-2"
+      edges={["top"]}
+    >
       {showCountdown && <Countdown onFinish={countdownFinish} />}
       <View
         style={{
@@ -138,7 +142,7 @@ export default function RunIndexScreen() {
           </Pressable>
         </View>
       </View>
-    </PageView>
+    </SafeAreaView>
   );
 }
 

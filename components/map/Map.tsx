@@ -1,5 +1,5 @@
 import MapView, { Marker } from "react-native-maps";
-import { StyleProp, ViewStyle, Image } from "react-native";
+import { StyleProp, ViewStyle, Image, Platform } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ThemedText } from "@/components/ThemedText";
 
@@ -38,7 +38,7 @@ function Map({
     <MapView
       ref={mapRef}
       style={style}
-      provider={"google"}
+      provider={Platform.OS === "android" ? "google" : undefined}
       initialRegion={{
         latitude: location.latitude,
         longitude: location.longitude,
