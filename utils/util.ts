@@ -1,5 +1,6 @@
 import { isNumber, isObject } from "@/utils/is";
 import dayjs from "dayjs";
+import { RunRecord } from "@/types/runType";
 
 export function deepMerge<T = any>(src: any = {}, target: any = {}): T {
   let key: string;
@@ -216,4 +217,38 @@ export function getPaceLabel(pace: number) {
   const minutes = Math.floor(pace);
   const seconds = Math.round((pace - minutes) * 60);
   return `${minutes}'${seconds < 10 ? `0${seconds}` : seconds}"`;
+}
+
+export function groupRunsByDay(
+  runs: RunRecord[],
+  type: "isoWeek" | "month" | "year" = "isoWeek",
+) {
+  const list: any = {};
+  runs.forEach((run) => {
+    const date = dayjs(run.endTime);
+    const dateKey =
+      type === "isoWeek"
+        ? date.format("ddd")
+        : type === "month"
+          ? date.format("D")
+          : date.format("MMM");
+    const distance = Number((run.distance / 1000).toFixed(2));
+    if (!list[dateKey]) {
+      list[dateKey] = {
+        date: dateKey,
+        day: dateKey,
+        dateTime: run.endTime,
+        distance,
+        time: run.time,
+        energy: run.energy,
+      };
+    } else {
+      list[dateKey].distance = Number(
+        (list[dateKey].distance + distance).toFixed(2),
+      );
+      list[dateKey].time += run.time;
+      list[dateKey].energy += run.energy;
+    }
+  });
+  return Object.values(list) || [];
 }

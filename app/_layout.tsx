@@ -20,7 +20,12 @@ import Toast from "react-native-toast-message";
 import "@/utils/i18n";
 import { SQLiteProvider } from "expo-sqlite";
 import { initializeSQLite } from "@/utils/sqlite";
+import dayjs from "dayjs";
+import isoWeek from "dayjs/plugin/isoWeek";
+import 'dayjs/locale/zh-cn';
 
+dayjs.extend(isoWeek);
+dayjs.locale('zh-cn');
 // const AppStack = () => (
 //   <>
 //     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
