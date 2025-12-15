@@ -48,13 +48,6 @@ const HOME_DATA = {
       "https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", // 模拟地图缩略图
   },
 };
-// 定义一套更高级的配色方案
-const CARD_THEMES = {
-  blue: { text: "#3b82f6", bg: "#eff6ff", icon: "#2563eb" }, // Blue-500/50/600
-  orange: { text: "#f97316", bg: "#fff7ed", icon: "#ea580c" }, // Orange-500/50/600
-  emerald: { text: "#10b981", bg: "#ecfdf5", icon: "#059669" }, // Emerald-500/50/600
-  purple: { text: "#a855f7", bg: "#f3e8ff", icon: "#9333ea" }, // Purple-500/50/600
-};
 
 export default function HomeScreen() {
   const router = useRouter();

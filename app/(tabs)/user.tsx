@@ -13,6 +13,9 @@ import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
+import { MenuItem } from "@/components/ui/MenuItem";
+import { Divider } from "@/components/ui/Divider";
+import { useTranslation } from "react-i18next";
 
 // 模拟用户信息数据
 const USER_MOCK = {
@@ -31,6 +34,7 @@ export default function UserProfileScreen() {
   const router = useRouter();
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const [isDark, setIsDark] = useState(colorScheme === "dark");
+  const { t } = useTranslation();
 
   // 处理主题切换
   const handleThemeToggle = () => {
@@ -71,7 +75,7 @@ export default function UserProfileScreen() {
               </Text>
               <TouchableOpacity className="mt-2 bg-indigo-50 dark:bg-indigo-900/30 self-start px-3 py-1 rounded-full">
                 <Text className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold">
-                  编辑资料
+                  {t("setting.editProfile")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -82,24 +86,24 @@ export default function UserProfileScreen() {
         {/* --- 设置分组 1: 应用偏好 --- */}
         <View className="px-5 mb-2">
           <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
-            偏好设置
+            {t("setting.preferences")}
           </Text>
           <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden ">
             <MenuItem
               icon="language"
               color="#3B82F6"
-              label="语言 / Language"
+              label={t("setting.language")}
               value="中文"
-              onPress={() => console.log("Open Language Modal")}
+              onPress={() => router.push("/(views)/language")}
             />
-            <MenuDivider />
+            <Divider />
             <View className="flex-row items-center justify-between p-4 bg-white dark:bg-slate-800">
               <View className="flex-row items-center">
                 <View className="w-8 h-8 rounded-lg items-center justify-center bg-purple-100 dark:bg-purple-900/30 mr-3">
                   <Ionicons name="moon" size={18} color="#A855F7" />
                 </View>
                 <Text className="text-base text-slate-700 dark:text-slate-200 font-medium">
-                  深色模式
+                  {t("setting.darkMode")}
                 </Text>
               </View>
               <Switch
@@ -111,50 +115,50 @@ export default function UserProfileScreen() {
             </View>
           </View>
         </View>
-
-        {/* --- 设置分组 2: 跑步工具 --- */}
         <View className="px-5 mt-4 mb-2">
           <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
-            跑步工具
+            {t("setting.tools")}
           </Text>
           <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden ">
             <MenuItem
               icon="map-outline"
               color="#10B981"
-              label="离线地图管理"
+              label={t("setting.map")}
               onPress={() => console.log("Nav to Offline Maps")}
             />
-            <MenuDivider />
+            <Divider />
             <MenuItem
               icon="heart-outline"
               color="#EF4444"
-              label="健康数据同步"
+              label={t("setting.cloudSync")}
               value="已连接"
               onPress={() => console.log("Nav to Health")}
             />
-            <MenuDivider />
+            <Divider />
             <MenuItem
               icon="notifications-outline"
               color="#F59E0B"
-              label="消息通知"
+              label={t("setting.notify")}
               onPress={() => console.log("Nav to Notifications")}
             />
           </View>
         </View>
 
-        {/* --- 设置分组 3: 其他 --- */}
         <View className="px-5 mt-4 mb-8">
+          <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
+            {t("setting.other")}
+          </Text>
           <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden ">
             <MenuItem
               icon="help-circle-outline"
               color="#64748B"
-              label="帮助与反馈"
+              label={t("setting.helps")}
             />
-            <MenuDivider />
+            <Divider />
             <MenuItem
               icon="information-circle-outline"
               color="#64748B"
-              label="关于我们"
+              label={t("setting.about")}
               value="v1.0.0"
             />
           </View>
@@ -165,7 +169,7 @@ export default function UserProfileScreen() {
           >
             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             <Text className="ml-2 text-red-500 font-semibold text-base">
-              退出登录
+              {t("setting.logout")}
             </Text>
           </TouchableOpacity>
 
@@ -177,42 +181,3 @@ export default function UserProfileScreen() {
     </SafeAreaView>
   );
 }
-
-// --- 子组件：菜单项 ---
-interface MenuItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  label: string;
-  value?: string;
-  onPress?: () => void;
-}
-
-const MenuItem = ({ icon, color, label, value, onPress }: MenuItemProps) => (
-  <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.7}
-    className="flex-row items-center justify-between p-4 bg-white dark:bg-slate-800"
-  >
-    <View className="flex-row items-center">
-      <View
-        className="w-8 h-8 rounded-lg items-center justify-center mr-3"
-        style={{ backgroundColor: `${color}20` }} // 20% opacity using hex
-      >
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      <Text className="text-base text-slate-700 dark:text-slate-200 font-medium">
-        {label}
-      </Text>
-    </View>
-
-    <View className="flex-row items-center">
-      {value && <Text className="text-slate-400 text-sm mr-2">{value}</Text>}
-      <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
-    </View>
-  </TouchableOpacity>
-);
-
-// --- 子组件：分割线 ---
-const MenuDivider = () => (
-  <View className="h-[1px] bg-slate-100 dark:bg-slate-700 ml-[52px]" />
-);

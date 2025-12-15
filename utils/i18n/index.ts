@@ -67,6 +67,20 @@ const resources = {
         recentActivities: "recent activities",
         showMore: "More",
       },
+      setting: {
+        language: "Language",
+        darkMode: "DarkMode",
+        editProfile: "Edit Profile",
+        cloudSync: "Cloud Sync Data",
+        map: "Map Settings",
+        notify: "Notification",
+        helps: "Help and Feedback",
+        about: "about Us",
+        logout: "Log out",
+        preferences: "Preferences",
+        tools: "Running Tools",
+        other: "Others",
+      },
       activity: {
         distance: "Distance",
         steps: "Steps",
@@ -146,6 +160,20 @@ const resources = {
         recentActivities: "最近活动",
         showMore: "查看全部",
       },
+      setting: {
+        language: "语言/Language",
+        darkMode: "深色模式",
+        editProfile: "编辑资料",
+        map: "地图设置",
+        cloudSync: "云端同步",
+        notify: "消息通知",
+        helps: "帮助与反馈",
+        about: "关于我们",
+        logout: "退出登录",
+        preferences: "偏好设置",
+        tools: "跑步工具",
+        other: "其他",
+      },
       activity: {
         distance: "距离",
         steps: "平均步频",
@@ -172,5 +200,4 @@ i18n
       escapeValue: false, // react already safes from xss
     },
   });
-
 export default i18n;

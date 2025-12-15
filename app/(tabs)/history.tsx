@@ -18,7 +18,6 @@ export default function HistoryScreen() {
   const { t } = useTranslation();
   useEffect(() => {
     getRuns().then((runs) => {
-      console.log(runs, "获取");
       const recordsMap: {
         [key: string]: HistoryRecord;
       } = {};
