@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Location from "expo-location";
-import { Alert, Linking, Platform } from "react-native";
 import { LocationSubscription } from "expo-location";
 import { haversineDistance } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
+import { requestLocationPermission } from "@/utils/location";
+import { useStorageState } from "@/hooks/useStorageState";
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -15,13 +16,18 @@ const runData: RunRecord = {
   isFinish: 0,
 };
 export function useRun() {
-  const [location, setLocation] = useState<any>(null);
+  const [[isLoading, locationCache], setLocationCache] =
+    useStorageState("location");
+  const [location, setLocation] = useState<any>(locationCache);
   const [distance, setDistance] = useState<number>(1);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [isTracking, setIsTracking] = useState(false);
   const { addRun, updateRun } = useRunDB();
   let calcIndex = 0;
+  const headingSubscription = useRef<Location.LocationSubscription | null>(
+    null,
+  );
   const [locationSubscription, setLocationSubscription] =
     useState<LocationSubscription | null>(null);
   const [routePoints, setRoutePoints] = useState<any[]>([]);
@@ -59,73 +65,58 @@ export function useRun() {
 
   // request location permissions
   const requestPermissions = async () => {
-    // 请求前台权限
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      setErrorMsg("权限被拒绝，无法获取位置。");
-      return false;
-    }
-
-    // 对于后台追踪，需要额外请求
-    if (Platform.OS === "android") {
-      const { status: backgroundStatus } =
-        await Location.requestBackgroundPermissionsAsync();
-      if (backgroundStatus !== "granted") {
-        setErrorMsg("后台位置权限被拒绝，无法在后台追踪。");
-        Alert.alert(
-          "需要背景位置权限",
-          "为了应用的功能正常运行，请手动在设置中授予‘始终允许’位置权限。",
-          [
-            {
-              text: "取消",
-              style: "cancel",
-            },
-            {
-              text: "前往设置",
-              onPress: () => {
-                // 3. 跳转到应用的系统设置页面
-                if (Platform.OS === "ios" || Platform.OS === "android") {
-                  // React Native 的 Linking 模块提供了一个 openSettings() 方法
-                  // 它可以直接打开应用的设置页面，兼容 iOS 和 Android。
-                  Linking.openSettings();
-                } else {
-                  // 其他平台（如 Web 或桌面端）的处理
-                  console.log("无法跳转到设置");
-                }
-              },
-            },
-          ],
-        );
-        return false;
-      }
-    }
+    await requestLocationPermission();
     try {
       // 2. 获取当前位置
       let locationData = await Location.getCurrentPositionAsync({
         // 设置精度：建议使用 High 或 Highest 获取更准确的 GPS 结果
         accuracy: Location.Accuracy.High,
         // 允许等待更长时间来获取高精度位置
-        mayShowUserSettingsDialog: false,
+        mayShowUserSettingsDialog: true,
       });
       // save heading direction
-      // if (locationData.coords.heading) {
-      //   setHeading(locationData.coords.heading);
-      // }
+      if (locationData.coords.heading) {
+        console.log(locationData.coords.heading, "初始方向");
+        setHeading(locationData.coords.heading);
+      }
       setLocation({ ...locationData.coords });
+      setLocationCache(JSON.stringify({ ...locationData.coords }));
+      headingSubscription.current = await Location.watchHeadingAsync((data) => {
+        setHeading(data.trueHeading);
+      });
+      const subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High, // 高精度模式
+          timeInterval: 1000, // 每 1 秒更新一次
+          distanceInterval: 5, // 每移动 5 米更新一次
+        },
+        (locationUpdate) => {
+          const newPoint = {
+            latitude: locationUpdate.coords.latitude,
+            longitude: locationUpdate.coords.longitude,
+            timestamp: locationUpdate.timestamp,
+          };
+
+          console.log("新位置点：", newPoint);
+          setLocation(newPoint);
+          if (isTracking) {
+            setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
+          }
+        },
+      );
+      setLocationSubscription(subscription);
     } catch (err) {
       setErrorMsg("获取位置信息失败，请检查GPS是否开启。");
     } finally {
     }
-
     return true;
   };
   useEffect(() => {
     requestPermissions();
   }, []);
   const startTracking = async () => {
-    const hasPermission = await requestPermissions();
+    const hasPermission = await requestLocationPermission();
     if (!hasPermission) return;
-
     setIsTracking(true);
     setRoutePoints([]); // 开始新会话时清空路径
     // simulateRun();
@@ -140,25 +131,6 @@ export function useRun() {
       isFinish: 0,
     });
     console.log("✅ 已保存跑步数据", runData);
-
-    const subscription = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High, // 高精度模式
-        timeInterval: 1000, // 每 1 秒更新一次
-        distanceInterval: 5, // 每移动 5 米更新一次
-      },
-      (locationUpdate) => {
-        const newPoint = {
-          latitude: locationUpdate.coords.latitude,
-          longitude: locationUpdate.coords.longitude,
-          timestamp: locationUpdate.timestamp,
-        };
-        console.log("新位置点：", newPoint);
-        setLocation(newPoint);
-        setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-      },
-    );
-    setLocationSubscription(subscription);
   };
   // 3. 停止位置追踪
   const stopTracking = (data: {

@@ -22,10 +22,13 @@ import { SQLiteProvider } from "expo-sqlite";
 import { initializeSQLite } from "@/utils/sqlite";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
-import 'dayjs/locale/zh-cn';
+import "dayjs/locale/zh-cn";
+import {
+  requestLocationPermission,
+} from "@/utils/location";
 
 dayjs.extend(isoWeek);
-dayjs.locale('zh-cn');
+dayjs.locale("zh-cn");
 // const AppStack = () => (
 //   <>
 //     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -35,7 +38,7 @@ dayjs.locale('zh-cn');
 // );
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-LogBox.ignoreLogs(['Require cycle: node_modules/victory']);
+LogBox.ignoreLogs(["Require cycle: node_modules/victory"]);
 export default function RootLayout() {
   // const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
@@ -58,13 +61,13 @@ export default function RootLayout() {
     if (loaded) {
       SplashScreen.hideAsync();
     }
+    requestLocationPermission();
   }, [loaded]);
 
   if (!loaded) {
     return null;
   }
   return (
-
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <SQLiteProvider
         databaseName="simrun.db"
@@ -73,7 +76,14 @@ export default function RootLayout() {
       >
         <ThemeProvider value={theme}>
           <SessionProvider>
-            <Slot />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                presentation: "card",
+              }}
+            >
+              <Slot />
+            </Stack>
           </SessionProvider>
           <StatusBar style="auto" />
           <Toast topOffset={insets.top + 10} visibilityTime={2000} />
