@@ -1,6 +1,5 @@
 import { StyleSheet, View, Pressable, Image } from "react-native";
 
-import PageView from "@/components/PageView";
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -66,7 +65,7 @@ export default function RunIndexScreen() {
       pace,
       energy: Math.floor(10 * 70 * (seconds / 3600)),
     });
-    router.replace("/(tabs)");
+    router.back();
   }
   function onStart() {
     setShowCountdown(true);
