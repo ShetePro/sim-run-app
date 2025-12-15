@@ -3,13 +3,9 @@ import BackRouteIcon from "@/components/BackRouteIcon";
 
 export default function ViewsLayout() {
   return (
-    <Stack>
-      <Stack.Screen
-        name={"run"}
-        options={{
-          headerShown: false,
-        }}
-      ></Stack.Screen>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name={"run"}></Stack.Screen>
+      <Stack.Screen name={"language"} options={{}}></Stack.Screen>
     </Stack>
   );
 }
