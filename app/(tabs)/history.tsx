@@ -80,7 +80,10 @@ export default function HistoryScreen() {
       className="flex-1 bg-gray-50 dark:bg-slate-900"
       edges={["top"]}
     >
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1 pb-20 pl-5 pr-5">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        className="flex-1 pb-20 pl-5 pr-5"
+      >
         {renderItem()}
       </ScrollView>
     </SafeAreaView>

@@ -73,7 +73,10 @@ export default function UserProfileScreen() {
               <Text className="text-slate-500 dark:text-slate-400 text-sm">
                 {USER_MOCK.email}
               </Text>
-              <TouchableOpacity className="mt-2 bg-indigo-50 dark:bg-indigo-900/30 self-start px-3 py-1 rounded-full">
+              <TouchableOpacity
+                className="mt-2 bg-indigo-50 dark:bg-indigo-900/30 self-start px-3 py-1 rounded-full"
+                onPress={() => router.push("/(views)/profile")}
+              >
                 <Text className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold">
                   {t("setting.editProfile")}
                 </Text>

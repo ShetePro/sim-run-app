@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient"; // 需要安装 expo-linear-gradient
+import { LinearGradient } from "expo-linear-gradient";
 import dayjs from "dayjs";
 import HomeDataCard from "@/components/card/HomeDataCard";
 import { TodayActivityCard } from "@/components/card/TodayActivityCard";
@@ -110,8 +110,14 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity onPress={() => router.push("/user")}>
             <Image
-              source={HOME_DATA.user.avatar}
-              className="w-12 h-12 rounded-full border-2 border-white dark:border-slate-700 shadow-sm"
+              style={{
+                width: 48,
+                height: 48,
+                backgroundColor: "#0553",
+                borderRadius: 9999,
+              }}
+              source={"https://picsum.photos/seed/696/3000/2000"}
+              className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
             />
           </TouchableOpacity>
         </View>
