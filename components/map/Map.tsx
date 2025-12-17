@@ -11,12 +11,11 @@ function Map({
   style?: StyleProp<ViewStyle>;
   className?: string;
   heading: number;
-  location: { latitude: number; longitude: number } | null;
+  location: LatLon | null;
 }) {
   const mapRef = useRef<MapView>(null);
   const [showMark, setShowMark] = useState<boolean>(false);
   useEffect(() => {
-    console.log(location, "location 当前位置");
     const isShowMark =
       location && !(location.latitude === 0 && location.longitude === 0);
     setShowMark(!!isShowMark);
@@ -25,7 +24,7 @@ function Map({
         longitude: location?.longitude || 0,
         latitude: location?.latitude || 0,
       },
-      heading: heading ?? 0,
+      // heading: heading ?? 0,
       pitch: 45,
       zoom: 20,
     });
@@ -46,7 +45,7 @@ function Map({
         longitudeDelta: 0.001,
       }}
       showsUserLocation={false}
-      followsUserLocation={true}
+      followsUserLocation={false}
     >
       {showMark && (
         <Marker

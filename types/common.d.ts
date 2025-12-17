@@ -23,3 +23,14 @@ type LatLon = {
   latitude: number;
   longitude: number;
 };
+
+type UserInfo = {
+  id: string;
+  nickname: string;
+  email?: string;
+  avatar?: string;
+  token?: string;
+  height?: string;
+  weight?: string;
+  age?: string;
+};

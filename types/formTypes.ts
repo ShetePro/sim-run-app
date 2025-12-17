@@ -16,3 +16,21 @@ export type FormColumnType = {
     formState: UseFormStateReturn<any>;
   }) => React.ReactElement;
 };
+export interface NumberInputSheetHandle {
+  present: () => void;
+  dismiss: () => void;
+}
+
+export interface NumberInputSheetProps {
+  title: string;
+  unit: string;
+  value: string;
+  onConfirm: (value: string) => void;
+}
+
+export interface NumberInputControlProps {
+  key: string;
+  title: string;
+  unit: string;
+  value?: string;
+}
