@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import * as Location from "expo-location";
-import { LocationSubscription } from "expo-location";
+import { LocationObjectCoords, LocationSubscription } from "expo-location";
 import { haversineDistance } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
-import { requestLocationPermission } from "@/utils/location";
+import { mapPointToLonLat, requestLocationPermission } from "@/utils/location";
 import { useStorageState } from "@/hooks/useStorageState";
 const runData: RunRecord = {
   startTime: Date.now(),
@@ -18,11 +18,13 @@ const runData: RunRecord = {
 export function useRun() {
   const [[isLoading, locationCache], setLocationCache] =
     useStorageState("location");
-  const [location, setLocation] = useState<any>(locationCache);
+  const [location, setLocation] = useState<LatLon | null>(
+    mapPointToLonLat(locationCache ? JSON.parse(locationCache) : null),
+  );
   const [distance, setDistance] = useState<number>(1);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
-  const [isTracking, setIsTracking] = useState(false);
+  const isTracking = useRef(false);
   const { addRun, updateRun } = useRunDB();
   let calcIndex = 0;
   const headingSubscription = useRef<Location.LocationSubscription | null>(
@@ -40,14 +42,15 @@ export function useRun() {
     const end = routePoints[calcIndex + 1];
     calcIndex++;
     const distance = haversineDistance(start, end);
+    console.log("距离", routePoints);
     setDistance((prev) => prev + distance);
   }, [routePoints]);
 
   // 手动模拟跑步
   const simulateRun = () => {
     const point = routePoints.at(-1);
-    let lat = point?.latitude || location.latitude;
-    let lon = point?.longitude || location.longitude;
+    let lat = point?.latitude || location?.latitude || 0;
+    let lon = point?.longitude || location?.longitude || 0;
     let index = 0;
     const interval = setInterval(() => {
       lat += 0.00003; // 每次增加一点纬度
@@ -76,11 +79,13 @@ export function useRun() {
       });
       // save heading direction
       if (locationData.coords.heading) {
-        console.log(locationData.coords.heading, "初始方向");
         setHeading(locationData.coords.heading);
       }
-      setLocation({ ...locationData.coords });
-      setLocationCache(JSON.stringify({ ...locationData.coords }));
+      const coords = mapPointToLonLat<LocationObjectCoords>({
+        ...locationData.coords,
+      });
+      setLocation(coords);
+      setLocationCache(JSON.stringify(coords));
       headingSubscription.current = await Location.watchHeadingAsync((data) => {
         setHeading(data.trueHeading);
       });
@@ -91,15 +96,13 @@ export function useRun() {
           distanceInterval: 5, // 每移动 5 米更新一次
         },
         (locationUpdate) => {
-          const newPoint = {
+          const newPoint = mapPointToLonLat({
             latitude: locationUpdate.coords.latitude,
             longitude: locationUpdate.coords.longitude,
             timestamp: locationUpdate.timestamp,
-          };
-
-          console.log("新位置点：", newPoint);
+          });
           setLocation(newPoint);
-          if (isTracking) {
+          if (isTracking.current) {
             setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
           }
         },
@@ -117,7 +120,7 @@ export function useRun() {
   const startTracking = async () => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) return;
-    setIsTracking(true);
+    isTracking.current = true;
     setRoutePoints([]); // 开始新会话时清空路径
     // simulateRun();
     console.log(Date.now(), "开始跑步时间");
@@ -138,7 +141,7 @@ export function useRun() {
     pace: number;
     energy: number;
   }) => {
-    if (!isTracking) return;
+    if (!isTracking.current) return;
     if (locationSubscription) {
       locationSubscription.remove();
       setLocationSubscription(null);
@@ -153,7 +156,7 @@ export function useRun() {
       isFinish: 1,
       endTime: Date.now(),
     }).then(() => {
-      setIsTracking(false);
+      isTracking.current = false;
       console.log("跑步会话结束，总点数：", routePoints.length);
     });
     // 在这里你可以将 routePoints 保存到本地或发送到服务器

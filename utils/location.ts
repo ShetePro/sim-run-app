@@ -1,8 +1,8 @@
 import { Alert, Linking, Platform } from "react-native";
 import * as Location from "expo-location";
 import { setStorageItemAsync } from "@/hooks/useStorageState";
+import { wgs84togcj02 } from "@/utils/coordtransform";
 export async function requestLocationPermission() {
-
   // 请求前台权限
   let { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") {
@@ -50,4 +50,18 @@ export async function requestLocationPermission() {
   setStorageItemAsync("location", JSON.stringify(locationData.coords));
   console.log(locationData.coords, "获取位置权限成功");
   return true;
+}
+export function mapPointToLonLat<T>(
+  coords: (LatLon & T) | null,
+): (LatLon & T) | null {
+  if (!coords) return coords;
+  const lonLat = wgs84togcj02(coords.longitude, coords.latitude) as [
+    number,
+    number,
+  ];
+  return {
+    ...coords,
+    longitude: lonLat[0],
+    latitude: lonLat[1],
+  };
 }
