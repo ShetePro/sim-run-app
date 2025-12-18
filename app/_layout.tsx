@@ -23,9 +23,8 @@ import { initializeSQLite } from "@/utils/sqlite";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 import "dayjs/locale/zh-cn";
-import {
-  requestLocationPermission,
-} from "@/utils/location";
+import { requestLocationPermission } from "@/utils/location";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -74,20 +73,22 @@ export default function RootLayout() {
         onInit={initializeSQLite}
         useSuspense
       >
-        <ThemeProvider value={theme}>
-          <SessionProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                presentation: "card",
-              }}
-            >
-              <Slot />
-            </Stack>
-          </SessionProvider>
-          <StatusBar style="auto" />
-          <Toast topOffset={insets.top + 10} visibilityTime={2000} />
-        </ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <ThemeProvider value={theme}>
+            <SessionProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  presentation: "card",
+                }}
+              >
+                <Slot />
+              </Stack>
+            </SessionProvider>
+            <StatusBar style="auto" />
+            <Toast topOffset={insets.top + 10} visibilityTime={2000} />
+          </ThemeProvider>
+        </GestureHandlerRootView>
       </SQLiteProvider>
     </SafeAreaProvider>
   );
