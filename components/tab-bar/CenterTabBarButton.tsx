@@ -7,7 +7,7 @@ export default function CenterTabBarButton() {
   const colors = useThemeColor();
   const theme = useColorScheme();
   function goRun() {
-    router.replace("/(views)/run");
+    router.push("/(views)/run");
   }
   return (
     <Pressable style={styles.centerWarp} onPress={goRun}>
