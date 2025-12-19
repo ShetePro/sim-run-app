@@ -252,3 +252,12 @@ export function groupRunsByDay(
   });
   return Object.values(list) || [];
 }
+
+export function jsonParse(text: string | null) {
+  if (!text) return text;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error(e);
+  }
+}

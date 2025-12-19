@@ -9,10 +9,10 @@ type GoodsType = {
   cover?: string;
   sales?: number;
   price?: number;
-  brandData?: BrandType
+  brandData?: BrandType;
 };
 type BrandType = {
-  id?: string
+  id?: string;
   brandName?: string;
   logo?: string;
   enName?: string;
@@ -33,4 +33,6 @@ type UserInfo = {
   height?: string;
   weight?: string;
   age?: string;
+  signature?: string;
+  gender?: string;
 };

@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useReducer } from "react";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { jsonParse } from "@/utils/util";
 
 type UseStateHook<T> = [[boolean, T | null], (value: T | null) => void];
 
@@ -56,15 +57,19 @@ export async function setStorageItemAsync(key: string, value: string | null) {
     }
   }
 }
-export function getStorageItem(key: string) {
+export function getStorageItem(key: string, parse: boolean = false) {
   if (Platform.OS === "web") {
     try {
-      return localStorage.getItem(key);
+      return parse
+        ? jsonParse(localStorage.getItem(key))
+        : localStorage.getItem(key);
     } catch (e) {
       console.error("Local storage is unavailable:", e);
     }
   } else {
-    return SecureStore.getItem(key);
+    return parse
+      ? jsonParse(SecureStore.getItem(key))
+      : SecureStore.getItem(key);
   }
 }
 export function getStorageItemAsync(key: string) {
