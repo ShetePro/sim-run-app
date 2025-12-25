@@ -23,8 +23,9 @@ import { initializeSQLite } from "@/utils/sqlite";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 import "dayjs/locale/zh-cn";
-import { requestLocationPermission } from "@/utils/location";
+import { requestLocationPermission } from "@/utils/location/location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import '@/utils/location/locationTask'
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");

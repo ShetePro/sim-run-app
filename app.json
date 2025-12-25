@@ -11,9 +11,15 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["location"],
-        "NSLocationWhenInUseUsageDescription": "此应用需要您的位置来记录跑步路线。",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "此应用需要您的位置来记录跑步路线，即使在后台运行也是如此。"
+        "UIBackgroundModes": ["location", "fetch"],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSupportsLiveActivities": true,
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your route even when the screen is off.",
+        "NSMotionUsageDescription": "我们需要您的运动数据来计算跑步步数"
+      },
+      "appleTeamId": "3NYLR6AY46",
+      "config": {
+        "googleMapsApiKey": ""
       },
       "bundleIdentifier": "com.anonymous.simrun"
     },
@@ -22,11 +28,18 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "FOREGROUND_SERVICE",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACTIVITY_RECOGNITION"
       ],
       "package": "com.anonymous.simrun"
     },
@@ -41,7 +54,17 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-location",
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -50,7 +73,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true
@@ -60,7 +84,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "fc767114-c2d3-4d51-80f1-9ea2ec03786f"
+        "projectId": "2e9b7289-40c2-40bf-89b1-c2ae8f7dccfc"
       }
     }
   }

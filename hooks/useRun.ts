@@ -1,11 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Location from "expo-location";
 import { LocationObjectCoords, LocationSubscription } from "expo-location";
 import { haversineDistance } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
-import { mapPointToLonLat, requestLocationPermission } from "@/utils/location";
+import {
+  mapPointToLonLat,
+  requestLocationPermission,
+} from "@/utils/location/location";
 import { useStorageState } from "@/hooks/useStorageState";
+import {
+  DeviceEventEmitter,
+  NativeEventEmitter,
+  NativeModules,
+} from "react-native";
+import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
+import { useRunStore } from "@/store/runStore";
+import { LiveActivity } from "@/utils/LiveActivityController";
+
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -15,56 +27,47 @@ const runData: RunRecord = {
   points: [],
   isFinish: 0,
 };
+
+const eventEmitter = new NativeEventEmitter(NativeModules.EventEmitter);
 export function useRun() {
-  const [[isLoading, locationCache], setLocationCache] =
-    useStorageState("location");
-  const [location, setLocation] = useState<LatLon | null>(
-    mapPointToLonLat(locationCache ? JSON.parse(locationCache) : null),
-  );
+  const currenLocation = useRunStore.getState().currentLocation;
+  const setLocation = useRunStore((state) => state.setLocation);
   const [distance, setDistance] = useState<number>(1);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const isTracking = useRef(false);
   const { addRun, updateRun } = useRunDB();
-  let calcIndex = 0;
   const headingSubscription = useRef<Location.LocationSubscription | null>(
     null,
   );
-  const [locationSubscription, setLocationSubscription] =
-    useState<LocationSubscription | null>(null);
+  const [locationSubscription, setLocationSubscription] = useState<any>(null);
   const [routePoints, setRoutePoints] = useState<any[]>([]);
-  // 计算距离逻辑
+  // watch running data from background task
   useEffect(() => {
-    if (routePoints.length < 2 || routePoints.length <= calcIndex + 1) {
-      return;
-    }
-    const start = routePoints[calcIndex];
-    const end = routePoints[calcIndex + 1];
-    calcIndex++;
-    const distance = haversineDistance(start, end);
-    console.log("距离", routePoints);
-    setDistance((prev) => prev + distance);
-  }, [routePoints]);
+    // 监听后台任务传回的数据
+    const subscription = DeviceEventEmitter.addListener(
+      RUNNING_UPDATE_EVENT,
+      (data) => {
+        console.log("触发emit 事件", data);
+        if (!isTracking.current) return;
+        const locationUpdate = data;
+        const newPoint = mapPointToLonLat({
+          latitude: locationUpdate.latitude,
+          longitude: locationUpdate.longitude,
+          timestamp: locationUpdate.timestamp,
+        });
+        setLocation(newPoint);
+        setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
+        setDistance(data.distance || distance);
+        LiveActivity.update(
+          Number((data.distance / 1000).toFixed(2)),
+          useRunStore.getState()?.stepCount?.toString(),
+        );
+      },
+    );
 
-  // 手动模拟跑步
-  const simulateRun = () => {
-    const point = routePoints.at(-1);
-    let lat = point?.latitude || location?.latitude || 0;
-    let lon = point?.longitude || location?.longitude || 0;
-    let index = 0;
-    const interval = setInterval(() => {
-      lat += 0.00003; // 每次增加一点纬度
-      // lon += 0.0001; // 每次增加一点经度
-      const newPoint = {
-        latitude: lat.toFixed(6),
-        longitude: lon,
-        timestamp: Date.now(),
-      };
-      setLocation(newPoint);
-      setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-      index++;
-    }, 1000);
-  };
+    return () => subscription.remove();
+  }, []);
 
   // request location permissions
   const requestPermissions = async () => {
@@ -85,29 +88,44 @@ export function useRun() {
         ...locationData.coords,
       });
       setLocation(coords);
-      setLocationCache(JSON.stringify(coords));
       headingSubscription.current = await Location.watchHeadingAsync((data) => {
         setHeading(data.trueHeading);
       });
-      const subscription = await Location.watchPositionAsync(
+      const locationUpdateTask = await Location.startLocationUpdatesAsync(
+        "RUNNING_TRACKER_TASK",
         {
-          accuracy: Location.Accuracy.High, // 高精度模式
-          timeInterval: 1000, // 每 1 秒更新一次
-          distanceInterval: 5, // 每移动 5 米更新一次
-        },
-        (locationUpdate) => {
-          const newPoint = mapPointToLonLat({
-            latitude: locationUpdate.coords.latitude,
-            longitude: locationUpdate.coords.longitude,
-            timestamp: locationUpdate.timestamp,
-          });
-          setLocation(newPoint);
-          if (isTracking.current) {
-            setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-          }
+          accuracy: Location.Accuracy.BestForNavigation,
+          activityType: Location.ActivityType.AutomotiveNavigation,
+          pausesUpdatesAutomatically: false,
+          timeInterval: 5000, // 1秒更新一次
+          distanceInterval: 10, // 1米移动更新
+          foregroundService: {
+            notificationTitle: "跑步记录中",
+            notificationBody: "正在使用高精度滤波器优化轨迹",
+            notificationColor: "#4CAF50",
+          },
         },
       );
-      setLocationSubscription(subscription);
+      setLocationSubscription(locationUpdateTask);
+      // const subscription = await Location.watchPositionAsync(
+      //   {
+      //     accuracy: Location.Accuracy.BestForNavigation, // 高精度模式
+      //     timeInterval: 1000, // 每 1 秒更新一次
+      //     distanceInterval: 1, // 每移动 5 米更新一次
+      //   },
+      //   (locationUpdate) => {
+      //     const newPoint = mapPointToLonLat({
+      //       latitude: locationUpdate.coords.latitude,
+      //       longitude: locationUpdate.coords.longitude,
+      //       timestamp: locationUpdate.timestamp,
+      //     });
+      //     setLocation(newPoint);
+      //     if (isTracking.current) {
+      //       setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
+      //     }
+      //   },
+      // );
+      // setLocationSubscription(subscription);
     } catch (err) {
       setErrorMsg("获取位置信息失败，请检查GPS是否开启。");
     } finally {
@@ -122,6 +140,7 @@ export function useRun() {
     if (!hasPermission) return;
     isTracking.current = true;
     setRoutePoints([]); // 开始新会话时清空路径
+    LiveActivity.start();
     // simulateRun();
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
@@ -146,6 +165,7 @@ export function useRun() {
       locationSubscription.remove();
       setLocationSubscription(null);
     }
+    LiveActivity.stop();
     const { time, pace, energy } = data;
     updateRun({
       id: runData.id,
@@ -175,7 +195,7 @@ export function useRun() {
     };
   }, [locationSubscription]);
   return {
-    location,
+    location: currenLocation,
     errorMsg,
     startTracking,
     stopTracking,

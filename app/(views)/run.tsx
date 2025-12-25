@@ -10,14 +10,18 @@ import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 import Countdown from "@/components/Countdown";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePedometer } from "@/hooks/usePedometer";
+import { useRunStore } from "@/store/runStore";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
   const { location, startTracking, stopTracking, distance, heading } = useRun();
+  const runStore = useRunStore();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
   const [pace, setPace] = useState<number>(0);
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
+  const { startPedometer, stopPedometer } = usePedometer();
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
@@ -60,6 +64,7 @@ export default function RunIndexScreen() {
   }, [distance, seconds, pace]);
   function onBack() {
     stopTimer();
+    stopPedometer();
     stopTracking({
       time: seconds,
       pace,
@@ -73,6 +78,7 @@ export default function RunIndexScreen() {
   function countdownFinish() {
     setShowCountdown(false);
     startTracking();
+    startPedometer();
     startTimer();
   }
   return (
@@ -90,6 +96,10 @@ export default function RunIndexScreen() {
           flexDirection: "column",
         }}
       >
+        <View className={"flex flex-row justify-end gap-4"}>
+          <ThemedText>步数:{runStore.stepCount}</ThemedText>
+          <ThemedText>信号强度:{Math.floor(runStore.accuracy)}</ThemedText>
+        </View>
         <View>
           <ThemedText
             style={{

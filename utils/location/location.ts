@@ -1,16 +1,16 @@
 import { Alert, Linking, Platform } from "react-native";
 import * as Location from "expo-location";
-import { setStorageItemAsync } from "@/hooks/useStorageState";
 import { wgs84togcj02 } from "@/utils/coordtransform";
+import { useRunStore } from "@/store/runStore";
 export async function requestLocationPermission() {
   // 请求前台权限
   let { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") {
     return false;
   }
-
+  await new Promise((resolve) => setTimeout(resolve, 500));
   // 对于后台追踪，需要额外请求
-  if (Platform.OS === "android") {
+  try {
     const { status: backgroundStatus } =
       await Location.requestBackgroundPermissionsAsync();
     if (backgroundStatus !== "granted") {
@@ -40,20 +40,22 @@ export async function requestLocationPermission() {
       );
       return false;
     }
-  }
+  } catch (error) {}
   let locationData = await Location.getCurrentPositionAsync({
     // 设置精度：建议使用 High 或 Highest 获取更准确的 GPS 结果
     accuracy: Location.Accuracy.High,
     // 允许等待更长时间来获取高精度位置
     mayShowUserSettingsDialog: true,
   });
-  setStorageItemAsync("location", JSON.stringify(locationData.coords));
+  const setLocation = useRunStore.getState().setLocation;
+  const setAccuracy = useRunStore.getState().setAccuracy;
+  setLocation(mapPointToLonLat(locationData.coords));
+  setAccuracy(locationData.coords.accuracy || 0);
+  // setStorageItemAsync("location", JSON.stringify(locationData.coords));
   console.log(locationData.coords, "获取位置权限成功");
   return true;
 }
-export function mapPointToLonLat<T>(
-  coords: (LatLon & T) | null,
-): (LatLon & T) | null {
+export function mapPointToLonLat<T>(coords: LatLon & T): LatLon & T {
   if (!coords) return coords;
   const lonLat = wgs84togcj02(coords.longitude, coords.latitude) as [
     number,
