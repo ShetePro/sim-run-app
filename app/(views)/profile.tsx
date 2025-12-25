@@ -139,7 +139,7 @@ export default function ProfileEditScreen() {
           <FormItem label="个性签名">
             <TextInput
               value={form.signature}
-              onChangeText={(t) => updateForm("bio", t)}
+              onChangeText={(t) => updateForm("signature", t)}
               placeholder="一句话介绍自己"
               maxLength={30}
               className="flex-1 text-right text-slate-800 dark:text-white font-medium h-full"
