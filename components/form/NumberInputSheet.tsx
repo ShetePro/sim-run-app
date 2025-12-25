@@ -46,6 +46,7 @@ const NumberInputSheet = forwardRef<
 
   useImperativeHandle(ref, () => ({
     present: () => {
+      setInputValue(value);
       sheetRef.current?.snapToIndex(1);
     }, // 展开到第一个停靠点
     dismiss: () => {

@@ -21,6 +21,9 @@ export default function RunBarChart({
   const theme = useColorScheme();
   const isDark = theme === "dark";
   const axisColor = isDark ? "#94a3b8" : "#64748b";
+  const maxY = Math.max(...(chartData || []).map((d) => d.distance));
+  let labelWidth = maxY.toString().length * 8 + 10;
+  if (labelWidth < 30) labelWidth = 30;
   const customTheme = {
     axis: {
       style: {
@@ -41,18 +44,20 @@ export default function RunBarChart({
       renderInPortal: false,
     },
   };
+
   return (
     <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
       <View className="bg-white dark:bg-slate-800 rounded-2xl  items-center">
         <VictoryChart
           width={type === "month" ? CHART_WIDTH + 200 : CHART_WIDTH}
           height={200}
-          padding={{ top: 0, bottom: 20, left: 30, right: 10 }}
+          padding={{ top: 0, bottom: 20, left: labelWidth, right: 10 }}
           domainPadding={{ x: 20 }}
           theme={VictoryTheme.material} // 使用默认主题或 customTheme
         >
           <VictoryAxis
             style={customTheme.axis.style}
+            minDomain={1}
             tickValues={axisX}
             tickFormat={axisX}
           />
