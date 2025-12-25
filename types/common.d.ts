@@ -22,6 +22,7 @@ type BrandType = {
 type LatLon = {
   latitude: number;
   longitude: number;
+  timestamp?: number;
 };
 
 type UserInfo = {
