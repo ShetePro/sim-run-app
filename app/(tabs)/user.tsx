@@ -73,7 +73,7 @@ export default function UserProfileScreen() {
                 {userInfo.nickname}
               </Text>
               <Text className="text-slate-500 dark:text-slate-400 text-sm">
-                {userInfo.bio}
+                {userInfo.signature}
               </Text>
               <TouchableOpacity
                 className="mt-2 bg-indigo-50 dark:bg-indigo-900/30 self-start px-3 py-1 rounded-full"
