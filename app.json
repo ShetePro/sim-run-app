@@ -21,9 +21,6 @@
       "config": {
         "googleMapsApiKey": ""
       },
-      "entitlements": {
-        "com.apple.developer.live-activity": true
-      },
       "bundleIdentifier": "com.shetepro.simrun"
     },
     "android": {
