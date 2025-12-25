@@ -24,7 +24,7 @@
       "entitlements": {
         "com.apple.developer.live-activity": true
       },
-      "bundleIdentifier": "com.anonymous.simrun"
+      "bundleIdentifier": "com.shetepro.simrun"
     },
     "android": {
       "adaptiveIcon": {
