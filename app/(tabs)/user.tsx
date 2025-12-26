@@ -36,7 +36,7 @@ export default function UserProfileScreen() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const [isDark, setIsDark] = useState(colorScheme === "dark");
   const { t } = useTranslation();
-  const userInfo = getStorageItem('userInfo', true)
+  const userInfo = getStorageItem("userInfo", true) || {};
 
   // 处理主题切换
   const handleThemeToggle = () => {
@@ -63,17 +63,17 @@ export default function UserProfileScreen() {
         <View className="px-6 pt-8 pb-6 bg-white dark:bg-slate-800 rounded-b-3xl  mb-6">
           <View className="flex-row items-center mb-6">
             <Image
-              source={userInfo.avatar}
+              source={userInfo.avatar || "-"}
               className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900"
               contentFit="cover"
               transition={500}
             />
             <View className="ml-4 flex-1">
               <Text className="text-2xl font-bold text-slate-800 dark:text-white">
-                {userInfo.nickname}
+                {userInfo.nickname || "runer"}
               </Text>
               <Text className="text-slate-500 dark:text-slate-400 text-sm">
-                {userInfo.signature}
+                {userInfo.signature || "-"}
               </Text>
               <TouchableOpacity
                 className="mt-2 bg-indigo-50 dark:bg-indigo-900/30 self-start px-3 py-1 rounded-full"

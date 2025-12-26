@@ -22,7 +22,7 @@ export default function KcalChart({
   // const theme = useColorScheme();
   const isDark = false;
   const axisColor = isDark ? "#94a3b8" : "#64748b";
-  const maxY = Math.max(...(chartData || []).map((d) => d.energy));
+  const maxY = Math.max(...(chartData || []).map((d) => d.energy), 1);
   let labelWidth = maxY.toString().length * 8 + 10;
   if (labelWidth < 30) labelWidth = 30;
   const customTheme = {

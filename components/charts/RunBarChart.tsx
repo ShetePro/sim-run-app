@@ -21,7 +21,7 @@ export default function RunBarChart({
   const theme = useColorScheme();
   const isDark = theme === "dark";
   const axisColor = isDark ? "#94a3b8" : "#64748b";
-  const maxY = Math.max(...(chartData || []).map((d) => d.distance));
+  const maxY = Math.max(...(chartData || []).map((d) => d.distance), 1);
   let labelWidth = maxY.toString().length * 8 + 10;
   if (labelWidth < 30) labelWidth = 30;
   const customTheme = {
@@ -51,7 +51,7 @@ export default function RunBarChart({
         <VictoryChart
           width={type === "month" ? CHART_WIDTH + 200 : CHART_WIDTH}
           height={200}
-          padding={{ top: 0, bottom: 20, left: labelWidth, right: 10 }}
+          padding={{ top: 10, bottom: 20, left: labelWidth, right: 10 }}
           domainPadding={{ x: 20 }}
           theme={VictoryTheme.material} // 使用默认主题或 customTheme
         >
