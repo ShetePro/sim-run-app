@@ -1,23 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Location from "expo-location";
 import { LocationObjectCoords, LocationSubscription } from "expo-location";
-import { haversineDistance } from "@/utils/util";
+import { secondFormatHours } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
 import {
   mapPointToLonLat,
   requestLocationPermission,
 } from "@/utils/location/location";
-import { useStorageState } from "@/hooks/useStorageState";
-import {
-  DeviceEventEmitter,
-  NativeEventEmitter,
-  NativeModules,
-} from "react-native";
+import { DeviceEventEmitter } from "react-native";
 import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 import { LiveActivity } from "@/utils/LiveActivityController";
-
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -28,7 +22,7 @@ const runData: RunRecord = {
   isFinish: 0,
 };
 
-const eventEmitter = new NativeEventEmitter(NativeModules.EventEmitter);
+// const eventEmitter = new NativeEventEmitter(NativeModules.EventEmitter);
 export function useRun() {
   const currenLocation = useRunStore.getState().currentLocation;
   const setLocation = useRunStore((state) => state.setLocation);
@@ -59,10 +53,11 @@ export function useRun() {
         setLocation(newPoint);
         setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
         setDistance(data.distance || distance);
-        LiveActivity.update(
-          Number((data.distance / 1000).toFixed(2)),
-          useRunStore.getState()?.stepCount?.toString(),
-        );
+        LiveActivity.update({
+          distance: Number((data.distance / 1000).toFixed(2)),
+          duration: secondFormatHours(useRunStore.getState().duration),
+          pace: secondFormatHours(useRunStore.getState().pace),
+        });
       },
     );
 
@@ -139,8 +134,9 @@ export function useRun() {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) return;
     isTracking.current = true;
-    setRoutePoints([]); // 开始新会话时清空路径
     LiveActivity.start();
+    setRoutePoints([]); // 开始新会话时清空路径
+    // LiveActivity.start();
     // simulateRun();
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
@@ -179,14 +175,9 @@ export function useRun() {
       isTracking.current = false;
       console.log("跑步会话结束，总点数：", routePoints.length);
     });
-    // 在这里你可以将 routePoints 保存到本地或发送到服务器
   };
   // 4. 组件卸载时停止追踪
   useEffect(() => {
-    // const call = setInterval(() => {
-    //   const random = Math.floor(Math.random() * 10) % 10;
-    //   setHeading((prevState) => prevState + random);
-    // }, 1500);
     return () => {
       // clearInterval(call);
       if (locationSubscription) {
