@@ -19,13 +19,12 @@ export default function RunIndexScreen() {
   const runStore = useRunStore();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
-  const [pace, setPace] = useState<number>(0);
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
-      setPace(seconds / (distance / 1000));
+      runStore.setPace(seconds / (distance / 1000));
     }
   }, [seconds, distance]);
 
@@ -33,7 +32,7 @@ export default function RunIndexScreen() {
     const data = [
       {
         label: t("activity.pace"),
-        value: secondFormatHours(pace),
+        value: secondFormatHours(runStore.pace),
         unit: "/" + t("unit.km"),
       },
       {
@@ -61,13 +60,13 @@ export default function RunIndexScreen() {
         </View>
       );
     });
-  }, [distance, seconds, pace]);
+  }, [distance, seconds, runStore.pace]);
   function onBack() {
     stopTimer();
     stopPedometer();
     stopTracking({
       time: seconds,
-      pace,
+      pace: runStore.pace,
       energy: Math.floor(10 * 70 * (seconds / 3600)),
     });
     router.back();

@@ -24,7 +24,6 @@ function Map({
         longitude: location?.longitude || 0,
         latitude: location?.latitude || 0,
       },
-      // heading: heading ?? 0,
       pitch: 45,
       zoom: 20,
     });
