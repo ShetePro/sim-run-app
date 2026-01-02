@@ -6,12 +6,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LanguageView() {
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 pl-6 pr-6">
-      <View>
-        <Text className="text-slate-500 dark:text-slate-400 text-xl font-bold uppercase mb-2 ml-2">
-          语言管理
-        </Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 px-4">
+      <Text className="text-slate-500 text-xs font-bold uppercase mb-2 ml-2">
+        语言管理
+      </Text>
       <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden ">
         <MenuItem
           icon="map-outline"
