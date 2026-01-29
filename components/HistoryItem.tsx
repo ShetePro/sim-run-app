@@ -3,12 +3,13 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ThemedText } from "@/components/ThemedText";
 import { secondFormatHours } from "@/utils/util";
 import { useTranslation } from "react-i18next";
+
 function HistoryItem({ record }: { record: any }) {
   const { t } = useTranslation();
   const distance = (record.distance / 1000).toFixed(2);
   const startTime = new Date(record.startTime);
   const miles = secondFormatHours(record.time);
-  console.log(record);
+  
   return (
     <View
       className={
@@ -27,7 +28,7 @@ function HistoryItem({ record }: { record: any }) {
         <MaterialIcons name="route" size={24} color="#39e17c" />
       </View>
       <View className={"flex flex-col"}>
-        <ThemedText>户外跑步</ThemedText>
+        <ThemedText>{t("history.outdoorRun")}</ThemedText>
         <ThemedText>
           {distance} {t("unit.km")} · {miles}
         </ThemedText>

@@ -1,18 +1,27 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { getStorageItemAsync, setStorageItemAsync } from "@/hooks/useStorageState";
+
+// 设置存储 key（与 settingsStore 保持一致）
+const SETTINGS_STORAGE_KEY = "app-settings";
 
 const resources = {
   en: {
     translation: {
       common: {
-        today: "today",
-        yesterday: "yesterday",
+        today: "Today",
+        yesterday: "Yesterday",
         time: "Time",
+        greeting: {
+          morning: "Good morning",
+          afternoon: "Good afternoon",
+          evening: "Good evening",
+        },
       },
       tabs: {
         index: "Home",
         history: "History",
-        charts: "Charts",
+        charts: "Stats",
         user: "User",
       },
       weather: {
@@ -40,7 +49,7 @@ const resources = {
         registerTitle: "Create Account",
         registerDescription:
           "Create an account so you can explore all the existing jobs",
-        welcome: "Welcome back you’ve been missed!",
+        welcome: "Welcome back you've been missed!",
         forgetPassword: "Forgot your password?",
         account: "Account",
         password: "Password",
@@ -59,13 +68,31 @@ const resources = {
         calories: "Calories",
         pace: "Average pace",
         stepFrequency: "Step frequency",
-        totalDistance: "total Distance",
-        totalHours: "total Hours",
-        totalRuns: "total Runs",
-        startRun: "start run!",
-        career: "Career cumulative",
-        recentActivities: "recent activities",
+        totalDistance: "Total Distance",
+        totalHours: "Total Hours",
+        totalRuns: "Total Runs",
+        startRun: "Start Run!",
+        career: "Career Stats",
+        recentActivities: "Recent Activities",
         showMore: "More",
+      },
+      charts: {
+        title: "Activity Stats",
+        sinceDate: "Since",
+        weeklyDistance: "Distance",
+        totalCalories: "Calories",
+        avgPace: "Avg Pace",
+        weekly: "Weekly",
+        monthly: "Monthly",
+        yearly: "Yearly",
+        dailyDistance: "Daily Distance (km)",
+        weeklyTrend: "Weekly Trend",
+        dailyCalories: "Daily Calories (kcal)",
+        caloriesBurned: "Calories Burned",
+      },
+      history: {
+        outdoorRun: "Outdoor Run",
+        noRecords: "No records yet",
       },
       setting: {
         language: "Language",
@@ -81,18 +108,34 @@ const resources = {
         tools: "Running Tools",
         other: "Others",
       },
+      language: {
+        title: "Language",
+        cn: "中文",
+        en: "English",
+      },
       activity: {
         distance: "Distance",
         steps: "Steps",
         energy: "Energy",
         pace: "Pace",
         runs: "Runs",
+        hours: "Hours",
       },
       unit: {
         km: "km",
         mi: "mi",
         kcal: "kcal",
-        hours: "Hours",
+        hours: "h",
+        minutes: "min",
+        seconds: "s",
+        spm: "spm",
+      },
+      time: {
+        week: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        months: [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ],
       },
     },
   },
@@ -102,6 +145,11 @@ const resources = {
         today: "今天",
         yesterday: "昨天",
         time: "时间",
+        greeting: {
+          morning: "早上好",
+          afternoon: "下午好",
+          evening: "晚上好",
+        },
       },
       tabs: {
         index: "首页",
@@ -160,6 +208,24 @@ const resources = {
         recentActivities: "最近活动",
         showMore: "查看全部",
       },
+      charts: {
+        title: "运动统计",
+        sinceDate: "至今",
+        weeklyDistance: "本周里程",
+        totalCalories: "总消耗",
+        avgPace: "平均配速",
+        weekly: "周",
+        monthly: "月",
+        yearly: "年",
+        dailyDistance: "每日跑量 (km)",
+        weeklyTrend: "本周累计趋势",
+        dailyCalories: "卡路里消耗 (kcal)",
+        caloriesBurned: "每日热量燃烧",
+      },
+      history: {
+        outdoorRun: "户外跑步",
+        noRecords: "暂无记录",
+      },
       setting: {
         language: "语言/Language",
         darkMode: "深色模式",
@@ -174,6 +240,11 @@ const resources = {
         tools: "跑步工具",
         other: "其他",
       },
+      language: {
+        title: "语言设置",
+        cn: "中文",
+        en: "English",
+      },
       activity: {
         distance: "距离",
         steps: "平均步频",
@@ -187,17 +258,54 @@ const resources = {
         km: "公里",
         mi: "米",
         hours: "小时",
+        minutes: "分",
+        seconds: "秒",
+        spm: "步/分",
+      },
+      time: {
+        week: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+        months: [
+          "1月", "2月", "3月", "4月", "5月", "6月",
+          "7月", "8月", "9月", "10月", "11月", "12月"
+        ],
       },
     },
   },
 };
-i18n
-  .use(initReactI18next) // passes i18n down to react-i18next
-  .init({
+
+// 从 settings 存储中获取语言
+const getLanguageFromSettings = async (): Promise<string | null> => {
+  try {
+    const stored = await getStorageItemAsync(SETTINGS_STORAGE_KEY) as string | null;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.language || null;
+    }
+  } catch (error) {
+    console.error("Failed to get language from settings:", error);
+  }
+  return null;
+};
+
+// 初始化 i18n
+const initI18n = async () => {
+  // 首先尝试从新的 settings 存储读取
+  let savedLang = await getLanguageFromSettings();
+  
+  // 如果没找到，尝试旧 key（兼容旧版本）
+  if (!savedLang) {
+    savedLang = await getStorageItemAsync("app-language") as string | null;
+  }
+  
+  i18n.use(initReactI18next).init({
     resources,
-    lng: "cn",
+    lng: savedLang || "cn",
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
   });
+};
+
+initI18n();
+
 export default i18n;

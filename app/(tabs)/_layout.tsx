@@ -7,11 +7,7 @@ import TabBar from "@/components/tab-bar/TabBar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSession } from "@/components/SessionProvider";
 import { ThemedText } from "@/components/ThemedText";
-import {
-  useTranslation,
-  WithTranslation,
-  withTranslation,
-} from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 function TabLayout() {
   const colors = useThemeColor();
@@ -23,7 +19,7 @@ function TabLayout() {
   // if (!session) {
   //   return <Redirect href="/SignIn" />;
   // }
-  const {t} = useTranslation("tabs")
+  const { t } = useTranslation()
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
@@ -37,25 +33,25 @@ function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t("home"),
+          title: t("tabs.index"),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: t("history"),
+          title: t("tabs.history"),
         }}
       />
       <Tabs.Screen
         name="charts"
         options={{
-          title: t("charts"),
+          title: t("tabs.charts"),
         }}
       />
       <Tabs.Screen
         name="user"
         options={{
-          title: t("user"),
+          title: t("tabs.user"),
         }}
       />
     </Tabs>

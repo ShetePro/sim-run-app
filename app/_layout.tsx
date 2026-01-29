@@ -26,6 +26,7 @@ import "dayjs/locale/zh-cn";
 import { requestLocationPermission } from "@/utils/location/location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import '@/utils/location/locationTask'
+import { useSettingsStore, migrateFromLegacy } from "@/store/settingsStore";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -62,6 +63,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
     requestLocationPermission();
+    // 初始化设置（从存储加载）
+    useSettingsStore.getState().initialize();
+    // 迁移旧版本设置
+    migrateFromLegacy();
   }, [loaded]);
 
   if (!loaded) {

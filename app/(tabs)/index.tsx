@@ -80,9 +80,9 @@ export default function HomeScreen() {
   // 根据时间生成问候语
   const getGreeting = () => {
     const hour = dayjs().hour();
-    if (hour < 12) return "早上好";
-    if (hour < 18) return "下午好";
-    return "晚上好";
+    if (hour < 12) return t("common.greeting.morning");
+    if (hour < 18) return t("common.greeting.afternoon");
+    return t("common.greeting.evening");
   };
 
   return (
