@@ -15,6 +15,8 @@ export type RunRecord = {
   points?: TrackPoint[];
   startTime?: number;
   endTime?: number;
+  title?: string;
+  note?: string;
 };
 
 export type TodayRunData = {

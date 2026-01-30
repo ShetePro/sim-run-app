@@ -12,6 +12,7 @@ interface RunState {
   setAccuracy: (accuracy: number) => void;
   setStepCount: (steps: number) => void;
   setLocation: (location: LatLon) => void;
+  reset: () => void;
 }
 
 export const useRunStore = create<RunState>((set) => ({
@@ -47,5 +48,14 @@ export const useRunStore = create<RunState>((set) => ({
         latitude: location.latitude,
         longitude: location.longitude,
       },
+    })),
+  reset: () =>
+    set(() => ({
+      distance: 0,
+      currentLocation: null,
+      accuracy: 0,
+      stepCount: 0,
+      duration: 0,
+      pace: 0,
     })),
 }));

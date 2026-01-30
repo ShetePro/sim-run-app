@@ -185,11 +185,15 @@ export function useRun() {
       }
     };
   }, [locationSubscription]);
+  // 获取当前跑步ID
+  const getCurrentRunId = () => runData.id;
+
   return {
     location: currenLocation,
     errorMsg,
     startTracking,
     stopTracking,
+    getCurrentRunId,
     routePoints,
     distance,
     heading,

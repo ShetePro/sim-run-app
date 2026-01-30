@@ -15,7 +15,7 @@ import { useRunStore } from "@/store/runStore";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, stopTracking, distance, heading } = useRun();
+  const { location, startTracking, stopTracking, getCurrentRunId, distance, heading } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
@@ -61,15 +61,36 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
-  function onBack() {
+  function onFinish() {
     stopTimer();
     stopPedometer();
-    stopTracking({
+    
+    const runData = {
       time: seconds,
       pace: runStore.pace,
       energy: Math.floor(10 * 70 * (seconds / 3600)),
+    };
+    
+    // 获取跑步记录ID
+    const runId = getCurrentRunId();
+    
+    // 先保存到数据库，然后跳转到确认页
+    stopTracking(runData);
+    
+    // 跳转到跑步结束确认页
+    router.push({
+      pathname: "/(views)/run-summary",
+      params: {
+        runId: String(runId || 0),
+        distance: String(distance),
+        duration: String(seconds),
+        pace: String(runStore.pace),
+        calories: String(runData.energy),
+        steps: String(runStore.stepCount),
+        startTime: String(Date.now() - seconds * 1000),
+        endTime: String(Date.now()),
+      },
     });
-    router.back();
   }
   function onStart() {
     setShowCountdown(true);
@@ -141,7 +162,7 @@ export default function RunIndexScreen() {
               </ThemedText>
             </Pressable>
           )}
-          <Pressable style={styles.finishButton} onPress={onBack}>
+          <Pressable style={styles.finishButton} onPress={onFinish}>
             <ThemedText
               style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
             >

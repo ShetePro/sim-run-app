@@ -22,20 +22,57 @@ export function useRunDB() {
     return lastInsertRowId;
   };
 
-  const updateRun = async (run: RunRecord) => {
+  const updateRun = async (run: Partial<RunRecord> & { title?: string; note?: string }) => {
     if (!run.id) throw new Error("Run ID is required for update.");
-    await db.runAsync(
-      `UPDATE runs SET endTime = ?, distance = ?, time = ?, pace = ?, energy = ? WHERE id = ?`,
-      [
-        run.endTime || null,
-        run.distance,
-        run.time,
-        run.pace,
-        run.energy,
-        run.id,
-      ],
-    );
-    await updateRunTrackPoints(run.id, run.points || []);
+    
+    // 构建动态更新语句
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (run.endTime !== undefined) {
+      updates.push("endTime = ?");
+      values.push(run.endTime);
+    }
+    if (run.distance !== undefined) {
+      updates.push("distance = ?");
+      values.push(run.distance);
+    }
+    if (run.time !== undefined) {
+      updates.push("time = ?");
+      values.push(run.time);
+    }
+    if (run.pace !== undefined) {
+      updates.push("pace = ?");
+      values.push(run.pace);
+    }
+    if (run.energy !== undefined) {
+      updates.push("energy = ?");
+      values.push(run.energy);
+    }
+    if (run.isFinish !== undefined) {
+      updates.push("isFinish = ?");
+      values.push(run.isFinish);
+    }
+    if (run.title !== undefined) {
+      updates.push("title = ?");
+      values.push(run.title);
+    }
+    if (run.note !== undefined) {
+      updates.push("note = ?");
+      values.push(run.note);
+    }
+    
+    if (updates.length > 0) {
+      values.push(run.id);
+      await db.runAsync(
+        `UPDATE runs SET ${updates.join(", ")} WHERE id = ?`,
+        values,
+      );
+    }
+    
+    if (run.points && run.points.length > 0) {
+      await updateRunTrackPoints(run.id, run.points);
+    }
   };
 
   const getRuns = async (): Promise<RunRecord[]> => {

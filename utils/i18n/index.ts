@@ -12,6 +12,10 @@ const resources = {
         today: "Today",
         yesterday: "Yesterday",
         time: "Time",
+        error: "Error",
+        cancel: "Cancel",
+        saving: "Saving...",
+        save: "Save",
         greeting: {
           morning: "Good morning",
           afternoon: "Good afternoon",
@@ -94,6 +98,17 @@ const resources = {
         outdoorRun: "Outdoor Run",
         noRecords: "No records yet",
       },
+      run: {
+        summary: "Run Summary",
+        discard: "Discard",
+        discardTitle: "Discard Run?",
+        discardMessage: "This run will not be saved. Are you sure?",
+        discardRecord: "Discard Record",
+        saveRecord: "Save Record",
+        editInfo: "Edit Info",
+        addNote: "Add a note...",
+        duration: "Duration",
+      },
       setting: {
         language: "Language",
         darkMode: "DarkMode",
@@ -145,6 +160,10 @@ const resources = {
         today: "今天",
         yesterday: "昨天",
         time: "时间",
+        error: "错误",
+        cancel: "取消",
+        saving: "保存中...",
+        save: "保存",
         greeting: {
           morning: "早上好",
           afternoon: "下午好",
@@ -225,6 +244,17 @@ const resources = {
       history: {
         outdoorRun: "户外跑步",
         noRecords: "暂无记录",
+      },
+      run: {
+        summary: "跑步总结",
+        discard: "放弃",
+        discardTitle: "放弃本次跑步?",
+        discardMessage: "本次跑步数据将不会被保存，确定放弃吗？",
+        discardRecord: "放弃记录",
+        saveRecord: "保存记录",
+        editInfo: "编辑信息",
+        addNote: "添加备注...",
+        duration: "运动时长",
       },
       setting: {
         language: "语言/Language",
