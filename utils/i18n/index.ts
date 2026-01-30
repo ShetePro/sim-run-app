@@ -16,6 +16,8 @@ const resources = {
         cancel: "Cancel",
         saving: "Saving...",
         save: "Save",
+        loading: "Loading",
+        back: "Back",
         greeting: {
           morning: "Good morning",
           afternoon: "Good afternoon",
@@ -108,6 +110,9 @@ const resources = {
         editInfo: "Edit Info",
         addNote: "Add a note...",
         duration: "Duration",
+        steps: "Steps",
+        signal: "Signal",
+        notFound: "Run record not found",
       },
       setting: {
         language: "Language",
@@ -164,6 +169,8 @@ const resources = {
         cancel: "取消",
         saving: "保存中...",
         save: "保存",
+        loading: "加载中",
+        back: "返回",
         greeting: {
           morning: "早上好",
           afternoon: "下午好",
@@ -255,6 +262,9 @@ const resources = {
         editInfo: "编辑信息",
         addNote: "添加备注...",
         duration: "运动时长",
+        steps: "步数",
+        signal: "信号强度",
+        notFound: "未找到跑步记录",
       },
       setting: {
         language: "语言/Language",

@@ -41,22 +41,25 @@ export async function initializeSQLite(db: SQLiteDatabase) {
 // 表结构迁移
 async function migrateTable(db: SQLiteDatabase) {
   try {
-    // 检查并添加 title 字段
-    const titleColumn = await db.getAllAsync(
+    // 获取表结构
+    const tableInfo = await db.getAllAsync(
       "PRAGMA table_info(runs)"
     );
-    const columns = titleColumn as Array<{ name: string }>;
-    const hasTitle = columns.some(col => col.name === "title");
-    const hasNote = columns.some(col => col.name === "note");
+    const columns = tableInfo as Array<{ name: string }>;
+    const columnNames = columns.map(col => col.name);
     
-    if (!hasTitle) {
-      await db.execAsync("ALTER TABLE runs ADD COLUMN title TEXT;");
-      console.log("✅ 添加 title 字段");
-    }
+    // 检查并添加缺失的字段
+    const migrations = [
+      { name: "isFinish", type: "INTEGER" },
+      { name: "title", type: "TEXT" },
+      { name: "note", type: "TEXT" },
+    ];
     
-    if (!hasNote) {
-      await db.execAsync("ALTER TABLE runs ADD COLUMN note TEXT;");
-      console.log("✅ 添加 note 字段");
+    for (const migration of migrations) {
+      if (!columnNames.includes(migration.name)) {
+        await db.execAsync(`ALTER TABLE runs ADD COLUMN ${migration.name} ${migration.type};`);
+        console.log(`✅ 添加 ${migration.name} 字段`);
+      }
     }
   } catch (error) {
     console.error("迁移失败:", error);
