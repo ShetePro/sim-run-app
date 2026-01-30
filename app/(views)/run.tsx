@@ -85,6 +85,12 @@ export default function RunIndexScreen() {
       },
     });
   }
+
+  function onCancel() {
+    // 未开始跑步，直接返回上一页
+    router.back();
+  }
+
   function onStart() {
     setShowCountdown(true);
   }
@@ -146,22 +152,34 @@ export default function RunIndexScreen() {
           style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
         />
         <View className={"flex flex-row gap-4 mt-4"}>
-          {seconds === 0 && (
-            <Pressable style={styles.startButton} onPress={onStart}>
+          {seconds === 0 ? (
+            <>
+              {/* 未开始状态：开始按钮 + 取消按钮 */}
+              <Pressable style={styles.startButton} onPress={onStart}>
+                <ThemedText
+                  style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
+                >
+                  {t("run.start")}
+                </ThemedText>
+              </Pressable>
+              <Pressable style={styles.cancelButton} onPress={onCancel}>
+                <ThemedText
+                  style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
+                >
+                  {t("common.cancel")}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : (
+            /* 已开始状态：结束按钮 */
+            <Pressable style={styles.finishButton} onPress={onFinish}>
               <ThemedText
                 style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
               >
-                {t("run.start")}
+                {t("run.finish")}
               </ThemedText>
             </Pressable>
           )}
-          <Pressable style={styles.finishButton} onPress={onFinish}>
-            <ThemedText
-              style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
-            >
-              {t("run.finish")}
-            </ThemedText>
-          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -187,6 +205,14 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 20,
     backgroundColor: "#dc282d",
+    padding: 15,
+    borderRadius: 10,
+    height: 50,
+  },
+  cancelButton: {
+    flex: 1,
+    marginTop: 20,
+    backgroundColor: "#6b7280",
     padding: 15,
     borderRadius: 10,
     height: 50,
