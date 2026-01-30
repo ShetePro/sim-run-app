@@ -77,18 +77,11 @@ export default function RunIndexScreen() {
     // 先保存到数据库，然后跳转到确认页
     stopTracking(runData);
     
-    // 跳转到跑步结束确认页
+    // 只传递 runId，详情页面从数据库查询
     router.push({
       pathname: "/(views)/run-summary",
       params: {
         runId: String(runId || 0),
-        distance: String(distance),
-        duration: String(seconds),
-        pace: String(runStore.pace),
-        calories: String(runData.energy),
-        steps: String(runStore.stepCount),
-        startTime: String(Date.now() - seconds * 1000),
-        endTime: String(Date.now()),
       },
     });
   }
@@ -117,8 +110,8 @@ export default function RunIndexScreen() {
         }}
       >
         <View className={"flex flex-row justify-end gap-4"}>
-          <ThemedText>步数:{runStore.stepCount}</ThemedText>
-          <ThemedText>信号强度:{Math.floor(runStore.accuracy)}</ThemedText>
+          <ThemedText>{t("run.steps")}:{runStore.stepCount}</ThemedText>
+          <ThemedText>{t("run.signal")}:{Math.floor(runStore.accuracy)}</ThemedText>
         </View>
         <View>
           <ThemedText

@@ -11,60 +11,73 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useRunStore } from "@/store/runStore";
 import { secondFormatHours, getPaceLabel } from "@/utils/util";
-import { useSettingsStore } from "@/store/settingsStore";
+import { RunRecord } from "@/types/runType";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-interface RunSummaryData {
-  runId: string;
-  distance: string; // meters
-  duration: string; // seconds
-  pace: string;
-  calories: string;
-  steps: string;
-  startTime: string;
-  endTime: string;
-}
 
 export default function RunSummaryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<RunSummaryData>();
-  const { updateRun, deleteRun, getTrackPoints } = useRunDB();
-  const { settings } = useSettingsStore();
+  const params = useLocalSearchParams<{ runId: string }>();
+  const { updateRun, deleteRun, getRunById, getTrackPoints } = useRunDB();
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [routePoints, setRoutePoints] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [runData, setRunData] = useState<RunRecord | null>(null);
   const runStore = useRunStore();
 
-  // 加载轨迹数据
-  const loadTrackPoints = useCallback(async () => {
-    if (params.runId) {
-      const points = await getTrackPoints(Number(params.runId));
+  const runId = Number(params.runId || 0);
+  const hasLoaded = useRef(false);
+
+  // 加载跑步数据和轨迹
+  const loadRunData = useCallback(async () => {
+    if (!runId || hasLoaded.current) return;
+
+    try {
+      setIsLoading(true);
+      hasLoaded.current = true;
+
+      // 获取跑步记录
+      const run = await getRunById(runId);
+      if (run) {
+        setRunData(run);
+        // 如果有保存的标题和备注，显示出来
+        if (run.title) setTitle(run.title);
+        if (run.note) setNote(run.note);
+      }
+
+      // 获取轨迹点
+      const points = await getTrackPoints(runId);
       setRoutePoints(points.map(p => ({ latitude: p.lat, longitude: p.lng })));
+    } catch (error) {
+      console.error("加载跑步数据失败:", error);
+      Alert.alert(t("common.error"), "加载跑步数据失败");
+      hasLoaded.current = false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [params.runId]);
+  }, [runId]);
 
-  // 页面加载时获取轨迹
+  // 页面加载时获取数据
   useEffect(() => {
-    loadTrackPoints();
-  }, [loadTrackPoints]);
+    loadRunData();
+  }, [loadRunData]);
 
-  // 解析数据
-  const distance = Number(params.distance || 0);
-  const duration = Number(params.duration || 0);
-  const pace = Number(params.pace || 0);
-  const calories = Number(params.calories || 0);
-  const steps = Number(params.steps || 0);
-  const startTime = Number(params.startTime || Date.now());
-  const endTime = Number(params.endTime || Date.now());
+  // 从数据库数据计算显示值
+  const distance = runData?.distance || 0;
+  const duration = runData?.time || 0;
+  const pace = runData?.pace || 0;
+  const calories = runData?.energy || 0;
+  const startTime = runData?.startTime || Date.now();
+  const endTime = runData?.endTime || Date.now();
 
   // 根据距离生成默认标题
   const defaultTitle = `${(distance / 1000).toFixed(2)}${t("unit.km")} ${t("history.outdoorRun")}`;
@@ -76,7 +89,7 @@ export default function RunSummaryScreen() {
 
     try {
       await updateRun({
-        id: Number(params.runId),
+        id: runId,
         title: title || defaultTitle,
         note,
         isFinish: 1,
@@ -107,9 +120,9 @@ export default function RunSummaryScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteRun(Number(params.runId));
+              await deleteRun(runId);
               runStore.reset();
-              router.back();
+              router.replace("/(tabs)");
             } catch (error) {
               console.error("删除失败:", error);
             }
@@ -118,6 +131,27 @@ export default function RunSummaryScreen() {
       ]
     );
   };
+
+  // 加载中状态
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center items-center">
+        <Text className="text-slate-500 dark:text-slate-400">{t("common.loading")}...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // 数据不存在
+  if (!runData) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center items-center">
+        <Text className="text-slate-500 dark:text-slate-400">{t("run.notFound")}</Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-4">
+          <Text className="text-indigo-600">{t("common.back")}</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   // 统计数据卡片
   const StatCard = ({
@@ -171,8 +205,10 @@ export default function RunSummaryScreen() {
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
-            scrollEnabled={false}
-            zoomEnabled={false}
+            scrollEnabled={true}
+            zoomEnabled={true}
+            rotateEnabled={true}
+            pitchEnabled={true}
           >
             {routePoints.length > 0 && (
               <>
@@ -238,41 +274,17 @@ export default function RunSummaryScreen() {
           </View>
         </View>
 
-        {/* 更多数据 */}
-        <View className="px-4 mt-4">
-          <View className="bg-white dark:bg-slate-800 rounded-2xl p-4">
-            <View className="flex-row justify-between items-center py-3 border-b border-gray-100 dark:border-slate-700">
-              <View className="flex-row items-center">
-                <Ionicons name="footsteps-outline" size={20} color="#64748b" />
-                <Text className="text-slate-600 dark:text-slate-300 ml-3">{t("activity.steps")}</Text>
-              </View>
-              <Text className="text-slate-800 dark:text-white font-semibold">
-                {steps || "--"}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center py-3">
-              <View className="flex-row items-center">
-                <Ionicons name="time-outline" size={20} color="#64748b" />
-                <Text className="text-slate-600 dark:text-slate-300 ml-3">{t("run.duration")}</Text>
-              </View>
-              <Text className="text-slate-800 dark:text-white font-semibold">
-                {Math.floor(duration / 60)}{t("unit.minutes")}
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* 编辑区域 */}
         <View className="px-4 mt-6 mb-8">
           <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2">
             {t("run.editInfo")}
           </Text>
-          
+
           {/* 标题输入 */}
           <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 mb-3">
             <TextInput
               value={title}
- onChangeText={setTitle}
+              onChangeText={setTitle}
               placeholder={defaultTitle}
               placeholderTextColor="#9ca3af"
               className="text-base text-slate-800 dark:text-white"
