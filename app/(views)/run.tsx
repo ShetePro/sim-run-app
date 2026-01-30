@@ -151,7 +151,7 @@ export default function RunIndexScreen() {
               <ThemedText
                 style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
               >
-                开始
+                {t("run.start")}
               </ThemedText>
             </Pressable>
           )}
@@ -159,7 +159,7 @@ export default function RunIndexScreen() {
             <ThemedText
               style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
             >
-              结束
+              {t("run.finish")}
             </ThemedText>
           </Pressable>
         </View>

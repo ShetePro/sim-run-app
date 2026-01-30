@@ -103,6 +103,8 @@ const resources = {
       run: {
         summary: "Run Summary",
         detail: "Run Detail",
+        start: "Start",
+        finish: "Finish",
         discard: "Discard",
         discardTitle: "Discard Run?",
         discardMessage: "This run will not be saved. Are you sure?",
