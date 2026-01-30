@@ -24,7 +24,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function RunSummaryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ runId: string }>();
+  const params = useLocalSearchParams<{ runId: string; mode?: string }>();
   const { updateRun, deleteRun, getRunById, getTrackPoints } = useRunDB();
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -35,6 +35,7 @@ export default function RunSummaryScreen() {
   const runStore = useRunStore();
 
   const runId = Number(params.runId || 0);
+  const isViewMode = params.mode === "view"; // 查看模式（历史记录）
   const hasLoaded = useRef(false);
 
   // 加载跑步数据和轨迹
@@ -132,6 +133,11 @@ export default function RunSummaryScreen() {
     );
   };
 
+  // 返回上一页
+  const handleBack = () => {
+    router.back();
+  };
+
   // 加载中状态
   if (isLoading) {
     return (
@@ -177,9 +183,25 @@ export default function RunSummaryScreen() {
     </View>
   );
 
-  return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900" edges={["top"]}>
-      {/* 顶部导航 */}
+  // 渲染顶部导航栏
+  const renderHeader = () => {
+    if (isViewMode) {
+      // 查看模式：显示返回按钮
+      return (
+        <View className="flex-row items-center justify-between px-4 py-3 bg-white dark:bg-slate-800">
+          <TouchableOpacity onPress={handleBack} className="p-2">
+            <Ionicons name="arrow-back" size={24} color="#6366f1" />
+          </TouchableOpacity>
+          <Text className="text-lg font-bold text-slate-800 dark:text-white">
+            {t("run.detail")}
+          </Text>
+          <View className="w-10" />{/* 占位保持居中 */}
+        </View>
+      );
+    }
+
+    // 编辑模式：显示保存/放弃按钮
+    return (
       <View className="flex-row items-center justify-between px-4 py-3 bg-white dark:bg-slate-800">
         <TouchableOpacity onPress={handleDiscard} className="p-2">
           <Text className="text-red-500 font-medium">{t("run.discard")}</Text>
@@ -193,6 +215,13 @@ export default function RunSummaryScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900" edges={["top"]}>
+      {/* 顶部导航 */}
+      {renderHeader()}
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 地图区域 */}
@@ -274,61 +303,81 @@ export default function RunSummaryScreen() {
           </View>
         </View>
 
-        {/* 编辑区域 */}
+        {/* 信息区域 */}
         <View className="px-4 mt-6 mb-8">
           <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2">
-            {t("run.editInfo")}
+            {isViewMode ? t("run.info") : t("run.editInfo")}
           </Text>
 
-          {/* 标题输入 */}
+          {/* 标题 */}
           <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 mb-3">
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder={defaultTitle}
-              placeholderTextColor="#9ca3af"
-              className="text-base text-slate-800 dark:text-white"
-              maxLength={50}
-            />
+            {isViewMode ? (
+              <Text className="text-base text-slate-800 dark:text-white">
+                {title || defaultTitle}
+              </Text>
+            ) : (
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder={defaultTitle}
+                placeholderTextColor="#9ca3af"
+                className="text-base text-slate-800 dark:text-white"
+                maxLength={50}
+              />
+            )}
           </View>
 
-          {/* 备注输入 */}
+          {/* 备注 */}
           <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3">
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t("run.addNote")}
-              placeholderTextColor="#9ca3af"
-              className="text-base text-slate-800 dark:text-white"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              maxLength={200}
-            />
+            {isViewMode ? (
+              note ? (
+                <Text className="text-base text-slate-800 dark:text-white">
+                  {note}
+                </Text>
+              ) : (
+                <Text className="text-base text-slate-400 italic">
+                  {t("run.noNote")}
+                </Text>
+              )
+            ) : (
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                placeholder={t("run.addNote")}
+                placeholderTextColor="#9ca3af"
+                className="text-base text-slate-800 dark:text-white"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                maxLength={200}
+              />
+            )}
           </View>
         </View>
 
-        {/* 底部按钮 */}
-        <View className="px-4 pb-8">
-          <TouchableOpacity
-            onPress={handleSave}
-            disabled={isSaving}
-            className={`py-4 rounded-xl ${isSaving ? "bg-indigo-400" : "bg-indigo-600"}`}
-          >
-            <Text className="text-white text-center font-bold text-lg">
-              {isSaving ? t("common.saving") : t("run.saveRecord")}
-            </Text>
-          </TouchableOpacity>
+        {/* 底部按钮 - 仅在编辑模式显示 */}
+        {!isViewMode && (
+          <View className="px-4 pb-8">
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={isSaving}
+              className={`py-4 rounded-xl ${isSaving ? "bg-indigo-400" : "bg-indigo-600"}`}
+            >
+              <Text className="text-white text-center font-bold text-lg">
+                {isSaving ? t("common.saving") : t("run.saveRecord")}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleDiscard}
-            className="py-4 mt-3"
-          >
-            <Text className="text-red-500 text-center font-medium">
-              {t("run.discardRecord")}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              onPress={handleDiscard}
+              className="py-4 mt-3"
+            >
+              <Text className="text-red-500 text-center font-medium">
+                {t("run.discardRecord")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
