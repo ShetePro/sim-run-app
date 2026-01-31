@@ -173,6 +173,7 @@ export default function UserProfileScreen() {
               icon="help-circle-outline"
               color="#64748B"
               label={t("setting.helps")}
+              onPress={() => router.push("/(views)/help")}
             />
             <Divider />
             <MenuItem
@@ -180,6 +181,7 @@ export default function UserProfileScreen() {
               color="#64748B"
               label={t("setting.about")}
               value="v1.0.0"
+              onPress={() => router.push("/(views)/about")}
             />
           </View>
 
