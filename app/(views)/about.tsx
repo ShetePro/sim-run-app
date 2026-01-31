@@ -106,10 +106,6 @@ export default function AboutScreen() {
             {renderItem(t("about.termsOfService"), undefined, () => {
               openLink("https://your-terms-url.com");
             }, true)}
-            <Divider />
-            {renderItem(t("about.openSource"), undefined, () => {
-              router.push("/(views)/open-source");
-            }, true)}
           </>
         ))}
 
