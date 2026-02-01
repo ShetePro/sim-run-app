@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,17 @@ export default function UserProfileScreen() {
   const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
-  const userInfo = getStorageItem("userInfo", true) || {};
+  
+  // 使用 state 存储用户信息，页面聚焦时刷新
+  const [userInfo, setUserInfo] = useState(getStorageItem("userInfo", true) || {});
+  
+  // 页面聚焦时刷新用户数据
+  useFocusEffect(
+    useCallback(() => {
+      const freshUserInfo = getStorageItem("userInfo", true) || {};
+      setUserInfo(freshUserInfo);
+    }, [])
+  );
 
   // 初始化设置
   useEffect(() => {
