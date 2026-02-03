@@ -80,19 +80,20 @@ public class ActivityControllerModule: Module {
   @objc
   private func handleAppKill() {
     if #available(iOS 16.1, *) {
-      print("💀 App 被强杀，触发最后清理...")
-
-      let semaphore = DispatchSemaphore(value: 0)
-
       Task {
+        // 1. 这里的关键是：直接遍历 Activity<RunAttributes>.activities
+        // 这样即使 self.currentActivity 丢了，也能关掉锁屏上的“僵尸”活动
         for activity in Activity<RunAttributes>.activities {
-          print("💀 关闭 ID: \(activity.id)")
+          print("🛑 正在关闭活动 ID: \(activity.id)")
+
+          // 2. 使用 .immediate 策略：立即从锁屏和灵动岛移除，不留痕迹
           await activity.end(dismissalPolicy: .immediate)
         }
-        semaphore.signal()
-      }
 
-      _ = semaphore.wait(timeout: .now() + 1.5)
+        // 3. 清理本地变量
+        self.currentActivity = nil
+        print("✅ 所有灵动岛及锁屏通知已彻底清理")
+      }
     }
   }
 }
