@@ -188,7 +188,7 @@ SimRun 支持浅色/深色模式：
 
 如遇到问题或有功能建议，请通过以下方式联系我们：
 
-- 邮箱：support@simrun.app
+- 邮箱：sheteprolin@gmail.com
 - GitHub Issues: [项目仓库](https://github.com/ShetePro/sim-run-app)
 
 ---

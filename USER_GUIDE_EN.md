@@ -188,7 +188,7 @@ SimRun supports light/dark modes:
 
 If you encounter issues or have feature suggestions, please contact us through:
 
-- Email: support@simrun.app
+- Email: sheteprolin@gmail.com
 - GitHub Issues: [Project Repository](https://github.com/ShetePro/sim-run-app)
 
 ---
