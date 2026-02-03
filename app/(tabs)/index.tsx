@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import dayjs from "dayjs";
 import HomeDataCard from "@/components/card/HomeDataCard";
@@ -20,6 +20,7 @@ import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
 import { getPaceLabel, secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
+import { getStorageItem } from "@/hooks/useStorageState";
 
 const HOME_DATA = {
   user: {
@@ -54,7 +55,9 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { getTodayRunData } = useRunDB();
   const [today, setToday] = useState<TodayRunData | null>(null);
+  const [userInfo, setUserInfo] = useState<{ nickname?: string; avatar?: string }>({});
 
+  // 获取今日跑步数据
   useEffect(() => {
     getTodayRunData().then((res) => {
       console.log(res, "获取的今日数据");
@@ -77,6 +80,31 @@ export default function HomeScreen() {
       setToday(todayData);
     });
   }, []);
+
+  // 获取用户信息（包括头像）
+  const loadUserInfo = () => {
+    const storedUserInfo = getStorageItem("userInfo");
+    if (storedUserInfo) {
+      try {
+        const parsed = JSON.parse(storedUserInfo);
+        setUserInfo(parsed);
+      } catch (e) {
+        console.error("解析用户信息失败:", e);
+      }
+    }
+  };
+
+  // 页面加载时获取用户信息
+  useEffect(() => {
+    loadUserInfo();
+  }, []);
+
+  // 页面获得焦点时刷新用户信息（从个人资料页返回时）
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserInfo();
+    }, [])
+  );
   // 根据时间生成问候语
   const getGreeting = () => {
     const hour = dayjs().hour();
@@ -113,10 +141,15 @@ export default function HomeScreen() {
               style={{
                 width: 48,
                 height: 48,
-                backgroundColor: "#0553",
+                backgroundColor: "#e2e8f0",
                 borderRadius: 9999,
               }}
-              source={"https://picsum.photos/seed/696/3000/2000"}
+              source={
+                userInfo?.avatar 
+                  ? { uri: userInfo.avatar } 
+                  : require("@/assets/images/default-avatar.png")
+              }
+              contentFit="cover"
               className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
             />
           </TouchableOpacity>

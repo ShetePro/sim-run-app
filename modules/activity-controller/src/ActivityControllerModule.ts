@@ -12,9 +12,9 @@ export const startLiveActivity: StartLiveActivityFn = async () => {
 };
 
 export const updateLiveActivity: UpdateLiveActivityFn = async (params) => {
-  const stringParams = JSON.stringify(params);
+  const { distance, duration, pace } = params;
   if (typeof nativeModule.updateLiveActivity === "function") {
-    return nativeModule.updateLiveActivity(stringParams);
+    return nativeModule.updateLiveActivity(distance, duration, pace);
   }
   return Promise.resolve();
 };

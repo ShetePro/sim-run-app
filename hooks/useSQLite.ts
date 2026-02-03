@@ -79,6 +79,11 @@ export function useRunDB() {
     return await db.getAllAsync("SELECT * FROM runs ORDER BY id DESC");
   };
 
+  // 根据 ID 获取单个跑步记录
+  const getRunById = async (runId: number): Promise<RunRecord | null> => {
+    return await db.getFirstAsync("SELECT * FROM runs WHERE id = ?", [runId]);
+  };
+
   const getTrackPoints = async (runId: number): Promise<TrackPoint[]> => {
     return await db.getAllAsync("SELECT * FROM track_points WHERE run_id = ?", [
       runId,
@@ -139,6 +144,7 @@ export function useRunDB() {
   return {
     addRun,
     getRuns,
+    getRunById,
     getTrackPoints,
     deleteRun,
     updateRun,
