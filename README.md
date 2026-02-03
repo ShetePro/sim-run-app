@@ -1,50 +1,202 @@
-# Welcome to your Expo app 👋
+# SimRun 使用指南
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+欢迎使用 SimRun！这是一款专为跑步爱好者设计的移动应用，帮助您记录每一次跑步轨迹，追踪运动数据，实现健康目标。
 
-## Get started
+---
 
-1. Install dependencies
+## 📱 功能概览
 
-   ```bash
-   npm install
-   ```
+- **实时跑步追踪** - GPS 精准记录跑步路线、距离、配速
+- **灵动岛/Live Activity 支持** - 锁屏状态下也能查看实时数据
+- **路线可视化** - 在地图上查看渐变色跑步轨迹
+- **数据统计** - 今日运动数据、生涯累计记录
+- **个人资料** - 自定义头像、身体数据管理
+- **暗黑模式** - 支持浅色/深色主题切换
 
-2. Start the app
+---
 
-   ```bash
-    npx expo start
-   ```
+## 🚀 快速开始
 
-In the output, you'll find options to open the app in a
+### 首次使用
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+1. **启动应用**
+   - 打开 SimRun 应用
+   - 允许位置权限（用于追踪跑步路线）
+   - 允许通知权限（用于后台跑步提醒）
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+2. **完善个人资料**
+   - 点击底部"我的"进入个人中心
+   - 点击"编辑资料"设置头像、昵称、身高、体重等信息
+   - 准确的身体数据有助于更精准计算卡路里消耗
 
-## Get a fresh project
+3. **设置头像**
+   - 在个人资料页点击头像区域
+   - 从相册选择照片，支持裁剪为 1:1 正方形
+   - 头像会自动同步到首页显示
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+## 🏃‍♂️ 开始跑步
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 启动跑步记录
 
-## Learn more
+1. 在首页点击大大的 **"开始跑步"** 按钮
+2. 等待 GPS 定位成功（确保信号良好）
+3. 点击"开始"进入跑步界面
+4. 实时查看距离、时间、配速等数据
 
-To learn more about developing your project with Expo, look at the following resources:
+### 跑步中操作
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| 功能 | 操作 |
+|------|------|
+| 暂停/继续 | 点击暂停按钮暂停计时，点击继续恢复 |
+| 查看地图 | 在跑步页面查看实时路线绘制 |
+| 锁屏显示 | iOS 用户可在锁屏/灵动岛查看实时数据 |
 
-## Join the community
+### 结束跑步
 
-Join our community of developers creating universal apps.
+1. 点击"结束"按钮
+2. 查看本次跑步的完整数据统计
+3. 添加跑步标题和备注（可选）
+4. 点击"保存记录"完成保存
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 📊 查看跑步记录
+
+### 首页数据卡片
+
+- **今日数据** - 查看当日累计距离、时长、卡路里、配速
+- **生涯累计** - 总跑步次数、总距离、总时长
+- **最近活动** - 快速查看上一次跑步记录
+
+### 历史记录
+
+1. 点击底部"历史"标签
+2. 浏览所有跑步记录列表
+3. 点击任意记录查看详情
+4. 在详情页查看：
+   - 渐变色跑步路线（绿色=起点，红色=终点）
+   - 完整数据统计
+   - 个人备注
+
+---
+
+## 🗺️ 地图路线说明
+
+跑步路线图使用渐变色表示跑步进度：
+
+- 🟢 **绿色** - 跑步起点
+- 🟡 **黄色** - 中间路段
+- 🔴 **红色** - 跑步终点
+
+地图上还显示：
+- 起点和终点的标记
+- 半透明脉冲圆圈效果
+- 跑步时间范围标签
+
+---
+
+## ⚡ Live Activity / 灵动岛（iOS）
+
+支持 iOS 16.1+ 的 Live Activity 功能：
+
+- **锁屏显示** - 锁屏状态下也能看到实时距离、时间、配速
+- **灵动岛** - iPhone 14 Pro+ 用户可在灵动岛查看跑步状态
+- **实时更新** - 每秒钟自动更新数据
+
+### 使用条件
+- iOS 16.1 或更高版本
+- 在"设置 > SimRun"中允许 Live Activity
+
+---
+
+## 👤 个人资料管理
+
+### 编辑资料
+
+1. 点击底部"我的"进入个人中心
+2. 点击"编辑资料"
+3. 可修改：
+   - **头像** - 从相册选择图片
+   - **昵称** - 设置个性化名称
+   - **个性签名** - 一句话介绍自己
+   - **性别** - 男/女
+   - **身高/体重/年龄** - 用于精准计算运动数据
+
+### 头像上传
+
+- 支持从手机相册选择图片
+- 自动裁剪为 1:1 正方形
+- 头像更改后会自动同步到首页
+
+---
+
+## 🌙 主题设置
+
+SimRun 支持浅色/深色模式：
+
+- **自动切换** - 跟随系统自动切换主题
+- **手动切换** - 在系统设置中更改外观
+
+---
+
+## 💡 使用技巧
+
+### 获得更准确的 GPS 数据
+
+- 在开阔地带跑步，避免高楼或树林遮挡
+- 开启"高精度定位"模式
+- 等待 GPS 信号稳定后再开始跑步
+
+### 延长电池续航
+
+- 降低屏幕亮度
+- 关闭不必要的后台应用
+- 使用省电模式（可能会影响 GPS 精度）
+
+### 数据安全
+
+- 所有跑步数据保存在本地
+- 支持 iCloud 备份（如开启）
+- 卸载应用前请确保数据已备份
+
+---
+
+## 🔧 常见问题
+
+**Q: 为什么 GPS 定位不准确？**
+> A: 请确保在开阔地带使用，避免建筑物遮挡。首次使用可能需要等待 30 秒左右完成定位。
+
+**Q: Live Activity 没有显示？**
+> A: 请确保：1) iOS 16.1+ 系统；2) 在系统设置中允许 Live Activity；3) 已经开始跑步记录。
+
+**Q: 如何修改已保存的跑步记录？**
+> A: 在历史记录中查看详情，目前不支持修改已保存的路线数据，但可以添加/修改备注。
+
+**Q: 头像上传失败？**
+> A: 请确保已授予相册访问权限。在"设置 > 隐私 > 照片"中检查权限设置。
+
+**Q: 支持哪些语言？**
+> A: 目前支持简体中文，后续版本将增加更多语言支持。
+
+---
+
+## 📞 技术支持
+
+如遇到问题或有功能建议，请通过以下方式联系我们：
+
+- 邮箱：support@simrun.app
+- GitHub Issues: [项目仓库](https://github.com/ShetePro/sim-run-app)
+
+---
+
+## 📄 版本信息
+
+- 当前版本：v1.0.0
+- 支持平台：iOS 16.0+ / Android 10+
+- 最后更新：2026年2月
+
+---
+
+**祝您跑步愉快！🏃‍♀️🏃‍♂️**

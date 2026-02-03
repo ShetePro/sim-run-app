@@ -57,7 +57,7 @@ export default function HelpScreen() {
   };
 
   const openEmail = () => {
-    Linking.openURL("mailto:support@simrun.app");
+    Linking.openURL("sheteprolin@gmail.com");
   };
 
   const renderSection = (title: string, children: React.ReactNode) => (
@@ -83,7 +83,7 @@ export default function HelpScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
         {/* 快速操作 */}
         {renderSection(t("help.quickActions"), (
           <>
@@ -99,7 +99,7 @@ export default function HelpScreen() {
                   {t("help.contactUs")}
                 </Text>
                 <Text className="text-slate-400 text-sm mt-0.5">
-                  support@simrun.app
+                  sheteprolin@gmail.com
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
@@ -162,7 +162,7 @@ export default function HelpScreen() {
             <Text className="text-slate-600 dark:text-slate-300 text-sm mb-4">
               {t("help.feedback.desc")}
             </Text>
-            
+
             {/* 邮箱输入 */}
             <View className="mb-4">
               <Text className="text-slate-500 dark:text-slate-400 text-xs mb-2">

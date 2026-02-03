@@ -21,6 +21,7 @@ export default function HistoryScreen() {
       const recordsMap: {
         [key: string]: HistoryRecord;
       } = {};
+      console.log(runs, 'runs');
       runs.forEach((item) => {
         if (item.startTime) {
           const date = getDateLabel(item.startTime);

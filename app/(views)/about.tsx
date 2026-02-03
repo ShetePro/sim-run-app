@@ -64,7 +64,7 @@ export default function AboutScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
         {/* Logo 区域 */}
         <View className="items-center py-10">
           <View className="w-24 h-24 bg-indigo-600 rounded-3xl items-center justify-center mb-4 shadow-lg">
