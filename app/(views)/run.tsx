@@ -64,19 +64,19 @@ export default function RunIndexScreen() {
   function onFinish() {
     stopTimer();
     stopPedometer();
-    
+
     const runData = {
       time: seconds,
       pace: runStore.pace,
       energy: Math.floor(10 * 70 * (seconds / 3600)),
     };
-    
+
     // 获取跑步记录ID
     const runId = getCurrentRunId();
-    
+
     // 先保存到数据库，然后跳转到确认页
     stopTracking(runData);
-    
+
     // 只传递 runId，详情页面从数据库查询
     router.push({
       pathname: "/(views)/run-summary",

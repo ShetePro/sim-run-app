@@ -118,7 +118,7 @@ export default function AboutScreen() {
             <View className="flex-row items-center mt-4">
               <Ionicons name="mail-outline" size={18} color="#6366f1" />
               <Text className="text-indigo-600 dark:text-indigo-400 ml-2 text-sm">
-                support@simrun.app
+                sheteprolin@gmail.com
               </Text>
             </View>
           </View>

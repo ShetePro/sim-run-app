@@ -147,7 +147,8 @@ const resources = {
         termsOfService: "Terms of Service",
         openSource: "Open Source Licenses",
         team: "About SimRun",
-        description: "SimRun is a professional running tracking app designed for runners who love outdoor sports. We are committed to providing accurate trajectory recording and detailed data analysis to help you better understand your running performance.",
+        description:
+          "SimRun is a professional running tracking app designed for runners who love outdoor sports. We are committed to providing accurate trajectory recording and detailed data analysis to help you better understand your running performance.",
         allRightsReserved: "All rights reserved.",
       },
       help: {
@@ -160,19 +161,23 @@ const resources = {
           title: "Frequently Asked Questions",
           gps: {
             question: "Why is my GPS trajectory inaccurate?",
-            answer: "GPS accuracy is affected by environmental factors. Please run in open areas and avoid tall buildings or dense tree cover. You can also try turning GPS off and on again, or restarting your phone.",
+            answer:
+              "GPS accuracy is affected by environmental factors. Please run in open areas and avoid tall buildings or dense tree cover. You can also try turning GPS off and on again, or restarting your phone.",
           },
           background: {
             question: "Can I record in the background?",
-            answer: "Yes, SimRun supports background recording. Please allow location permission \"Always\" in settings to ensure continuous tracking when the screen is locked.",
+            answer:
+              'Yes, SimRun supports background recording. Please allow location permission "Always" in settings to ensure continuous tracking when the screen is locked.',
           },
           battery: {
             question: "Will recording consume a lot of battery?",
-            answer: "GPS recording does consume battery. It is recommended to fully charge before long runs or enable battery saver mode. We have optimized battery usage as much as possible.",
+            answer:
+              "GPS recording does consume battery. It is recommended to fully charge before long runs or enable battery saver mode. We have optimized battery usage as much as possible.",
           },
           export: {
             question: "How to export running data?",
-            answer: "Go to Run History, select a record, click the share button to export GPX file, which can be imported into other sports apps.",
+            answer:
+              "Go to Run History, select a record, click the share button to export GPX file, which can be imported into other sports apps.",
           },
         },
         feedback: {
@@ -180,12 +185,15 @@ const resources = {
           desc: "Encountered a problem or have a suggestion? Let us know!",
           email: "Your Email",
           content: "Feedback Content",
-          placeholder: "Please describe your problem or suggestion in detail...",
+          placeholder:
+            "Please describe your problem or suggestion in detail...",
           submit: "Submit Feedback",
         },
         feedbackEmpty: "Please enter feedback content",
-        feedbackSent: "Thank you for your feedback! We will process it as soon as possible.",
-        responseTime: "We typically reply within 1-2 business days. For urgent issues, please contact us via email directly.",
+        feedbackSent:
+          "Thank you for your feedback! We will process it as soon as possible.",
+        responseTime:
+          "We typically reply within 1-2 business days. For urgent issues, please contact us via email directly.",
       },
       language: {
         title: "Language",
@@ -212,8 +220,18 @@ const resources = {
       time: {
         week: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         months: [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
         ],
       },
     },
@@ -229,6 +247,7 @@ const resources = {
         saving: "保存中...",
         save: "保存",
         loading: "加载中",
+        start: "开始",
         back: "返回",
         optional: "选填",
         success: "成功",
@@ -315,13 +334,18 @@ const resources = {
       },
       run: {
         summary: "跑步总结",
+        detail: "跑步详情",
+        start: "开始",
+        finish: "结束",
         discard: "放弃",
         discardTitle: "放弃本次跑步?",
         discardMessage: "本次跑步数据将不会被保存，确定放弃吗？",
         discardRecord: "放弃记录",
         saveRecord: "保存记录",
         editInfo: "编辑信息",
+        info: "跑步信息",
         addNote: "添加备注...",
+        noNote: "暂无备注",
         duration: "运动时长",
         steps: "步数",
         signal: "信号强度",
@@ -353,7 +377,8 @@ const resources = {
         termsOfService: "用户协议",
         openSource: "开源许可",
         team: "关于 SimRun",
-        description: "SimRun 是一款专为热爱户外运动的跑者设计的专业跑步记录应用。我们致力于提供精准的轨迹记录和详细的数据分析，帮助您更好地了解自己的跑步表现。",
+        description:
+          "SimRun 是一款专为热爱户外运动的跑者设计的专业跑步记录应用。我们致力于提供精准的轨迹记录和详细的数据分析，帮助您更好地了解自己的跑步表现。",
         allRightsReserved: "版权所有",
       },
       help: {
@@ -366,19 +391,23 @@ const resources = {
           title: "常见问题",
           gps: {
             question: "为什么我的 GPS 轨迹不准确？",
-            answer: "GPS 精度受环境影响。请在开阔地带跑步，避免高楼或茂密树木遮挡。您也可以尝试重新开关 GPS 或重启手机。",
+            answer:
+              "GPS 精度受环境影响。请在开阔地带跑步，避免高楼或茂密树木遮挡。您也可以尝试重新开关 GPS 或重启手机。",
           },
           background: {
             question: "可以后台记录吗？",
-            answer: "是的，SimRun 支持后台记录。请在设置中允许\"始终\"位置权限，以确保锁屏时持续追踪。",
+            answer:
+              '是的，SimRun 支持后台记录。请在设置中允许"始终"位置权限，以确保锁屏时持续追踪。',
           },
           battery: {
             question: "记录会消耗很多电量吗？",
-            answer: "GPS 记录确实会消耗电量。建议长跑前充满电，或开启省电模式。我们已尽可能优化电池使用。",
+            answer:
+              "GPS 记录确实会消耗电量。建议长跑前充满电，或开启省电模式。我们已尽可能优化电池使用。",
           },
           export: {
             question: "如何导出跑步数据？",
-            answer: "进入跑步记录，选择某条记录，点击分享按钮可导出 GPX 文件，可导入其他运动 App。",
+            answer:
+              "进入跑步记录，选择某条记录，点击分享按钮可导出 GPX 文件，可导入其他运动 App。",
           },
         },
         feedback: {
@@ -391,7 +420,8 @@ const resources = {
         },
         feedbackEmpty: "请输入反馈内容",
         feedbackSent: "感谢您的反馈！我们会尽快处理。",
-        responseTime: "我们通常会在 1-2 个工作日内回复。紧急问题请直接邮件联系。",
+        responseTime:
+          "我们通常会在 1-2 个工作日内回复。紧急问题请直接邮件联系。",
       },
       language: {
         title: "语言设置",
@@ -418,8 +448,18 @@ const resources = {
       time: {
         week: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
         months: [
-          "1月", "2月", "3月", "4月", "5月", "6月",
-          "7月", "8月", "9月", "10月", "11月", "12月"
+          "1月",
+          "2月",
+          "3月",
+          "4月",
+          "5月",
+          "6月",
+          "7月",
+          "8月",
+          "9月",
+          "10月",
+          "11月",
+          "12月",
         ],
       },
     },
@@ -444,12 +484,12 @@ const getLanguageFromSettings = async (): Promise<string | null> => {
 const initI18n = async () => {
   // 首先尝试从新的 settings 存储读取
   let savedLang = await getLanguageFromSettings();
-  
+
   // 如果没找到，尝试旧 key（兼容旧版本）
   if (!savedLang) {
     savedLang = await getStorageItemAsync("app-language") as string | null;
   }
-  
+
   i18n.use(initReactI18next).init({
     resources,
     lng: savedLang || "cn",
