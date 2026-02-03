@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Location from "expo-location";
-import { LocationObjectCoords, LocationSubscription } from "expo-location";
+import { LocationObjectCoords } from "expo-location";
 import { secondFormatHours } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
@@ -102,25 +102,6 @@ export function useRun() {
         },
       );
       setLocationSubscription(locationUpdateTask);
-      // const subscription = await Location.watchPositionAsync(
-      //   {
-      //     accuracy: Location.Accuracy.BestForNavigation, // 高精度模式
-      //     timeInterval: 1000, // 每 1 秒更新一次
-      //     distanceInterval: 1, // 每移动 5 米更新一次
-      //   },
-      //   (locationUpdate) => {
-      //     const newPoint = mapPointToLonLat({
-      //       latitude: locationUpdate.coords.latitude,
-      //       longitude: locationUpdate.coords.longitude,
-      //       timestamp: locationUpdate.timestamp,
-      //     });
-      //     setLocation(newPoint);
-      //     if (isTracking.current) {
-      //       setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-      //     }
-      //   },
-      // );
-      // setLocationSubscription(subscription);
     } catch (err) {
       setErrorMsg("获取位置信息失败，请检查GPS是否开启。");
     } finally {
@@ -136,8 +117,6 @@ export function useRun() {
     isTracking.current = true;
     LiveActivity.start();
     setRoutePoints([]); // 开始新会话时清空路径
-    // LiveActivity.start();
-    // simulateRun();
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
       startTime: Date.now(),
