@@ -70,7 +70,7 @@ public class ActivityControllerModule: Module {
       let activity = self.currentActivity as? Activity<RunAttributes> {
 
         Task {
-          await activity.end(using: activity.contentState, dismissalPolicy: .default)
+          await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
           self.currentActivity = nil
           print("🛑 灵动岛已结束")
         }
