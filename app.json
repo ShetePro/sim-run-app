@@ -94,6 +94,12 @@
           "launchMode": "most-recent"
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "允许 $(PRODUCT_NAME) 访问您的相册以选择头像图片。"
+        }
+      ],
       "@bacons/apple-targets"
     ],
     "experiments": {
