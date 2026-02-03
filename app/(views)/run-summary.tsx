@@ -11,13 +11,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState, useCallback, useEffect, useRef } from "react";
-import MapView, { Polyline, Marker } from "react-native-maps";
+import React, { useState, useCallback, useEffect, useRef, ReactElement } from "react";
+import MapView, { Polyline, Marker, Circle } from "react-native-maps";
 import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useRunStore } from "@/store/runStore";
 import { secondFormatHours, getPaceLabel } from "@/utils/util";
 import { RunRecord } from "@/types/runType";
+import Toast from "react-native-toast-message";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -80,8 +81,7 @@ export default function RunSummaryScreen() {
   const startTime = runData?.startTime || Date.now();
   const endTime = runData?.endTime || Date.now();
 
-  // 根据距离生成默认标题
-  const defaultTitle = `${(distance / 1000).toFixed(2)}${t("unit.km")} ${t("history.outdoorRun")}`;
+  const defaultTitle = `${t("history.outdoorRun")}`;
 
   // 保存跑步记录
   const handleSave = async () => {
@@ -125,7 +125,11 @@ export default function RunSummaryScreen() {
               runStore.reset();
               router.replace("/(tabs)");
             } catch (error) {
-              console.error("删除失败:", error);
+              Toast.show({
+                type: "error",
+                text1: "删除失败",
+                visibilityTime: 2000,
+              });
             }
           },
         },
@@ -136,6 +140,51 @@ export default function RunSummaryScreen() {
   // 返回上一页
   const handleBack = () => {
     router.back();
+  };
+
+  // 生成渐变色路线段
+  const generateGradientRoute = (points: typeof routePoints) => {
+    if (points.length <= 1) return null;
+
+    const segments: ReactElement[] = [];
+    const totalPoints = points.length;
+    const maxSegments = 50; // 最多50段，保证性能
+    const step = Math.max(1, Math.floor((totalPoints - 1) / maxSegments));
+
+    for (let i = 0; i < totalPoints - 1; i += step) {
+      const progress = Math.min(i / (totalPoints - 1), 1);
+      const nextIndex = Math.min(i + step, totalPoints - 1);
+
+      // 渐变色：绿色(开始) -> 黄色(中间) -> 红色(结束)
+      let color: string;
+      if (progress < 0.5) {
+        // 绿色 (#22c55e) 到黄色 (#facc15)
+        const p = progress * 2;
+        const r = Math.round(34 + (250 - 34) * p);
+        const g = Math.round(197 + (204 - 197) * p);
+        const b = Math.round(94 + (21 - 94) * p);
+        color = `rgb(${r}, ${g}, ${b})`;
+      } else {
+        // 黄色 (#facc15) 到红色 (#ef4444)
+        const p = (progress - 0.5) * 2;
+        const r = Math.round(250 + (239 - 250) * p);
+        const g = Math.round(204 + (68 - 204) * p);
+        const b = Math.round(21 + (68 - 21) * p);
+        color = `rgb(${r}, ${g}, ${b})`;
+      }
+
+      segments.push(
+        <Polyline
+          key={`segment-${i}`}
+          coordinates={points.slice(i, nextIndex + 1)}
+          strokeColor={color}
+          strokeWidth={5}
+          lineCap="round"
+          lineJoin="round"
+        />
+      );
+    }
+    return segments;
   };
 
   // 加载中状态
@@ -241,17 +290,56 @@ export default function RunSummaryScreen() {
           >
             {routePoints.length > 0 && (
               <>
-                <Polyline
-                  coordinates={routePoints}
-                  strokeColor="#6366f1"
-                  strokeWidth={4}
+                {/* 渐变路线 - 从绿色(起点)渐变到红色(终点) */}
+                {generateGradientRoute(routePoints)}
+
+                {/* 起点标记 */}
+                <Marker coordinate={routePoints[0]} anchor={{ x: 0.5, y: 0.5 }}>
+                  <View style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: '#22c55e',
+                    borderWidth: 3,
+                    borderColor: 'white',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 2,
+                    elevation: 4
+                  }} />
+                </Marker>
+
+                {/* 终点标记 */}
+                <Marker coordinate={routePoints[routePoints.length - 1]} anchor={{ x: 0.5, y: 0.5 }}>
+                  <View style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: '#ef4444',
+                    borderWidth: 3,
+                    borderColor: 'white',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 2,
+                    elevation: 4
+                  }} />
+                </Marker>
+
+                {/* 起点和终点的脉冲圆圈效果 */}
+                <Circle
+                  center={routePoints[0]}
+                  radius={30}
+                  strokeColor="rgba(34, 197, 94, 0.3)"
+                  fillColor="rgba(34, 197, 94, 0.1)"
                 />
-                <Marker coordinate={routePoints[0]}>
-                  <View className="w-4 h-4 rounded-full bg-green-500 border-2 border-white" />
-                </Marker>
-                <Marker coordinate={routePoints[routePoints.length - 1]}>
-                  <View className="w-4 h-4 rounded-full bg-red-500 border-2 border-white" />
-                </Marker>
+                <Circle
+                  center={routePoints[routePoints.length - 1]}
+                  radius={30}
+                  strokeColor="rgba(239, 68, 68, 0.3)"
+                  fillColor="rgba(239, 68, 68, 0.1)"
+                />
               </>
             )}
           </MapView>
@@ -261,6 +349,17 @@ export default function RunSummaryScreen() {
             <Text className="text-white text-xs">
               {dayjs(startTime).format("YYYY-MM-DD HH:mm")} - {dayjs(endTime).format("HH:mm")}
             </Text>
+          </View>
+
+          {/* 路线图例 */}
+          <View className="absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm">
+            <View className="flex-row items-center">
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#22c55e' }} />
+              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1 mr-3">起</Text>
+              <View style={{ width: 30, height: 4, borderRadius: 2, backgroundColor: '#facc15' }} />
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444', marginLeft: 6 }} />
+              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1">终</Text>
+            </View>
           </View>
         </View>
 
