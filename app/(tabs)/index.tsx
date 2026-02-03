@@ -74,7 +74,7 @@ export default function HomeScreen() {
         todayData.duration += run.time;
       });
       const { distance, calories, duration } = todayData;
-      todayData.calories = Math.ceil(calories);
+      todayData.calories = Math.ceil(calories / 1000);
       todayData.pace = distance < 10 ? 0 : duration / distance / 60;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
@@ -145,8 +145,8 @@ export default function HomeScreen() {
                 borderRadius: 9999,
               }}
               source={
-                userInfo?.avatar 
-                  ? { uri: userInfo.avatar } 
+                userInfo?.avatar
+                  ? { uri: userInfo.avatar }
                   : require("@/assets/images/default-avatar.png")
               }
               contentFit="cover"

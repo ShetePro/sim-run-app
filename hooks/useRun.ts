@@ -127,7 +127,16 @@ export function useRun() {
       time: 0,
       pace: 0,
       energy: 0,
-      points: [],
+      points: currenLocation
+        ? [
+            {
+              lat: currenLocation.latitude,
+              lng: currenLocation.longitude,
+              heading: heading,
+              timestamp: Date.now()
+            },
+          ]
+        : [],
       isFinish: 0,
     });
     console.log("✅ 已保存跑步数据", runData);
