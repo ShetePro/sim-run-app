@@ -33,6 +33,12 @@ export default function RunSummaryScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [routePoints, setRoutePoints] = useState<{ latitude: number; longitude: number }[]>([]);
   const [runData, setRunData] = useState<RunRecord | null>(null);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 30.9042,
+    longitude: 122.4074,
+    latitudeDelta: 0.005,
+    longitudeDelta: 0.005,
+  });
   const runStore = useRunStore();
 
   const runId = Number(params.runId || 0);
@@ -58,7 +64,19 @@ export default function RunSummaryScreen() {
 
       // 获取轨迹点
       const points = await getTrackPoints(runId);
-      setRoutePoints(points.map(p => ({ latitude: p.lat, longitude: p.lng })));
+      const mappedPoints = points.map(p => ({ latitude: p.lat, longitude: p.lng }));
+      setRoutePoints(mappedPoints);
+
+      console.log(points);
+      // 设置地图中心为起点
+      if (mappedPoints.length > 0) {
+        setMapRegion({
+          latitude: mappedPoints[0].latitude,
+          longitude: mappedPoints[0].longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        });
+      }
     } catch (error) {
       console.error("加载跑步数据失败:", error);
       Alert.alert(t("common.error"), "加载跑步数据失败");
@@ -224,7 +242,7 @@ export default function RunSummaryScreen() {
   }) => (
     <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex-1 mx-1 items-center">
       <MaterialCommunityIcons name={icon} size={24} color={color} />
-      <Text className="text-2xl font-bold text-slate-800 dark:text-white mt-2">
+      <Text className="text-2xl font-bold text-slate-800 dark:text-white mt-2 whitespace-nowrap">
         {value}
         {unit && <Text className="text-sm font-normal text-slate-400"> {unit}</Text>}
       </Text>
@@ -274,15 +292,10 @@ export default function RunSummaryScreen() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 地图区域 */}
-        <View className="h-64 w-full relative">
+        <View className="h-72 w-full relative">
           <MapView
-            style={{ width: SCREEN_WIDTH, height: 256 }}
-            initialRegion={{
-              latitude: routePoints[0]?.latitude || 39.9042,
-              longitude: routePoints[0]?.longitude || 116.4074,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
+            style={{ width: SCREEN_WIDTH, height: 288 }}
+            region={mapRegion}
             scrollEnabled={true}
             zoomEnabled={true}
             rotateEnabled={true}
@@ -364,7 +377,7 @@ export default function RunSummaryScreen() {
         </View>
 
         {/* 主要数据 */}
-        <View className="px-4 -mt-6">
+        <View className="px-4 mt-4">
           <View className="bg-indigo-600 rounded-3xl p-6 shadow-lg">
             <Text className="text-indigo-100 text-sm text-center mb-2">{t("activity.distance")}</Text>
             <View className="flex-row items-baseline justify-center">
@@ -388,7 +401,7 @@ export default function RunSummaryScreen() {
             <StatCard
               icon="speedometer"
               value={getPaceLabel(pace)}
-              unit={`/${t("unit.km")}`}
+              unit={`/km`}
               label={t("activity.pace")}
               color="#10b981"
             />

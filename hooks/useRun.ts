@@ -51,6 +51,9 @@ export function useRun() {
           timestamp: locationUpdate.timestamp,
         });
         setLocation(newPoint);
+        updateRun({
+          points: [...routePoints, newPoint],
+        });
         setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
         setDistance(data.distance || distance);
         LiveActivity.update({
