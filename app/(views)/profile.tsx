@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { Divider } from "@/components/ui/Divider";
 import NumberInputSheet from "@/components/form/NumberInputSheet";
 import {
@@ -59,9 +61,32 @@ export default function ProfileEditScreen() {
 
   // 更新表单辅助函数
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setStorageItemAsync('userInfo', JSON.stringify({ ...form, [key]: value })).then(() => {
+    const newForm = { ...form, [key]: value };
+    setForm(newForm);
+    setStorageItemAsync('userInfo', JSON.stringify(newForm));
+  };
+
+  // 选择头像
+  const pickAvatar = async () => {
+    // 请求权限
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('权限 denied', '需要访问相册权限才能选择头像');
+      return;
+    }
+
+    // 打开图片选择器
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
     });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const selectedImageUri = result.assets[0].uri;
+      updateForm('avatar', selectedImageUri);
+    }
   };
   const openNumberInputSheet = (key: string) => {
     const config = numberInputOptions[key];
@@ -104,20 +129,22 @@ export default function ProfileEditScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="items-center mb-8">
-          <TouchableOpacity className="relative">
+          <TouchableOpacity className="relative" onPress={pickAvatar}>
             <Image
               style={{
                 width: 100,
                 height: 100,
-                backgroundColor: "#0553",
+                backgroundColor: "#e2e8f0",
                 borderRadius: 9999,
               }}
-              source={{ uri: form.avatar }}
+              source={form.avatar ? { uri: form.avatar } : require("@/assets/images/default-avatar.png")}
+              contentFit="cover"
             />
             <View className="absolute bottom-0 right-0 bg-indigo-600 p-2 rounded-full border-[3px] border-white dark:border-slate-900">
               <Ionicons name="camera" size={16} color="white" />
             </View>
           </TouchableOpacity>
+          <Text className="text-slate-400 text-sm mt-2">点击更换头像</Text>
         </View>
 
         <Text className="text-slate-500 text-xs font-bold uppercase mb-2 ml-2">
