@@ -120,6 +120,9 @@ const resources = {
         steps: "Steps",
         signal: "Signal",
         notFound: "Run record not found",
+        exportTitle: "Export Run Data",
+        exportMessage: "Choose export format",
+        exportError: "Failed to export run data, please try again",
       },
       setting: {
         language: "Language",
@@ -350,6 +353,9 @@ const resources = {
         steps: "步数",
         signal: "信号强度",
         notFound: "未找到跑步记录",
+        exportTitle: "导出跑步数据",
+        exportMessage: "选择导出格式",
+        exportError: "导出跑步数据失败，请重试",
       },
       setting: {
         language: "语言/Language",

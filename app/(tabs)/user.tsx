@@ -24,10 +24,10 @@ export default function UserProfileScreen() {
   const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
-  
+
   // 使用 state 存储用户信息，页面聚焦时刷新
   const [userInfo, setUserInfo] = useState(getStorageItem("userInfo", true) || {});
-  
+
   // 页面聚焦时刷新用户数据
   useFocusEffect(
     useCallback(() => {
