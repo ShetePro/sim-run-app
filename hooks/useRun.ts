@@ -12,6 +12,7 @@ import { DeviceEventEmitter } from "react-native";
 import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 import { LiveActivity } from "@/utils/LiveActivityController";
+import { backupDatabase } from "@/utils/backup";
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -162,9 +163,11 @@ export function useRun() {
       distance,
       isFinish: 1,
       endTime: Date.now(),
-    }).then(() => {
+    }).then(async () => {
       isTracking.current = false;
       console.log("跑步会话结束，总点数：", routePoints.length);
+      // 备份数据库到 documentDirectory 以便 iCloud 备份
+      await backupDatabase();
     });
   };
   // 4. 组件卸载时停止追踪

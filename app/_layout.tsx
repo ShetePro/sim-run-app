@@ -20,6 +20,7 @@ import Toast from "react-native-toast-message";
 import "@/utils/i18n";
 import { SQLiteProvider } from "expo-sqlite";
 import { initializeSQLite } from "@/utils/sqlite";
+import { restoreDatabase, checkBackupExists } from "@/utils/backup";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 import "dayjs/locale/zh-cn";
@@ -67,7 +68,18 @@ export default function RootLayout() {
     useSettingsStore.getState().initialize();
     // 迁移旧版本设置
     migrateFromLegacy();
+    // 尝试从 iCloud 备份恢复数据库
+    restoreDatabaseFromICloud();
   }, [loaded]);
+
+  // 从 iCloud 备份恢复数据库
+  const restoreDatabaseFromICloud = async () => {
+    const hasBackup = await checkBackupExists();
+    if (hasBackup) {
+      console.log("🔄 发现数据库备份，正在恢复...");
+      await restoreDatabase();
+    }
+  };
 
   if (!loaded) {
     return null;
