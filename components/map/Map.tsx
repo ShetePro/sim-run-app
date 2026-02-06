@@ -62,15 +62,16 @@ function getScaleWidth(latitudeDelta: number, screenWidth: number): { width: num
 
 /**
  * 自定义指南针组件
+ * 始终指向北方，点击恢复地图朝向
  */
 function Compass({ 
-  heading, 
   onPress,
-  visible 
+  visible,
+  isNorthUp = false,
 }: { 
-  heading: number; 
   onPress: () => void;
   visible: boolean;
+  isNorthUp?: boolean;
 }) {
   if (!visible) return null;
   
@@ -87,8 +88,13 @@ function Compass({
       }}
       activeOpacity={0.8}
     >
-      <View style={{ transform: [{ rotate: `${-heading}deg` }] }}>
-        <Ionicons name="compass" size={28} color="#3B82F6" />
+      {/* 指南针始终指向北方，不随地图旋转 */}
+      <View style={{ transform: [{ rotate: '0deg' }] }}>
+        <Ionicons 
+          name="compass" 
+          size={28} 
+          color={isNorthUp ? "#3B82F6" : "#F59E0B"} 
+        />
       </View>
     </TouchableOpacity>
   );
@@ -199,20 +205,31 @@ function Map({
     setMapLayout({ width, height });
   }, []);
 
-  // 重置指南针（朝向北方）
+  // 当前地图朝向状态
+  const [mapHeading, setMapHeading] = useState(0);
+  
+  // 处理相机变化，更新地图朝向
+  const handleCameraChange = useCallback((event: any) => {
+    const { heading } = event.nativeEvent;
+    if (heading !== undefined) {
+      setMapHeading(heading);
+    }
+  }, []);
+  
+  // 重置地图朝向北方
   const handleCompassPress = useCallback(() => {
     if (location) {
+      // 只重置朝向，保持当前的 pitch 和 zoom
       mapRef.current?.animateCamera({
         center: {
           longitude: location.longitude,
           latitude: location.latitude,
         },
         heading: 0, // 朝向北方
-        pitch: mapSettings.showBuildings ? 45 : 0,
-        zoom: 20,
+        // 不设置 pitch，保持当前倾斜角度
       });
     }
-  }, [location, mapSettings.showBuildings]);
+  }, [location]);
 
   if (!location) {
     return <ThemedText>获取位置中...</ThemedText>;
@@ -241,6 +258,8 @@ function Map({
         showsIndoors={false}
         // 区域变化回调
         onRegionChangeComplete={handleRegionChange}
+        // 相机变化回调（用于监听地图朝向）
+        onCameraChange={handleCameraChange}
       >
         {/* 当前位置标记（仅当不显示用户位置或需要自定义标记时） */}
         {showMark && !mapSettings.showUserLocation && (
@@ -274,9 +293,9 @@ function Map({
 
       {/* 自定义指南针 */}
       <Compass 
-        heading={heading} 
         onPress={handleCompassPress}
         visible={mapSettings.showCompass}
+        isNorthUp={Math.abs(mapHeading) < 5 || Math.abs(mapHeading - 360) < 5}
       />
 
       {/* 自定义比例尺 */}
