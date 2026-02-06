@@ -180,8 +180,11 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
     const { settings } = get();
     const updated = { ...settings, ...newSettings };
     
-    await setStorageItemAsync(SYNC_SETTINGS_KEY, JSON.stringify(updated));
+    // 先立即更新状态（让 UI 立即响应，保证动画流畅）
     set({ settings: updated });
+    
+    // 然后异步保存到存储
+    await setStorageItemAsync(SYNC_SETTINGS_KEY, JSON.stringify(updated));
   },
 
   performSync: async () => {
