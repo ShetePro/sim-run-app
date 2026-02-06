@@ -107,7 +107,17 @@ export default function HomeScreen() {
         <View className="px-5 pt-2 mb-6 flex-row justify-between items-center">
           <View>
             <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
-              {dayjs().format("M月D日 dddd")}
+              {(() => {
+                const now = dayjs();
+                const months = t("time.months", { returnObjects: true }) as string[];
+                const weekDays = t("time.week", { returnObjects: true }) as string[];
+                const month = months?.[now.month()] ?? "";
+                const day = now.date();
+                const weekday = weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
+                // 中文格式：10月6日 周日，英文格式：Oct 6, Sun
+                const isCN = (t("common.today") as string).length <= 2;
+                return isCN ? `${month}${day}日 ${weekday}` : `${month} ${day}, ${weekday}`;
+              })()}
             </Text>
             <View className="flex-row items-center">
               <Text className="text-3xl font-bold text-slate-800 dark:text-white mr-2">
@@ -215,7 +225,7 @@ export default function HomeScreen() {
                   index={index}
                   onPress={() => router.push({
                     pathname: "/(views)/run-summary",
-                    params: { runId: String(run.id) }
+                    params: { runId: String(run.id), mode: "view" }
                   })}
                 />
               ))}
