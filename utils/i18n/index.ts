@@ -101,6 +101,17 @@ const resources = {
       history: {
         outdoorRun: "Outdoor Run",
         noRecords: "No records yet",
+        emptyTitle: "No Running Records Yet",
+        emptySubtitle: "Take your first step and start recording every run! 🏃‍♂️",
+        startRun: "Start First Run",
+      },
+      emptyState: {
+        title: "No Running Records Yet",
+        subtitle: "Take your first step and start recording every run! 🏃‍♂️",
+        feature1: "Record running routes",
+        feature2: "Track personal progress",
+        feature3: "Analyze workout data",
+        action: "Start First Run",
       },
       run: {
         summary: "Run Summary",
@@ -416,6 +427,17 @@ const resources = {
       history: {
         outdoorRun: "户外跑步",
         noRecords: "暂无记录",
+        emptyTitle: "还没有跑步记录",
+        emptySubtitle: "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️",
+        startRun: "开始第一次跑步",
+      },
+      emptyState: {
+        title: "还没有跑步记录",
+        subtitle: "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️",
+        feature1: "记录跑步轨迹",
+        feature2: "追踪个人进步",
+        feature3: "分析运动数据",
+        action: "开始第一次跑步",
       },
       run: {
         summary: "跑步总结",
