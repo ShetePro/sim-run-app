@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { Divider } from "@/components/ui/Divider";
+import { DefaultAvatar } from "@/components/DefaultAvatar";
 import NumberInputSheet from "@/components/form/NumberInputSheet";
 import {
   NumberInputControlProps,
@@ -130,16 +131,19 @@ export default function ProfileEditScreen() {
       >
         <View className="items-center mb-8">
           <TouchableOpacity className="relative" onPress={pickAvatar}>
-            <Image
-              style={{
-                width: 100,
-                height: 100,
-                backgroundColor: "#e2e8f0",
-                borderRadius: 9999,
-              }}
-              source={form.avatar ? { uri: form.avatar } : require("@/assets/images/default-avatar.png")}
-              contentFit="cover"
-            />
+            {form.avatar ? (
+              <Image
+                style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: 9999,
+                }}
+                source={{ uri: form.avatar }}
+                contentFit="cover"
+              />
+            ) : (
+              <DefaultAvatar nickname={form.nickname} size={100} />
+            )}
             <View className="absolute bottom-0 right-0 bg-indigo-600 p-2 rounded-full border-[3px] border-white dark:border-slate-900">
               <Ionicons name="camera" size={16} color="white" />
             </View>

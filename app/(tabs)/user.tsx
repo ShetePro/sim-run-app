@@ -16,6 +16,7 @@ import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
 import { SwitchItem } from "@/components/ui/SwitchItem";
+import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
@@ -83,12 +84,16 @@ export default function UserProfileScreen() {
         {/* --- 头部：个人信息与概览 --- */}
         <View className="px-6 pt-8 pb-6 bg-white dark:bg-slate-800 rounded-b-3xl mb-6">
           <View className="flex-row items-center mb-6">
-            <Image
-              source={userInfo.avatar || "-"}
-              className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900"
-              contentFit="cover"
-              transition={500}
-            />
+            {userInfo.avatar ? (
+              <Image
+                source={userInfo.avatar}
+                className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900"
+                contentFit="cover"
+                transition={500}
+              />
+            ) : (
+              <DefaultAvatar nickname={userInfo.nickname} size={80} />
+            )}
             <View className="ml-4 flex-1">
               <Text className="text-2xl font-bold text-slate-800 dark:text-white">
                 {userInfo.nickname || "runer"}

@@ -20,6 +20,7 @@ import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
 import { getPaceLabel, secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
+import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { getStorageItem } from "@/hooks/useStorageState";
 
 const HOME_DATA = {
@@ -137,21 +138,20 @@ export default function HomeScreen() {
             </View>
           </View>
           <TouchableOpacity onPress={() => router.push("/user")}>
-            <Image
-              style={{
-                width: 48,
-                height: 48,
-                backgroundColor: "#e2e8f0",
-                borderRadius: 9999,
-              }}
-              source={
-                userInfo?.avatar
-                  ? { uri: userInfo.avatar }
-                  : require("@/assets/images/default-avatar.png")
-              }
-              contentFit="cover"
-              className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
-            />
+            {userInfo?.avatar ? (
+              <Image
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 9999,
+                }}
+                source={{ uri: userInfo.avatar }}
+                contentFit="cover"
+                className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
+              />
+            ) : (
+              <DefaultAvatar nickname={userInfo?.nickname} size={48} />
+            )}
           </TouchableOpacity>
         </View>
 
