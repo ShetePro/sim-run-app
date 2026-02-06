@@ -7,6 +7,8 @@ import i18n from "@/utils/i18n";
 export type Language = "cn" | "en";
 export type DistanceUnit = "km" | "mi";
 export type ThemeMode = "light" | "dark" | "system";
+export type MapType = "standard" | "satellite" | "hybrid";
+export type PathColor = "blue" | "red" | "green" | "orange" | "purple";
 
 /**
  * 应用设置配置接口
@@ -48,6 +50,19 @@ export interface AppSettings {
     voiceFeedback: boolean;
     targetDistance: number; // km, 0 表示无目标
   };
+  
+  // 地图设置
+  map: {
+    mapType: MapType;
+    showUserLocation: boolean;
+    followUserLocation: boolean;
+    showCompass: boolean;
+    showScale: boolean;
+    showBuildings: boolean;
+    pathColor: PathColor;
+    pathWidth: number;
+    keepScreenOn: boolean;
+  };
 }
 
 /**
@@ -58,7 +73,8 @@ export type SettingPath = keyof AppSettings |
   `notifications.${keyof AppSettings['notifications']}` |
   `privacy.${keyof AppSettings['privacy']}` |
   `sync.${keyof AppSettings['sync']}` |
-  `run.${keyof AppSettings['run']}`;
+  `run.${keyof AppSettings['run']}` |
+  `map.${keyof AppSettings['map']}`;
 
 // ==================== 默认值 ====================
 
@@ -88,6 +104,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoPause: true,
     voiceFeedback: false,
     targetDistance: 0,
+  },
+  map: {
+    mapType: "standard",
+    showUserLocation: true,
+    followUserLocation: true,
+    showCompass: true,
+    showScale: true,
+    showBuildings: true,
+    pathColor: "blue",
+    pathWidth: 4,
+    keepScreenOn: true,
   },
 };
 
@@ -170,7 +197,7 @@ interface SettingsState {
   resetSettings: () => Promise<void>;
   
   // 重置特定分组的设置
-  resetGroup: (group: "notifications" | "privacy" | "sync" | "run") => Promise<void>;
+  resetGroup: (group: "notifications" | "privacy" | "sync" | "run" | "map") => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -279,6 +306,27 @@ export const UNIT_NAMES: Record<DistanceUnit, { name: string; short: string }> =
   km: { name: "公里", short: "km" },
   mi: { name: "英里", short: "mi" },
 };
+
+export const MAP_TYPE_NAMES: Record<MapType, { name: string; icon: string }> = {
+  standard: { name: "标准", icon: "map-outline" },
+  satellite: { name: "卫星", icon: "globe-outline" },
+  hybrid: { name: "混合", icon: "layers-outline" },
+};
+
+export const PATH_COLOR_NAMES: Record<PathColor, { name: string; color: string }> = {
+  blue: { name: "蓝色", color: "#3B82F6" },
+  red: { name: "红色", color: "#EF4444" },
+  green: { name: "绿色", color: "#10B981" },
+  orange: { name: "橙色", color: "#F59E0B" },
+  purple: { name: "紫色", color: "#A855F7" },
+};
+
+export const PATH_WIDTH_OPTIONS = [
+  { value: 2, label: "细" },
+  { value: 4, label: "标准" },
+  { value: 6, label: "粗" },
+  { value: 8, label: "特粗" },
+];
 
 // ==================== 迁移辅助（处理旧版本存储）====================
 

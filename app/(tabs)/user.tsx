@@ -143,7 +143,8 @@ export default function UserProfileScreen() {
               icon="map-outline"
               color="#10B981"
               label={t("setting.map")}
-              onPress={() => console.log("Nav to Offline Maps")}
+              value={t(`mapSettings.mapType.${settings.map.mapType}`) || settings.map.mapType}
+              onPress={() => router.push("/(views)/map-settings")}
             />
             <Divider />
             <MenuItem
