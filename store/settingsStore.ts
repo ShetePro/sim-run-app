@@ -58,7 +58,7 @@ export interface AppSettings {
     followUserLocation: boolean;
     showCompass: boolean;
     showScale: boolean;
-    showBuildings: boolean;
+    tiltEnabled: boolean;  // 3D倾斜视角
     pathColor: PathColor;
     pathWidth: number;
     keepScreenOn: boolean;
@@ -111,7 +111,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     followUserLocation: true,
     showCompass: true,
     showScale: true,
-    showBuildings: true,
+    tiltEnabled: true,  // 默认开启3D倾斜
     pathColor: "blue",
     pathWidth: 4,
     keepScreenOn: true,

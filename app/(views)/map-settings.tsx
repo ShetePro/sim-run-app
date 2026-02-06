@@ -222,11 +222,11 @@ export default function MapSettingsScreen() {
             />
             <Divider />
             <SwitchItem
-              icon="business"
-              title={t("mapSettings.showBuildings") || "3D 建筑"}
-              subtitle={t("mapSettings.showBuildingsDesc") || "显示三维建筑效果"}
-              value={map.showBuildings}
-              onValueChange={(value) => updateSetting("map.showBuildings", value)}
+              icon="cube"
+              title={t("mapSettings.tiltEnabled") || "3D 倾斜视角"}
+              subtitle={t("mapSettings.tiltEnabledDesc") || "开启后地图呈倾斜视角（45度）"}
+              value={map.tiltEnabled}
+              onValueChange={(value) => updateSetting("map.tiltEnabled", value)}
               colorScheme="primary"
             />
           </View>

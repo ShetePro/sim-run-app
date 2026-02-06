@@ -188,7 +188,7 @@ function Map({
           longitude: location?.longitude || 0,
           latitude: location?.latitude || 0,
         },
-        pitch: mapSettings.showBuildings ? 45 : 0,
+        pitch: mapSettings.tiltEnabled ? 45 : 0,
         zoom: 20,
       });
     }
@@ -226,7 +226,7 @@ function Map({
           latitude: location.latitude,
         },
         heading: 0, // 朝向北方
-        // 不设置 pitch，保持当前倾斜角度
+        // 不设置 pitch，保持当前倾斜角度（如果3D倾斜开启则保持倾斜，否则保持平面）
       });
     }
   }, [location]);
@@ -253,7 +253,7 @@ function Map({
         followsUserLocation={false} // 我们手动控制相机移动
         showsCompass={false} // 使用自定义指南针
         showsScale={false} // 使用自定义比例尺
-        showsBuildings={mapSettings.showBuildings}
+        showsBuildings={true}
         showsTraffic={false}
         showsIndoors={false}
         // 区域变化回调

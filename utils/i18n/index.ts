@@ -183,8 +183,8 @@ const resources = {
         showCompassDesc: "Show direction on the map",
         showScale: "Show Scale",
         showScaleDesc: "Show map scale indicator",
-        showBuildings: "3D Buildings",
-        showBuildingsDesc: "Show three-dimensional building effects",
+        tiltEnabled: "3D Tilt View",
+        tiltEnabledDesc: "Enable tilted map view (45 degrees)",
         pathStyle: "Path Style",
         pathColorTitle: "Path Color",
         pathColor: {
@@ -485,8 +485,8 @@ const resources = {
         showCompassDesc: "在地图上显示方向",
         showScale: "显示比例尺",
         showScaleDesc: "显示地图比例尺",
-        showBuildings: "3D 建筑",
-        showBuildingsDesc: "显示三维建筑效果",
+        tiltEnabled: "3D 倾斜视角",
+        tiltEnabledDesc: "开启后地图呈倾斜视角（45度）",
         pathStyle: "路径样式",
         pathColorTitle: "路径颜色",
         pathColor: {
