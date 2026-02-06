@@ -59,6 +59,14 @@ export interface AppSettings {
     showCompass: boolean;
     showScale: boolean;
     tiltEnabled: boolean;  // 3D倾斜视角
+    // 交互设置
+    zoomEnabled: boolean;   // 允许缩放
+    rotateEnabled: boolean; // 允许旋转
+    scrollEnabled: boolean; // 允许滚动/平移
+    pitchEnabled: boolean;  // 允许倾斜手势
+    // 显示设置
+    showTraffic: boolean;   // 显示交通状况
+    showPOI: boolean;       // 显示兴趣点
     pathColor: PathColor;
     pathWidth: number;
     keepScreenOn: boolean;
@@ -112,6 +120,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showCompass: true,
     showScale: true,
     tiltEnabled: true,  // 默认开启3D倾斜
+    // 交互设置默认开启
+    zoomEnabled: true,
+    rotateEnabled: true,
+    scrollEnabled: true,
+    pitchEnabled: true,
+    // 显示设置
+    showTraffic: false,  // 默认不显示交通
+    showPOI: true,       // 默认显示兴趣点
     pathColor: "blue",
     pathWidth: 4,
     keepScreenOn: true,

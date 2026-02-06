@@ -229,6 +229,68 @@ export default function MapSettingsScreen() {
               onValueChange={(value) => updateSetting("map.tiltEnabled", value)}
               colorScheme="primary"
             />
+            <Divider />
+            <SwitchItem
+              icon="car"
+              title={t("mapSettings.showTraffic") || "显示交通状况"}
+              subtitle={t("mapSettings.showTrafficDesc") || "在地图上显示实时交通信息"}
+              value={map.showTraffic}
+              onValueChange={(value) => updateSetting("map.showTraffic", value)}
+              colorScheme="danger"
+            />
+            <Divider />
+            <SwitchItem
+              icon="pin"
+              title={t("mapSettings.showPOI") || "显示兴趣点"}
+              subtitle={t("mapSettings.showPOIDesc") || "显示商店、餐厅等地点标记"}
+              value={map.showPOI}
+              onValueChange={(value) => updateSetting("map.showPOI", value)}
+              colorScheme="success"
+            />
+          </View>
+        </View>
+
+        {/* --- 交互设置 --- */}
+        <View className="px-5 mt-4 mb-2">
+          <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
+            {t("mapSettings.interaction") || "交互设置"}
+          </Text>
+          <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
+            <SwitchItem
+              icon="expand"
+              title={t("mapSettings.zoomEnabled") || "允许缩放"}
+              subtitle={t("mapSettings.zoomEnabledDesc") || "双指捏合缩放地图"}
+              value={map.zoomEnabled}
+              onValueChange={(value) => updateSetting("map.zoomEnabled", value)}
+              colorScheme="primary"
+            />
+            <Divider />
+            <SwitchItem
+              icon="refresh-circle"
+              title={t("mapSettings.rotateEnabled") || "允许旋转"}
+              subtitle={t("mapSettings.rotateEnabledDesc") || "双指旋转地图方向"}
+              value={map.rotateEnabled}
+              onValueChange={(value) => updateSetting("map.rotateEnabled", value)}
+              colorScheme="purple"
+            />
+            <Divider />
+            <SwitchItem
+              icon="hand-left"
+              title={t("mapSettings.scrollEnabled") || "允许平移"}
+              subtitle={t("mapSettings.scrollEnabledDesc") || "单指拖动移动地图"}
+              value={map.scrollEnabled}
+              onValueChange={(value) => updateSetting("map.scrollEnabled", value)}
+              colorScheme="success"
+            />
+            <Divider />
+            <SwitchItem
+              icon="swap-vertical"
+              title={t("mapSettings.pitchEnabled") || "允许倾斜"}
+              subtitle={t("mapSettings.pitchEnabledDesc") || "双指上下滑动改变视角倾斜"}
+              value={map.pitchEnabled}
+              onValueChange={(value) => updateSetting("map.pitchEnabled", value)}
+              colorScheme="warning"
+            />
           </View>
         </View>
 

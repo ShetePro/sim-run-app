@@ -88,11 +88,17 @@ function Map({
         // 地图显示设置 - 使用 react-native-maps 原生属性
         showsUserLocation={mapSettings.showUserLocation}
         followsUserLocation={false}
-        showsCompass={mapSettings.showCompass}  // 原生指南针
-        showsScale={mapSettings.showScale}      // 原生比例尺
-        showsBuildings={true}                   // 始终显示建筑
-        showsTraffic={false}
+        showsCompass={mapSettings.showCompass}      // 原生指南针
+        showsScale={mapSettings.showScale}          // 原生比例尺
+        showsBuildings={true}                       // 始终显示建筑
+        showsTraffic={mapSettings.showTraffic}      // 交通状况
+        showsPointsOfInterest={mapSettings.showPOI} // 兴趣点
         showsIndoors={false}
+        // 交互手势设置
+        zoomEnabled={mapSettings.zoomEnabled}       // 缩放
+        rotateEnabled={mapSettings.rotateEnabled}   // 旋转
+        scrollEnabled={mapSettings.scrollEnabled}   // 滚动/平移
+        pitchEnabled={mapSettings.pitchEnabled}     // 倾斜手势
         // 区域变化回调
         onRegionChangeComplete={handleRegionChange}
       >
