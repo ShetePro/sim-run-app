@@ -299,7 +299,7 @@ export default function MapSettingsScreen() {
           <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
             {t("mapSettings.pathStyle") || "路径样式"}
           </Text>
-          
+
           {/* 路径颜色 */}
           <View className="bg-white dark:bg-slate-800 rounded-xl p-4 mb-3">
             <Text className="text-sm text-slate-500 dark:text-slate-400 mb-2">

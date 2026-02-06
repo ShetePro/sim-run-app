@@ -1,5 +1,5 @@
 import MapView, { MapType, Marker, Polyline, Region } from "react-native-maps";
-import { StyleProp, ViewStyle, Image, Platform, View } from "react-native";
+import { StyleProp, ViewStyle, Image, Platform, View, Text } from "react-native";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { ThemedText } from "@/components/ThemedText";
 import { useSettingsStore, PATH_COLOR_NAMES } from "@/store/settingsStore";
@@ -13,6 +13,98 @@ interface MapProps {
   path?: LatLon[];
 }
 
+/**
+ * 计算比例尺的宽度（米）
+ * 根据当前地图的缩放级别计算合适的比例尺
+ */
+function getScaleWidth(latitudeDelta: number, screenWidth: number): { width: number; label: string } {
+  // 地球周长约 40075000 米
+  const earthCircumference = 40075000;
+  
+  // 计算当前缩放级别下屏幕宽度对应的实际距离（米）
+  // latitudeDelta 是纬度跨度，1度纬度约 111km
+  const metersPerDegree = earthCircumference / 360;
+  const metersPerScreen = latitudeDelta * metersPerDegree;
+  
+  // 比例尺占屏幕宽度的 1/4
+  const scaleMeters = metersPerScreen / 4;
+  
+  // 取整到合适的数值
+  const scales = [
+    { value: 10, label: "10 m" },
+    { value: 20, label: "20 m" },
+    { value: 50, label: "50 m" },
+    { value: 100, label: "100 m" },
+    { value: 200, label: "200 m" },
+    { value: 500, label: "500 m" },
+    { value: 1000, label: "1 km" },
+    { value: 2000, label: "2 km" },
+    { value: 5000, label: "5 km" },
+    { value: 10000, label: "10 km" },
+    { value: 20000, label: "20 km" },
+    { value: 50000, label: "50 km" },
+  ];
+  
+  // 找到最接近但不大于 scaleMeters 的刻度
+  let closestScale = scales[0];
+  for (const scale of scales) {
+    if (scale.value <= scaleMeters) {
+      closestScale = scale;
+    } else {
+      break;
+    }
+  }
+  
+  // 计算比例尺在屏幕上的宽度（像素）
+  const pixelWidth = (closestScale.value / metersPerScreen) * screenWidth;
+  
+  return { width: pixelWidth, label: closestScale.label };
+}
+
+/**
+ * 自定义比例尺组件
+ */
+function ScaleBar({ 
+  latitudeDelta, 
+  screenWidth,
+  visible 
+}: { 
+  latitudeDelta: number; 
+  screenWidth: number;
+  visible: boolean;
+}) {
+  if (!visible || !latitudeDelta || latitudeDelta <= 0) return null;
+  
+  const { width, label } = getScaleWidth(latitudeDelta, screenWidth);
+  
+  // 限制最大宽度
+  const displayWidth = Math.min(Math.max(width, 30), 120);
+  
+  return (
+    <View 
+      className="absolute bottom-4 left-4 bg-white/80 dark:bg-slate-800/80 px-2 py-1.5 rounded-lg"
+      style={{ 
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 3,
+      }}
+    >
+      {/* 比例尺线条 - 上方横线 + 两侧竖线 */}
+      <View className="flex-row items-end mb-1" style={{ width: displayWidth }}>
+        <View className="w-0.5 h-2 bg-slate-700 dark:bg-slate-300" />
+        <View className="flex-1 h-0.5 bg-slate-700 dark:bg-slate-300" />
+        <View className="w-0.5 h-2 bg-slate-700 dark:bg-slate-300" />
+      </View>
+      {/* 标签 */}
+      <Text className="text-xs text-slate-700 dark:text-slate-300 font-medium text-center">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function Map({
   style,
   heading,
@@ -22,6 +114,7 @@ function Map({
   const mapRef = useRef<MapView>(null);
   const [showMark, setShowMark] = useState<boolean>(false);
   const [region, setRegion] = useState<Region | null>(null);
+  const [mapLayout, setMapLayout] = useState({ width: 0, height: 0 });
   
   // 读取地图设置
   const { settings } = useSettingsStore();
@@ -63,9 +156,15 @@ function Map({
     }
   }, [location, heading, mapSettings.followUserLocation, mapSettings.tiltEnabled]);
 
-  // 处理区域变化
+  // 处理区域变化，用于更新比例尺
   const handleRegionChange = useCallback((newRegion: Region) => {
     setRegion(newRegion);
+  }, []);
+
+  // 处理布局变化，获取地图尺寸
+  const handleLayout = useCallback((event: any) => {
+    const { width, height } = event.nativeEvent.layout;
+    setMapLayout({ width, height });
   }, []);
 
   if (!location) {
@@ -73,7 +172,7 @@ function Map({
   }
 
   return (
-    <View style={style} className="relative">
+    <View style={style} className="relative" onLayout={handleLayout}>
       <MapView
         ref={mapRef}
         style={{ width: "100%", height: "100%" }}
@@ -88,8 +187,8 @@ function Map({
         // 地图显示设置 - 使用 react-native-maps 原生属性
         showsUserLocation={mapSettings.showUserLocation}
         followsUserLocation={false}
-        showsCompass={mapSettings.showCompass}      // 原生指南针
-        showsScale={mapSettings.showScale}          // 原生比例尺
+        showsCompass={mapSettings.showCompass}      // 原生指南针（iOS）
+        showsScale={false}                          // 禁用原生比例尺，使用自定义
         showsBuildings={true}                       // 始终显示建筑
         showsTraffic={mapSettings.showTraffic}      // 交通状况
         showsPointsOfInterest={mapSettings.showPOI} // 兴趣点
@@ -131,6 +230,13 @@ function Map({
           />
         )}
       </MapView>
+
+      {/* 自定义比例尺 - 跨平台可靠 */}
+      <ScaleBar 
+        latitudeDelta={region?.latitudeDelta || 0.001}
+        screenWidth={mapLayout.width}
+        visible={mapSettings.showScale}
+      />
     </View>
   );
 }
