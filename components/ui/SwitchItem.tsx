@@ -195,6 +195,10 @@ export const SwitchItem: React.FC<SwitchItemProps> = ({
           }}
           thumbColor={value ? "#fff" : "#f4f3f4"}
           ios_backgroundColor="#767577"
+          // 确保动画效果一致
+          style={{ 
+            transform: [{ scale: 1 }], // 防止缩放导致的渲染问题
+          }}
           {...switchProps}
         />
       )}

@@ -218,7 +218,7 @@ export default function MapSettingsScreen() {
               subtitle={t("mapSettings.showScaleDesc") || "显示地图比例尺"}
               value={map.showScale}
               onValueChange={(value) => updateSetting("map.showScale", value)}
-              colorScheme="warning"
+              colorScheme="primary"
             />
             <Divider />
             <SwitchItem
