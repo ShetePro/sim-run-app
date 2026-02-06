@@ -69,7 +69,6 @@ export interface AppSettings {
     showPOI: boolean;       // 显示兴趣点
     pathColor: PathColor;
     pathWidth: number;
-    keepScreenOn: boolean;
   };
 }
 
@@ -130,7 +129,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showPOI: true,       // 默认显示兴趣点
     pathColor: "blue",
     pathWidth: 4,
-    keepScreenOn: true,
   },
 };
 

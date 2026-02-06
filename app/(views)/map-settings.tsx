@@ -317,23 +317,6 @@ export default function MapSettingsScreen() {
           </View>
         </View>
 
-        {/* --- 其他设置 --- */}
-        <View className="px-5 mt-4 mb-2">
-          <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
-            {t("mapSettings.other") || "其他"}
-          </Text>
-          <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
-            <SwitchItem
-              icon="sunny"
-              title={t("mapSettings.keepScreenOn") || "保持屏幕常亮"}
-              subtitle={t("mapSettings.keepScreenOnDesc") || "跑步时防止屏幕自动锁定"}
-              value={map.keepScreenOn}
-              onValueChange={(value) => updateSetting("map.keepScreenOn", value)}
-              colorScheme="warning"
-            />
-          </View>
-        </View>
-
         {/* --- 重置按钮 --- */}
         <View className="px-5 mt-6 mb-8">
           <TouchableOpacity
