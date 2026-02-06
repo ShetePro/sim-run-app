@@ -15,7 +15,7 @@ import { useRunStore } from "@/store/runStore";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, stopTracking, getCurrentRunId, distance, heading } = useRun();
+  const { location, startTracking, stopTracking, getCurrentRunId, distance, heading, routePoints } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
   const { seconds, startTimer, stopTimer } = useTick();
@@ -149,6 +149,7 @@ export default function RunIndexScreen() {
         <Map
           location={location}
           heading={heading}
+          path={routePoints}
           style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
         />
         <View className={"flex flex-row gap-4 mt-4"}>
