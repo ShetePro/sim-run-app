@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   SafeAreaView,
 } from "react-native";
@@ -16,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
+import { SwitchItem } from "@/components/ui/SwitchItem";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
@@ -123,22 +123,13 @@ export default function UserProfileScreen() {
               onPress={() => router.push("/(views)/language")}
             />
             <Divider />
-            <View className="flex-row items-center justify-between p-4 bg-white dark:bg-slate-800">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-lg items-center justify-center bg-purple-100 dark:bg-purple-900/30 mr-3">
-                  <Ionicons name="moon" size={18} color="#A855F7" />
-                </View>
-                <Text className="text-base text-slate-700 dark:text-slate-200 font-medium">
-                  {t("setting.darkMode")}
-                </Text>
-              </View>
-              <Switch
-                value={colorScheme === "dark"}
-                onValueChange={handleThemeToggle}
-                trackColor={{ false: "#767577", true: "#818cf8" }}
-                thumbColor={colorScheme === "dark" ? "#fff" : "#f4f3f4"}
-              />
-            </View>
+            <SwitchItem
+              icon="moon"
+              title={t("setting.darkMode")}
+              value={colorScheme === "dark"}
+              onValueChange={handleThemeToggle}
+              colorScheme="purple"
+            />
           </View>
         </View>
 
@@ -156,11 +147,11 @@ export default function UserProfileScreen() {
             />
             <Divider />
             <MenuItem
-              icon="heart-outline"
-              color="#EF4444"
-              label={t("setting.cloudSync")}
-              value="已连接"
-              onPress={() => console.log("Nav to Health")}
+              icon="cloud-outline"
+              color="#3B82F6"
+              label={t("setting.cloudSync") || "云端同步"}
+              value={t("setting.cloudSyncValue") || "iCloud"}
+              onPress={() => router.push("/(views)/cloud-sync")}
             />
             <Divider />
             <MenuItem
