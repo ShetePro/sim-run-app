@@ -24,14 +24,6 @@ export interface AppSettings {
   // 单位设置
   distanceUnit: DistanceUnit;
   
-  // 通知设置
-  notifications: {
-    enabled: boolean;
-    runComplete: boolean;
-    weeklyReport: boolean;
-    reminder: boolean;
-  };
-  
   // 隐私设置
   privacy: {
     shareLocation: boolean;
@@ -77,7 +69,6 @@ export interface AppSettings {
  * 支持嵌套路径，如 "notifications.enabled"
  */
 export type SettingPath = keyof AppSettings | 
-  `notifications.${keyof AppSettings['notifications']}` |
   `privacy.${keyof AppSettings['privacy']}` |
   `sync.${keyof AppSettings['sync']}` |
   `run.${keyof AppSettings['run']}` |
@@ -93,12 +84,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: "cn",
   themeMode: "system",
   distanceUnit: "km",
-  notifications: {
-    enabled: true,
-    runComplete: true,
-    weeklyReport: true,
-    reminder: false,
-  },
   privacy: {
     shareLocation: false,
     analyticsEnabled: true,
@@ -211,7 +196,7 @@ interface SettingsState {
   resetSettings: () => Promise<void>;
   
   // 重置特定分组的设置
-  resetGroup: (group: "notifications" | "privacy" | "sync" | "run" | "map") => Promise<void>;
+  resetGroup: (group: "privacy" | "sync" | "run" | "map") => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

@@ -159,14 +159,7 @@ export default function UserProfileScreen() {
               value={t("setting.cloudSyncValue") || "iCloud"}
               onPress={() => router.push("/(views)/cloud-sync")}
             />
-            <Divider />
-            <MenuItem
-              icon="notifications-outline"
-              color="#F59E0B"
-              label={t("setting.notify")}
-              value={settings.notifications.enabled ? "开启" : "关闭"}
-              onPress={() => router.push("/(views)/notifications")}
-            />
+
           </View>
         </View>
 
