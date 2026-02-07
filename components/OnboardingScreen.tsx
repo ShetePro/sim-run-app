@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Animated,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -32,8 +32,7 @@ interface OnboardingPage {
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(0);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<Animated.FlatList<any>>(null);
+  const flatListRef = useRef<FlatList>(null);
 
   const pages: OnboardingPage[] = [
     {
@@ -137,7 +136,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       )}
 
       {/* 页面内容 */}
-      <Animated.FlatList
+      <FlatList
         ref={flatListRef}
         data={pages}
         renderItem={renderPage}
@@ -146,10 +145,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         scrollEnabled={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
       />
 
       {/* 底部控制区 */}

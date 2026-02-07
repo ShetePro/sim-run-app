@@ -48,10 +48,16 @@ export default function RootLayout() {
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
-  Appearance.addChangeListener((theme) => {
-    setColorScheme(() => theme.colorScheme);
-  });
+  
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener((theme) => {
+      setColorScheme(theme.colorScheme);
+    });
+    return () => subscription.remove();
+  }, []);
+  
   const [loaded] = useFonts({
     // SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     // PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
@@ -83,16 +89,33 @@ export default function RootLayout() {
   }, [loaded, isCheckingOnboarding]);
   
   useEffect(() => {
-    if (!showOnboarding) {
+    // 检查完成后，如果不需要显示引导页，直接初始化
+    if (!isCheckingOnboarding && !showOnboarding) {
       requestLocationPermission();
-      // 初始化设置（从存储加载）
       useSettingsStore.getState().initialize();
-      // 迁移旧版本设置
       migrateFromLegacy();
-      // 尝试从 iCloud 备份恢复数据库
       restoreDatabaseFromICloud();
     }
-  }, [showOnboarding]);
+  }, [isCheckingOnboarding, showOnboarding]);
+  
+  useEffect(() => {
+    // 引导页完成后初始化
+    if (hasCompletedOnboarding) {
+      requestLocationPermission();
+      useSettingsStore.getState().initialize();
+      migrateFromLegacy();
+      restoreDatabaseFromICloud();
+    }
+  }, [hasCompletedOnboarding]);
+  
+  // 处理引导页完成
+  const handleOnboardingComplete = () => {
+    setHasCompletedOnboarding(true);
+    // 延迟隐藏引导页，确保主应用已准备好
+    setTimeout(() => {
+      setShowOnboarding(false);
+    }, 100);
+  };
 
   // 从 iCloud 备份恢复数据库
   const restoreDatabaseFromICloud = async () => {
@@ -110,7 +133,7 @@ export default function RootLayout() {
   // 显示引导页
   if (showOnboarding) {
     return (
-      <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+      <OnboardingScreen onComplete={handleOnboardingComplete} />
     );
   }
   
