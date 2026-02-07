@@ -12,15 +12,30 @@ interface TodayActivityCardProps {
 
 export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
   const router = useRouter();
-  const { settings } = useSettingsStore();
+  const { settings, isLoaded } = useSettingsStore();
   const plan = settings.plan;
-  
-  if (todayData === null) return null
-  const goal = plan.enabled ? plan.dailyDistance : 5
-  const { width } = Dimensions.get("window");
   const { t } = useTranslation();
-  const progress = Math.min(todayData.distance / goal, 1);
-  const progressWidth = (width - 80) * progress;
+  
+  if (todayData === null) return null;
+  
+  // 等待设置加载完成
+  if (!isLoaded) {
+    return (
+      <View className="px-5 mb-6">
+        <View className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-6 h-48 animate-pulse" />
+      </View>
+    );
+  }
+  
+  // 判断是否设置了计划目标
+  const hasPlanEnabled = plan?.enabled === true;
+  const dailyGoal = hasPlanEnabled ? plan.dailyDistance : 0;
+  const hasGoal = dailyGoal > 0;
+  
+  // 计算进度
+  const progress = hasGoal ? Math.min(todayData.distance / dailyGoal, 1) : 0;
+  const progressPercent = Math.round(progress * 100);
+  
   return (
     <View className="px-5 mb-6">
       <View className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-6 shadow-lg shadow-indigo-200 dark:shadow-none overflow-hidden relative">
@@ -38,13 +53,13 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
             className="flex-row items-center bg-white/10 px-2 py-1 rounded-full"
           >
             <Ionicons
-              name={plan.enabled ? "flag" : "flag-outline"}
+              name={hasPlanEnabled ? "flag" : "flag-outline"}
               size={14}
               color="white"
               style={{ opacity: 0.9 }}
             />
             <Text className="text-white/90 text-xs ml-1">
-              {plan.enabled ? t("plan.enabled") : t("plan.setGoal")}
+              {hasPlanEnabled ? t("plan.enabled") : t("plan.setGoal")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -54,21 +69,45 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
             <Text className="text-6xl font-extrabold text-white tracking-tighter">
               {todayData.distance}
             </Text>
-            <Text className="text-xl text-indigo-100 font-medium ml-2">
-              / {goal} km
-            </Text>
+            {hasGoal ? (
+              <Text className="text-xl text-indigo-100 font-medium ml-2">
+                / {dailyGoal} km
+              </Text>
+            ) : (
+              <Text className="text-lg text-indigo-200 font-medium ml-2">
+                km
+              </Text>
+            )}
           </View>
           <Text className="text-indigo-200 text-sm mt-1">
-            {t("home.completeness")} {Math.round(progress * 100)}%
+            {hasGoal 
+              ? `${t("home.completeness")} ${progressPercent}%`
+              : t("plan.tapToSetGoal")
+            }
           </Text>
         </View>
 
         <View className="h-2 bg-black/20 rounded-full w-full overflow-hidden">
           <View
-            style={{ width: `${Math.round(progress * 100)}%` }}
-            className="h-full bg-yellow-400 rounded-full"
+            style={{ width: `${progressPercent}%` }}
+            className={`h-full rounded-full ${
+              progress >= 1 ? "bg-green-400" : "bg-yellow-400"
+            }`}
           />
         </View>
+        
+        {/* 未设置目标时的提示 */}
+        {!hasGoal && (
+          <TouchableOpacity
+            onPress={() => router.push("/(views)/plan-settings")}
+            className="mt-4 bg-white/20 rounded-xl px-4 py-3 flex-row items-center justify-center"
+          >
+            <Ionicons name="add-circle" size={18} color="white" />
+            <Text className="text-white font-medium ml-2">
+              {t("plan.setYourFirstGoal")}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
