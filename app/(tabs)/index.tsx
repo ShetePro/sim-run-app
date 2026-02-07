@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,45 +19,21 @@ import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
 import { getPaceLabel, secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
+import { DefaultAvatar } from "@/components/DefaultAvatar";
+import { RecentActivityItem } from "@/components/RecentActivityItem";
 import { getStorageItem } from "@/hooks/useStorageState";
-
-const HOME_DATA = {
-  user: {
-    name: "",
-    avatar:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-  },
-  today: {
-    distance: 5.2, // km
-    goal: 10.0, // km
-    calories: 340, // kcal
-    duration: "00:32:15",
-    pace: "6'15''",
-    cadence: 172, // spm
-  },
-  lifetime: {
-    totalRuns: 142,
-    totalDistance: 1240.5, // km
-    totalHours: 128.5, // hours
-  },
-  lastRun: {
-    date: "昨天 18:30",
-    distance: 7.1,
-    location: "世纪公园环线",
-    mapThumbnail:
-      "https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", // 模拟地图缩略图
-  },
-};
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { getTodayRunData } = useRunDB();
+  const { getTodayRunData, getRuns } = useRunDB();
   const [today, setToday] = useState<TodayRunData | null>(null);
+  const [recentRuns, setRecentRuns] = useState<any[]>([]);
   const [userInfo, setUserInfo] = useState<{ nickname?: string; avatar?: string }>({});
 
-  // 获取今日跑步数据
+  // 获取今日跑步数据和最近活动
   useEffect(() => {
+    // 获取今日数据
     getTodayRunData().then((res) => {
       console.log(res, "获取的今日数据");
       const todayData: TodayRunData = {
@@ -78,6 +53,15 @@ export default function HomeScreen() {
       todayData.pace = distance < 10 ? 0 : duration / distance / 60;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
+    });
+
+    // 获取最近3条跑步记录
+    getRuns().then((runs) => {
+      const sorted = runs
+        .filter((run) => run.isFinish === 1)
+        .sort((a, b) => (b.startTime || 0) - (a.startTime || 0))
+        .slice(0, 3);
+      setRecentRuns(sorted);
     });
   }, []);
 
@@ -123,7 +107,17 @@ export default function HomeScreen() {
         <View className="px-5 pt-2 mb-6 flex-row justify-between items-center">
           <View>
             <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
-              {dayjs().format("M月D日 dddd")}
+              {(() => {
+                const now = dayjs();
+                const months = t("time.months", { returnObjects: true }) as string[];
+                const weekDays = t("time.week", { returnObjects: true }) as string[];
+                const month = months?.[now.month()] ?? "";
+                const day = now.date();
+                const weekday = weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
+                // 中文格式：10月6日 周日，英文格式：Oct 6, Sun
+                const isCN = (t("common.today") as string).length <= 2;
+                return isCN ? `${month}${day}日 ${weekday}` : `${month} ${day}, ${weekday}`;
+              })()}
             </Text>
             <View className="flex-row items-center">
               <Text className="text-3xl font-bold text-slate-800 dark:text-white mr-2">
@@ -137,21 +131,20 @@ export default function HomeScreen() {
             </View>
           </View>
           <TouchableOpacity onPress={() => router.push("/user")}>
-            <Image
-              style={{
-                width: 48,
-                height: 48,
-                backgroundColor: "#e2e8f0",
-                borderRadius: 9999,
-              }}
-              source={
-                userInfo?.avatar
-                  ? { uri: userInfo.avatar }
-                  : require("@/assets/images/default-avatar.png")
-              }
-              contentFit="cover"
-              className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
-            />
+            {userInfo?.avatar ? (
+              <Image
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 9999,
+                }}
+                source={{ uri: userInfo.avatar }}
+                contentFit="cover"
+                className="rounded-full border-4 border-white dark:border-slate-800 shadow-sm"
+              />
+            ) : (
+              <DefaultAvatar nickname={userInfo?.nickname} size={48} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -206,42 +199,39 @@ export default function HomeScreen() {
           <LifeCountCard className={"bg-white dark:bg-slate-800"} />
         </View>
 
-        <View className="px-5 mb-10">
-          <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-slate-800 dark:text-white font-bold text-lg">
-              {t("home.recentActivities")}
-            </Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/history")}>
-              <Text className="text-indigo-500 text-sm font-medium">
-                {t("home.showMore")}
+        {/* --- 5. 最近活动 --- */}
+        {recentRuns.length > 0 && (
+          <View className="px-5 mb-10">
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-slate-800 dark:text-white font-bold text-lg">
+                {t("home.recentActivities")}
               </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity 
+                onPress={() => router.push("/(tabs)/history")}
+                className="flex-row items-center"
+              >
+                <Text className="text-indigo-500 text-sm font-medium mr-1">
+                  {t("home.showMore")}
+                </Text>
+                <Ionicons name="arrow-forward" size={14} color="#6366F1" />
+              </TouchableOpacity>
+            </View>
 
-          <TouchableOpacity
-            className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm"
-            activeOpacity={0.9}
-          >
-            <ImageBackground
-              source={{ uri: HOME_DATA.lastRun.mapThumbnail }}
-              className="h-32 w-full justify-end p-4"
-              imageStyle={{ opacity: 0.9 }}
-            >
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.7)"]}
-                className="absolute left-0 right-0 bottom-0 h-20"
-              />
-              <View>
-                <Text className="text-white font-bold text-lg">
-                  {HOME_DATA.lastRun.distance} km
-                </Text>
-                <Text className="text-white/80 text-xs">
-                  {HOME_DATA.lastRun.date} · {HOME_DATA.lastRun.location}
-                </Text>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-        </View>
+            <View>
+              {recentRuns.map((run, index) => (
+                <RecentActivityItem
+                  key={run.id}
+                  record={run}
+                  index={index}
+                  onPress={() => router.push({
+                    pathname: "/(views)/run-summary",
+                    params: { runId: String(run.id), mode: "view" }
+                  })}
+                />
+              ))}
+            </View>
+          </View>
+        )}
         <View className="h-20" />
       </ScrollView>
     </SafeAreaView>

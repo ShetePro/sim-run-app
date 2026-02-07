@@ -17,8 +17,15 @@ import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useRunStore } from "@/store/runStore";
 import { secondFormatHours, getPaceLabel } from "@/utils/util";
-import { RunRecord } from "@/types/runType";
+import { RunRecord, TrackPoint } from "@/types/runType";
 import Toast from "react-native-toast-message";
+import {
+  exportRunAsJSON,
+  exportRunAsGPX,
+  exportRunAsCSV,
+  ExportFormats,
+  ExportFormat,
+} from "@/utils/exportRun";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -160,6 +167,60 @@ export default function RunSummaryScreen() {
     router.back();
   };
 
+  // 导出跑步数据
+  const handleExport = () => {
+    if (!runData) return;
+
+    const options = [
+      { text: "JSON (完整数据)", onPress: () => doExport("json") },
+      { text: "GPX (轨迹文件)", onPress: () => doExport("gpx") },
+      { text: "CSV (表格数据)", onPress: () => doExport("csv") },
+      { text: "取消", style: "cancel" as const },
+    ];
+
+    Alert.alert(
+      t("run.exportTitle") || "导出跑步数据",
+      t("run.exportMessage") || "选择导出格式",
+      options
+    );
+  };
+
+  // 执行导出
+  const doExport = async (format: ExportFormat) => {
+    try {
+      // 获取轨迹点
+      let points: TrackPoint[] = [];
+      if (routePoints.length > 0) {
+        points = routePoints.map((p) => ({
+          lat: p.latitude,
+          lng: p.longitude,
+          heading: 0,
+          timestamp: 0,
+        }));
+      } else {
+        points = await getTrackPoints(runId);
+      }
+
+      switch (format) {
+        case "json":
+          await exportRunAsJSON(runData!, points);
+          break;
+        case "gpx":
+          await exportRunAsGPX(runData!, points);
+          break;
+        case "csv":
+          await exportRunAsCSV(runData!, points);
+          break;
+      }
+    } catch (error) {
+      console.error("导出失败:", error);
+      Alert.alert(
+        t("common.error") || "导出失败",
+        t("run.exportError") || "导出跑步数据失败，请重试"
+      );
+    }
+  };
+
   // 生成渐变色路线段
   const generateGradientRoute = (points: typeof routePoints) => {
     if (points.length <= 1) return null;
@@ -253,7 +314,7 @@ export default function RunSummaryScreen() {
   // 渲染顶部导航栏
   const renderHeader = () => {
     if (isViewMode) {
-      // 查看模式：显示返回按钮
+      // 查看模式：显示返回按钮和导出按钮
       return (
         <View className="flex-row items-center justify-between px-4 py-3 bg-white dark:bg-slate-800">
           <TouchableOpacity onPress={handleBack} className="p-2">
@@ -262,7 +323,9 @@ export default function RunSummaryScreen() {
           <Text className="text-lg font-bold text-slate-800 dark:text-white">
             {t("run.detail")}
           </Text>
-          <View className="w-10" />{/* 占位保持居中 */}
+          <TouchableOpacity onPress={handleExport} className="p-2">
+            <Ionicons name="share-outline" size={24} color="#6366f1" />
+          </TouchableOpacity>
         </View>
       );
     }

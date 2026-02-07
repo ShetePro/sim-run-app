@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   SafeAreaView,
 } from "react-native";
@@ -16,6 +15,8 @@ import { useTranslation } from "react-i18next";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
+import { SwitchItem } from "@/components/ui/SwitchItem";
+import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
@@ -24,10 +25,10 @@ export default function UserProfileScreen() {
   const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
-  
+
   // 使用 state 存储用户信息，页面聚焦时刷新
   const [userInfo, setUserInfo] = useState(getStorageItem("userInfo", true) || {});
-  
+
   // 页面聚焦时刷新用户数据
   useFocusEffect(
     useCallback(() => {
@@ -83,12 +84,16 @@ export default function UserProfileScreen() {
         {/* --- 头部：个人信息与概览 --- */}
         <View className="px-6 pt-8 pb-6 bg-white dark:bg-slate-800 rounded-b-3xl mb-6">
           <View className="flex-row items-center mb-6">
-            <Image
-              source={userInfo.avatar || "-"}
-              className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900"
-              contentFit="cover"
-              transition={500}
-            />
+            {userInfo.avatar ? (
+              <Image
+                source={userInfo.avatar}
+                className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900"
+                contentFit="cover"
+                transition={500}
+              />
+            ) : (
+              <DefaultAvatar nickname={userInfo.nickname} size={80} />
+            )}
             <View className="ml-4 flex-1">
               <Text className="text-2xl font-bold text-slate-800 dark:text-white">
                 {userInfo.nickname || "runer"}
@@ -123,22 +128,13 @@ export default function UserProfileScreen() {
               onPress={() => router.push("/(views)/language")}
             />
             <Divider />
-            <View className="flex-row items-center justify-between p-4 bg-white dark:bg-slate-800">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-lg items-center justify-center bg-purple-100 dark:bg-purple-900/30 mr-3">
-                  <Ionicons name="moon" size={18} color="#A855F7" />
-                </View>
-                <Text className="text-base text-slate-700 dark:text-slate-200 font-medium">
-                  {t("setting.darkMode")}
-                </Text>
-              </View>
-              <Switch
-                value={colorScheme === "dark"}
-                onValueChange={handleThemeToggle}
-                trackColor={{ false: "#767577", true: "#818cf8" }}
-                thumbColor={colorScheme === "dark" ? "#fff" : "#f4f3f4"}
-              />
-            </View>
+            <SwitchItem
+              icon="moon"
+              title={t("setting.darkMode")}
+              value={colorScheme === "dark"}
+              onValueChange={handleThemeToggle}
+              colorScheme="purple"
+            />
           </View>
         </View>
 
@@ -152,24 +148,18 @@ export default function UserProfileScreen() {
               icon="map-outline"
               color="#10B981"
               label={t("setting.map")}
-              onPress={() => console.log("Nav to Offline Maps")}
+              value={t(`mapSettings.mapType.${settings.map.mapType}`) || settings.map.mapType}
+              onPress={() => router.push("/(views)/map-settings")}
             />
             <Divider />
             <MenuItem
-              icon="heart-outline"
-              color="#EF4444"
-              label={t("setting.cloudSync")}
-              value="已连接"
-              onPress={() => console.log("Nav to Health")}
+              icon="cloud-outline"
+              color="#3B82F6"
+              label={t("setting.cloudSync") || "云端同步"}
+              value={t("setting.cloudSyncValue") || "iCloud"}
+              onPress={() => router.push("/(views)/cloud-sync")}
             />
-            <Divider />
-            <MenuItem
-              icon="notifications-outline"
-              color="#F59E0B"
-              label={t("setting.notify")}
-              value={settings.notifications.enabled ? "开启" : "关闭"}
-              onPress={() => router.push("/(views)/notifications")}
-            />
+
           </View>
         </View>
 
@@ -195,17 +185,7 @@ export default function UserProfileScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="mt-6 flex-row items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/50"
-          >
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text className="ml-2 text-red-500 font-semibold text-base">
-              {t("setting.logout")}
-            </Text>
-          </TouchableOpacity>
-
-          <Text className="text-center text-slate-400 text-xs mt-6 mb-10">
+          <Text className="text-center text-slate-400 text-xs mt-10 mb-10">
             SimRun App © 2025
           </Text>
         </View>

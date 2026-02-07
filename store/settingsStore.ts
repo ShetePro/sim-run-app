@@ -7,6 +7,8 @@ import i18n from "@/utils/i18n";
 export type Language = "cn" | "en";
 export type DistanceUnit = "km" | "mi";
 export type ThemeMode = "light" | "dark" | "system";
+export type MapType = "standard" | "satellite" | "hybrid";
+export type PathColor = "blue" | "red" | "green" | "orange" | "purple";
 
 /**
  * 应用设置配置接口
@@ -21,14 +23,6 @@ export interface AppSettings {
   
   // 单位设置
   distanceUnit: DistanceUnit;
-  
-  // 通知设置
-  notifications: {
-    enabled: boolean;
-    runComplete: boolean;
-    weeklyReport: boolean;
-    reminder: boolean;
-  };
   
   // 隐私设置
   privacy: {
@@ -48,6 +42,26 @@ export interface AppSettings {
     voiceFeedback: boolean;
     targetDistance: number; // km, 0 表示无目标
   };
+  
+  // 地图设置
+  map: {
+    mapType: MapType;
+    showUserLocation: boolean;
+    followUserLocation: boolean;
+    showCompass: boolean;
+    showScale: boolean;
+    tiltEnabled: boolean;  // 3D倾斜视角
+    // 交互设置
+    zoomEnabled: boolean;   // 允许缩放
+    rotateEnabled: boolean; // 允许旋转
+    scrollEnabled: boolean; // 允许滚动/平移
+    pitchEnabled: boolean;  // 允许倾斜手势
+    // 显示设置
+    showTraffic: boolean;   // 显示交通状况
+    showPOI: boolean;       // 显示兴趣点
+    pathColor: PathColor;
+    pathWidth: number;
+  };
 }
 
 /**
@@ -55,10 +69,10 @@ export interface AppSettings {
  * 支持嵌套路径，如 "notifications.enabled"
  */
 export type SettingPath = keyof AppSettings | 
-  `notifications.${keyof AppSettings['notifications']}` |
   `privacy.${keyof AppSettings['privacy']}` |
   `sync.${keyof AppSettings['sync']}` |
-  `run.${keyof AppSettings['run']}`;
+  `run.${keyof AppSettings['run']}` |
+  `map.${keyof AppSettings['map']}`;
 
 // ==================== 默认值 ====================
 
@@ -70,12 +84,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: "cn",
   themeMode: "system",
   distanceUnit: "km",
-  notifications: {
-    enabled: true,
-    runComplete: true,
-    weeklyReport: true,
-    reminder: false,
-  },
   privacy: {
     shareLocation: false,
     analyticsEnabled: true,
@@ -88,6 +96,24 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoPause: true,
     voiceFeedback: false,
     targetDistance: 0,
+  },
+  map: {
+    mapType: "standard",
+    showUserLocation: true,
+    followUserLocation: true,
+    showCompass: true,
+    showScale: true,
+    tiltEnabled: true,  // 默认开启3D倾斜
+    // 交互设置默认开启
+    zoomEnabled: true,
+    rotateEnabled: true,
+    scrollEnabled: true,
+    pitchEnabled: true,
+    // 显示设置
+    showTraffic: false,  // 默认不显示交通
+    showPOI: true,       // 默认显示兴趣点
+    pathColor: "blue",
+    pathWidth: 4,
   },
 };
 
@@ -170,7 +196,7 @@ interface SettingsState {
   resetSettings: () => Promise<void>;
   
   // 重置特定分组的设置
-  resetGroup: (group: "notifications" | "privacy" | "sync" | "run") => Promise<void>;
+  resetGroup: (group: "privacy" | "sync" | "run" | "map") => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -279,6 +305,27 @@ export const UNIT_NAMES: Record<DistanceUnit, { name: string; short: string }> =
   km: { name: "公里", short: "km" },
   mi: { name: "英里", short: "mi" },
 };
+
+export const MAP_TYPE_NAMES: Record<MapType, { name: string; icon: string }> = {
+  standard: { name: "标准", icon: "map-outline" },
+  satellite: { name: "卫星", icon: "globe-outline" },
+  hybrid: { name: "混合", icon: "layers-outline" },
+};
+
+export const PATH_COLOR_NAMES: Record<PathColor, { name: string; color: string }> = {
+  blue: { name: "蓝色", color: "#3B82F6" },
+  red: { name: "红色", color: "#EF4444" },
+  green: { name: "绿色", color: "#10B981" },
+  orange: { name: "橙色", color: "#F59E0B" },
+  purple: { name: "紫色", color: "#A855F7" },
+};
+
+export const PATH_WIDTH_OPTIONS = [
+  { value: 2, label: "细" },
+  { value: 4, label: "标准" },
+  { value: 6, label: "粗" },
+  { value: 8, label: "特粗" },
+];
 
 // ==================== 迁移辅助（处理旧版本存储）====================
 

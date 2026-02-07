@@ -3,6 +3,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HistoryItem from "@/components/HistoryItem";
+import { EmptyState } from "@/components/EmptyState";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useEffect, useState } from "react";
 import { dateFormat, diffDayNum } from "@/utils/util";
@@ -76,6 +77,24 @@ export default function HistoryScreen() {
       );
     });
   }
+
+  // 空状态渲染
+  if (historyRecords.length === 0) {
+    return (
+      <SafeAreaView
+        className="flex-1 bg-gray-50 dark:bg-slate-900"
+        edges={["top"]}
+      >
+        <EmptyState
+          title={t("history.emptyTitle") || "还没有跑步记录"}
+          subtitle={t("history.emptySubtitle") || "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️"}
+          icon="walk-outline"
+          actionLabel={t("history.startRun") || "开始第一次跑步"}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       className="flex-1 bg-gray-50 dark:bg-slate-900"

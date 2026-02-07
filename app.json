@@ -25,11 +25,13 @@
         "googleMapsApiKey": ""
       },
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.shetepro.simrun"
-        ],
+        "com.apple.security.application-groups": ["group.com.shetepro.simrun"],
         "com.apple.developer.group-session": true,
-        "aps-environment": "production"
+        "aps-environment": "production",
+        "com.apple.developer.icloud-container-identifiers": [
+          "iCloud.com.shetepro.simrun"
+        ],
+        "com.apple.developer.icloud-services": ["CloudKit"]
       },
       "bundleIdentifier": "com.shetepro.simrun"
     },
