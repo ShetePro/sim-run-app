@@ -164,6 +164,7 @@ const resources = {
       plan: {
         title: "Running Plan",
         enablePlan: "Enable Running Plan",
+        enabled: "Active",
         setGoal: "Set Goal",
         tapToSetGoal: "Tap to set your running goal",
         setYourFirstGoal: "Set Your First Goal",
@@ -197,6 +198,7 @@ const resources = {
         language: "Language",
         darkMode: "DarkMode",
         editProfile: "Edit Profile",
+        editPlan: "Running Plan",
         cloudSync: "Cloud Sync",
         cloudSyncValue: "iCloud",
         map: "Map Settings",
@@ -546,6 +548,7 @@ const resources = {
       plan: {
         title: "跑步计划",
         enablePlan: "启用跑步计划",
+        enabled: "已开启",
         setGoal: "设置目标",
         tapToSetGoal: "点击右上角设置跑步目标",
         setYourFirstGoal: "设置你的第一个目标",
