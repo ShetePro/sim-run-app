@@ -185,6 +185,9 @@ export default function PlanSettingsScreen() {
         options={{
           headerShown: true,
           headerTitle: t("plan.title"),
+          headerTitleStyle: { color: "#0f172a" },
+          headerStyle: { backgroundColor: "#fff" },
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} className="ml-4">
               <Ionicons name="arrow-back" size={24} color="#6366f1" />
@@ -194,26 +197,24 @@ export default function PlanSettingsScreen() {
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* 未开启时的引导卡片 */}
-        {!plan.enabled && (
-          <View className="mx-4 mt-4 p-5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl">
-            <View className="flex-row items-center mb-3">
-              <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center">
-                <Ionicons name="flag" size={24} color="white" />
-              </View>
-              <View className="ml-3 flex-1">
-                <Text className="text-white font-bold text-lg">{t("plan.welcomeTitle")}</Text>
-                <Text className="text-indigo-100 text-sm">{t("plan.welcomeSubtitle")}</Text>
-              </View>
+        {/* 引导卡片 - 始终显示 */}
+        <View className="mx-4 mt-2 p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl">
+          <View className="flex-row items-center mb-2">
+            <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
+              <Ionicons name="flag" size={20} color="white" />
             </View>
-            <Text className="text-white/80 text-sm leading-5">
-              {t("plan.welcomeDesc")}
-            </Text>
+            <View className="ml-3 flex-1">
+              <Text className="text-white font-bold text-base">{t("plan.welcomeTitle")}</Text>
+              <Text className="text-indigo-100 text-xs">{t("plan.welcomeSubtitle")}</Text>
+            </View>
           </View>
-        )}
+          <Text className="text-white/80 text-xs leading-4">
+            {t("plan.welcomeDesc")}
+          </Text>
+        </View>
 
         {/* 总开关 */}
-        <View className="px-4 pt-4">
+        <View className="px-4 pt-3">
           <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
             <SwitchItem
               icon="flag-outline"
@@ -229,8 +230,8 @@ export default function PlanSettingsScreen() {
         {plan.enabled && (
           <>
             {/* 快捷推荐 */}
-            <View className="px-4 mt-6">
-              <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-3 ml-1">
+            <View className="px-4 mt-4">
+              <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-2 ml-1">
                 {t("plan.quickSelect")}
               </Text>
               <View className="flex-row">
@@ -262,10 +263,10 @@ export default function PlanSettingsScreen() {
             </View>
 
             {/* 自定义目标 */}
-            <View className="px-4 mt-6">
+            <View className="px-4 mt-4">
               <TouchableOpacity
                 onPress={() => setShowCustom(!showCustom)}
-                className="flex-row items-center justify-between mb-3"
+                className="flex-row items-center justify-between mb-2"
               >
                 <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium ml-1">
                   {t("plan.customTargets")}
@@ -392,8 +393,8 @@ export default function PlanSettingsScreen() {
             </View>
 
             {/* 提醒设置 */}
-            <View className="px-4 mt-6">
-              <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-3 ml-1">
+            <View className="px-4 mt-4">
+              <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-2 ml-1">
                 {t("plan.reminder")}
               </Text>
               <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
@@ -434,8 +435,8 @@ export default function PlanSettingsScreen() {
 
         {/* 重置按钮 */}
         {plan.enabled && (
-          <View className="px-4 mt-8 mb-10">
-            <TouchableOpacity onPress={handleReset} className="py-3 items-center">
+          <View className="px-4 mt-6 mb-8">
+            <TouchableOpacity onPress={handleReset} className="py-2 items-center">
               <Text className="text-red-500 font-medium">{t("plan.resetToDefault")}</Text>
             </TouchableOpacity>
           </View>
