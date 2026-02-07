@@ -28,6 +28,8 @@ import { requestLocationPermission } from "@/utils/location/location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import '@/utils/location/locationTask'
 import { useSettingsStore, migrateFromLegacy } from "@/store/settingsStore";
+import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -44,6 +46,8 @@ LogBox.ignoreLogs(["Require cycle: node_modules/victory"]);
 export default function RootLayout() {
   // const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
   Appearance.addChangeListener((theme) => {
     setColorScheme(() => theme.colorScheme);
@@ -59,18 +63,36 @@ export default function RootLayout() {
   });
 
   const insets = useSafeAreaInsets();
+  
+  // 检查是否需要显示引导页
   useEffect(() => {
-    if (loaded) {
+    const checkOnboarding = async () => {
+      const hasSeenOnboarding = await getStorageItemAsync(ONBOARDING_KEY);
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+      }
+      setIsCheckingOnboarding(false);
+    };
+    checkOnboarding();
+  }, []);
+  
+  useEffect(() => {
+    if (loaded && !isCheckingOnboarding) {
       SplashScreen.hideAsync();
     }
-    requestLocationPermission();
-    // 初始化设置（从存储加载）
-    useSettingsStore.getState().initialize();
-    // 迁移旧版本设置
-    migrateFromLegacy();
-    // 尝试从 iCloud 备份恢复数据库
-    restoreDatabaseFromICloud();
-  }, [loaded]);
+  }, [loaded, isCheckingOnboarding]);
+  
+  useEffect(() => {
+    if (!showOnboarding) {
+      requestLocationPermission();
+      // 初始化设置（从存储加载）
+      useSettingsStore.getState().initialize();
+      // 迁移旧版本设置
+      migrateFromLegacy();
+      // 尝试从 iCloud 备份恢复数据库
+      restoreDatabaseFromICloud();
+    }
+  }, [showOnboarding]);
 
   // 从 iCloud 备份恢复数据库
   const restoreDatabaseFromICloud = async () => {
@@ -81,9 +103,17 @@ export default function RootLayout() {
     }
   };
 
-  if (!loaded) {
+  if (!loaded || isCheckingOnboarding) {
     return null;
   }
+  
+  // 显示引导页
+  if (showOnboarding) {
+    return (
+      <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+    );
+  }
+  
   return (
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <SQLiteProvider

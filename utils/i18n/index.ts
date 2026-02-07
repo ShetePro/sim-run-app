@@ -138,6 +138,27 @@ const resources = {
         exportMessage: "Choose export format",
         exportError: "Failed to export run data, please try again",
       },
+      onboarding: {
+        skip: "Skip",
+        next: "Next",
+        getStarted: "Get Started",
+        gps: {
+          title: "GPS Tracking",
+          description: "SimRun uses precise GPS to record your running routes. Track every step and watch your progress on the map.",
+        },
+        location: {
+          title: "Background Location",
+          description: "To keep tracking your run when the screen is locked, we need \"Always\" location permission. Your data stays on your device.",
+        },
+        privacy: {
+          title: "Privacy First",
+          description: "All your data is stored locally on your device. No account required. No data uploaded to any server. Your privacy is our priority.",
+        },
+        start: {
+          title: "Ready to Run?",
+          description: "Everything is set up. Start your first run and let SimRun help you track your fitness journey!",
+        },
+      },
       setting: {
         language: "Language",
         darkMode: "DarkMode",
@@ -464,6 +485,27 @@ const resources = {
         exportTitle: "导出跑步数据",
         exportMessage: "选择导出格式",
         exportError: "导出跑步数据失败，请重试",
+      },
+      onboarding: {
+        skip: "跳过",
+        next: "下一步",
+        getStarted: "开始使用",
+        gps: {
+          title: "GPS 轨迹记录",
+          description: "SimRun 使用高精度 GPS 记录您的跑步路线。追踪每一步，在地图上见证您的运动轨迹。",
+        },
+        location: {
+          title: "后台定位权限",
+          description: "为了在锁屏时继续记录跑步数据，我们需要\"始终\"位置权限。您的数据仅保存在本地设备。",
+        },
+        privacy: {
+          title: "隐私优先",
+          description: "您的所有数据都存储在本地设备上。无需注册账号，数据不会上传到任何服务器。保护您的隐私是我们的首要任务。",
+        },
+        start: {
+          title: "准备好开始了吗？",
+          description: "一切准备就绪！开始您的第一次跑步，让 SimRun 帮您记录运动之旅！",
+        },
       },
       setting: {
         language: "语言/Language",
