@@ -14,6 +14,67 @@ import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
 
+// GPS信号强度指示器组件
+function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
+  // 根据误差米数计算信号等级 (0-4)
+  const getSignalLevel = (acc: number): number => {
+    if (acc <= 0) return 0;
+    if (acc <= 5) return 4;   // 优秀 <5m
+    if (acc <= 10) return 3;  // 良好 5-10m
+    if (acc <= 20) return 2;  // 一般 10-20m
+    if (acc <= 50) return 1;  // 较差 20-50m
+    return 0;                 // 很差 >50m
+  };
+
+  const level = getSignalLevel(accuracy);
+  const totalBars = 4;
+
+  // 根据等级获取颜色
+  const getColor = (barIndex: number) => {
+    if (barIndex >= level) return "rgba(255,255,255,0.2)";
+    if (level === 4) return "#22c55e"; // 绿色-优秀
+    if (level === 3) return "#84cc16"; // 黄绿-良好
+    if (level === 2) return "#f59e0b"; // 橙色-一般
+    return "#ef4444"; // 红色-差
+  };
+
+  return (
+    <View style={signalStyles.container}>
+      <View style={signalStyles.barsContainer}>
+        {Array.from({ length: totalBars }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              signalStyles.bar,
+              {
+                height: 8 + index * 4,
+                backgroundColor: getColor(index),
+              },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const signalStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  barsContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 2,
+    height: 24,
+  },
+  bar: {
+    width: 4,
+    borderRadius: 1,
+  },
+});
+
 export default function RunIndexScreen() {
   const { t } = useTranslation();
   const { location, startTracking, stopTracking, pauseTracking, resumeTracking, getCurrentRunId, distance, heading, routePoints, isPaused } = useRun();
@@ -133,9 +194,12 @@ export default function RunIndexScreen() {
             <ThemedText style={styles.pausedText}>{t("run.paused")}</ThemedText>
           </View>
         )}
-        <View className={"flex flex-row justify-end gap-4"}>
+        <View className={"flex flex-row justify-end gap-4 items-center"}>
           <ThemedText>{t("run.steps")}:{runStore.stepCount}</ThemedText>
-          <ThemedText>{t("run.signal")}:{Math.floor(runStore.accuracy)}</ThemedText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <ThemedText style={{ fontSize: 12, opacity: 0.8 }}>{t("run.signal")}</ThemedText>
+            <SignalStrengthIndicator accuracy={runStore.accuracy} />
+          </View>
         </View>
         <View>
           <ThemedText
