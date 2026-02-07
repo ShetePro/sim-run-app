@@ -31,12 +31,14 @@ export function useRun() {
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const isTracking = useRef(false);
+  const isPaused = useRef(false);
   const { addRun, updateRun } = useRunDB();
   const headingSubscription = useRef<Location.LocationSubscription | null>(
     null,
   );
   const [locationSubscription, setLocationSubscription] = useState<any>(null);
   const [routePoints, setRoutePoints] = useState<any[]>([]);
+  const pausedDistanceRef = useRef(0);
   // watch running data from background task
   useEffect(() => {
     // 监听后台任务传回的数据
@@ -44,7 +46,7 @@ export function useRun() {
       RUNNING_UPDATE_EVENT,
       (data) => {
         console.log("触发emit 事件", data);
-        if (!isTracking.current) return;
+        if (!isTracking.current || isPaused.current) return;
         const locationUpdate = data;
         const newPoint = mapPointToLonLat({
           latitude: locationUpdate.latitude,
@@ -56,9 +58,10 @@ export function useRun() {
           points: [...routePoints, newPoint],
         });
         setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
-        setDistance(data.distance || distance);
+        const actualDistance = (data.distance || distance) - pausedDistanceRef.current;
+        setDistance(Math.max(0, actualDistance));
         LiveActivity.update({
-          distance: Number((data.distance / 1000).toFixed(2)),
+          distance: Number((actualDistance / 1000).toFixed(2)),
           duration: secondFormatHours(useRunStore.getState().duration),
           pace: secondFormatHours(useRunStore.getState().pace),
         });
@@ -155,20 +158,36 @@ export function useRun() {
     }
     LiveActivity.stop();
     const { time, pace, energy } = data;
+    const finalDistance = distance - pausedDistanceRef.current;
     updateRun({
       id: runData.id,
       time,
       pace,
       energy,
-      distance,
+      distance: Math.max(0, finalDistance),
       isFinish: 1,
       endTime: Date.now(),
     }).then(async () => {
       isTracking.current = false;
+      isPaused.current = false;
+      pausedDistanceRef.current = 0;
       console.log("跑步会话结束，总点数：", routePoints.length);
       // 备份数据库到 documentDirectory 以便 iCloud 备份
       await backupDatabase();
     });
+  };
+
+  // 暂停追踪
+  const pauseTracking = () => {
+    if (!isTracking.current || isPaused.current) return;
+    isPaused.current = true;
+    pausedDistanceRef.current = distance;
+  };
+
+  // 继续追踪
+  const resumeTracking = () => {
+    if (!isTracking.current || !isPaused.current) return;
+    isPaused.current = false;
   };
   // 4. 组件卸载时停止追踪
   useEffect(() => {
@@ -187,9 +206,12 @@ export function useRun() {
     errorMsg,
     startTracking,
     stopTracking,
+    pauseTracking,
+    resumeTracking,
     getCurrentRunId,
     routePoints,
     distance,
     heading,
+    isPaused: () => isPaused.current,
   };
 }

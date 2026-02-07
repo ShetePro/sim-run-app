@@ -12,13 +12,14 @@ import Countdown from "@/components/Countdown";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, stopTracking, getCurrentRunId, distance, heading, routePoints } = useRun();
+  const { location, startTracking, stopTracking, pauseTracking, resumeTracking, getCurrentRunId, distance, heading, routePoints, isPaused } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
-  const { seconds, startTimer, stopTimer } = useTick();
+  const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer, isPaused: isTimerPaused } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
 
@@ -100,6 +101,16 @@ export default function RunIndexScreen() {
     startPedometer();
     startTimer();
   }
+
+  function onPause() {
+    pauseTracking();
+    pauseTimer();
+  }
+
+  function onResume() {
+    resumeTracking();
+    resumeTimer();
+  }
   return (
     <SafeAreaView
       className="flex-1 bg-gray-50 dark:bg-slate-900 pb-4 p-2"
@@ -115,6 +126,13 @@ export default function RunIndexScreen() {
           flexDirection: "column",
         }}
       >
+        {/* 暂停状态提示 */}
+        {isTimerPaused && (
+          <View style={styles.pausedBanner}>
+            <Ionicons name="pause-circle" size={24} color="#F59E0B" />
+            <ThemedText style={styles.pausedText}>{t("run.paused")}</ThemedText>
+          </View>
+        )}
         <View className={"flex flex-row justify-end gap-4"}>
           <ThemedText>{t("run.steps")}:{runStore.stepCount}</ThemedText>
           <ThemedText>{t("run.signal")}:{Math.floor(runStore.accuracy)}</ThemedText>
@@ -171,15 +189,46 @@ export default function RunIndexScreen() {
                 </ThemedText>
               </Pressable>
             </>
+          ) : isTimerPaused ? (
+            /* 暂停状态：继续按钮 + 结束按钮 */
+            <>
+              <Pressable style={styles.resumeButton} onPress={onResume}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="play" size={20} color="#fff" />
+                  <ThemedText style={styles.buttonText}>
+                    {t("run.resume")}
+                  </ThemedText>
+                </View>
+              </Pressable>
+              <Pressable style={styles.finishButton} onPress={onFinish}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="stop" size={20} color="#fff" />
+                  <ThemedText style={styles.buttonText}>
+                    {t("run.finish")}
+                  </ThemedText>
+                </View>
+              </Pressable>
+            </>
           ) : (
-            /* 已开始状态：结束按钮 */
-            <Pressable style={styles.finishButton} onPress={onFinish}>
-              <ThemedText
-                style={{ color: "#fff", textAlign: "center", fontSize: 18 }}
-              >
-                {t("run.finish")}
-              </ThemedText>
-            </Pressable>
+            /* 跑步中状态：暂停按钮 */
+            <>
+              <Pressable style={styles.pauseButton} onPress={onPause}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="pause" size={20} color="#fff" />
+                  <ThemedText style={styles.buttonText}>
+                    {t("run.pause")}
+                  </ThemedText>
+                </View>
+              </Pressable>
+              <Pressable style={styles.finishButton} onPress={onFinish}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="stop" size={20} color="#fff" />
+                  <ThemedText style={styles.buttonText}>
+                    {t("run.finish")}
+                  </ThemedText>
+                </View>
+              </Pressable>
+            </>
           )}
         </View>
       </View>
@@ -217,5 +266,48 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     height: 50,
+  },
+  pauseButton: {
+    flex: 1,
+    marginTop: 20,
+    backgroundColor: "#F59E0B",
+    padding: 15,
+    borderRadius: 10,
+    height: 50,
+  },
+  resumeButton: {
+    flex: 1,
+    marginTop: 20,
+    backgroundColor: "#32a211",
+    padding: 15,
+    borderRadius: 10,
+    height: 50,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 18,
+  },
+  pausedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 10,
+    marginBottom: 10,
+    gap: 8,
+  },
+  pausedText: {
+    color: "#F59E0B",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
