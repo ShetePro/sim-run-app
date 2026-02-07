@@ -185,17 +185,7 @@ export default function UserProfileScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="mt-6 flex-row items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/50"
-          >
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text className="ml-2 text-red-500 font-semibold text-base">
-              {t("setting.logout")}
-            </Text>
-          </TouchableOpacity>
-
-          <Text className="text-center text-slate-400 text-xs mt-6 mb-10">
+          <Text className="text-center text-slate-400 text-xs mt-10 mb-10">
             SimRun App © 2025
           </Text>
         </View>
