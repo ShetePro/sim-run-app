@@ -8,9 +8,10 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useColorScheme } from "nativewind";
 import { useSettingsStore } from "@/store/settingsStore";
 import { SwitchItem } from "@/components/ui/SwitchItem";
 
@@ -57,21 +58,21 @@ function NumberStepper({
       >
         <Ionicons name="remove" size={20} className="text-slate-600 dark:text-slate-300" color="#64748B" />
       </TouchableOpacity>
-      
+
       <TextInput
         value={String(value)}
         onChangeText={handleChange}
         keyboardType={decimal ? "decimal-pad" : "number-pad"}
         className="w-14 text-center text-slate-800 dark:text-white font-semibold"
       />
-      
+
       <TouchableOpacity
         onPress={handleIncrease}
         className="w-10 h-10 items-center justify-center active:bg-gray-200 dark:active:bg-slate-600"
       >
         <Ionicons name="add" size={20} className="text-slate-600 dark:text-slate-300" color="#64748B" />
       </TouchableOpacity>
-      
+
       {unit && (
         <Text className="text-slate-500 dark:text-slate-400 pr-3 text-sm">{unit}</Text>
       )}
@@ -124,6 +125,8 @@ function GoalPreset({
 export default function PlanSettingsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { settings, updateSetting, updateSettings } = useSettingsStore();
   const { plan } = settings;
   const [showCustom, setShowCustom] = useState(false);
@@ -181,18 +184,25 @@ export default function PlanSettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900" edges={["top"]}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: t("plan.title"),
-          headerTitleStyle: { color: "#0f172a" },
-          headerStyle: { backgroundColor: "#f9fafb" },
-          headerTintColor: "#6366f1",
-          headerShadowVisible: false,
-        }}
-      />
-
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* 自定义导航栏 */}
+        <View className="flex-row items-center px-4 py-3 bg-white dark:bg-slate-800">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="p-2 -ml-2"
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={isDark ? "#fff" : "#1f2937"}
+            />
+          </TouchableOpacity>
+          <Text className="flex-1 text-center text-lg font-semibold text-slate-800 dark:text-white -ml-6">
+            {t("plan.title")}
+          </Text>
+          <View className="w-8" />
+        </View>
+
         {/* 引导卡片 - 始终显示 */}
         <View className="mx-4 mt-2 p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl">
           <View className="flex-row items-center mb-2">
