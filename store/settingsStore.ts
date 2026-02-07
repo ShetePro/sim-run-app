@@ -43,6 +43,17 @@ export interface AppSettings {
     targetDistance: number; // km, 0 表示无目标
   };
   
+  // 跑步计划设置
+  plan: {
+    enabled: boolean;
+    dailyDistance: number;      // 每日目标距离 (km)
+    weeklyDistance: number;     // 每周目标距离 (km)
+    weeklyRuns: number;         // 每周目标跑步次数
+    monthlyDistance: number;    // 每月目标距离 (km)
+    reminderEnabled: boolean;   // 是否开启提醒
+    reminderTime: string;       // 提醒时间 (HH:mm)
+  };
+  
   // 地图设置
   map: {
     mapType: MapType;
@@ -72,6 +83,7 @@ export type SettingPath = keyof AppSettings |
   `privacy.${keyof AppSettings['privacy']}` |
   `sync.${keyof AppSettings['sync']}` |
   `run.${keyof AppSettings['run']}` |
+  `plan.${keyof AppSettings['plan']}` |
   `map.${keyof AppSettings['map']}`;
 
 // ==================== 默认值 ====================
@@ -96,6 +108,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoPause: true,
     voiceFeedback: false,
     targetDistance: 0,
+  },
+  plan: {
+    enabled: false,
+    dailyDistance: 5,        // 默认每日 5km
+    weeklyDistance: 20,      // 默认每周 20km
+    weeklyRuns: 3,           // 默认每周 3 次
+    monthlyDistance: 80,     // 默认每月 80km
+    reminderEnabled: false,
+    reminderTime: "07:00",   // 默认早上 7 点提醒
   },
   map: {
     mapType: "standard",
@@ -196,7 +217,7 @@ interface SettingsState {
   resetSettings: () => Promise<void>;
   
   // 重置特定分组的设置
-  resetGroup: (group: "privacy" | "sync" | "run" | "map") => Promise<void>;
+  resetGroup: (group: "privacy" | "sync" | "run" | "plan" | "map") => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

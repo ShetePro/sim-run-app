@@ -47,7 +47,7 @@ function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
             style={[
               signalStyles.bar,
               {
-                height: 8 + index * 4,
+                height: 6 + index * 3,
                 backgroundColor: getColor(index),
               },
             ]}
@@ -61,13 +61,14 @@ function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
 const signalStyles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
+    height: 16,
   },
   barsContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 2,
-    height: 24,
+    height: 16,
   },
   bar: {
     width: 4,
@@ -194,12 +195,9 @@ export default function RunIndexScreen() {
             <ThemedText style={styles.pausedText}>{t("run.paused")}</ThemedText>
           </View>
         )}
-        <View className={"flex flex-row justify-end gap-4 items-center"}>
-          <ThemedText>{t("run.steps")}:{runStore.stepCount}</ThemedText>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <ThemedText style={{ fontSize: 12, opacity: 0.8 }}>{t("run.signal")}</ThemedText>
-            <SignalStrengthIndicator accuracy={runStore.accuracy} />
-          </View>
+        <View style={styles.topBar}>
+          <ThemedText style={styles.topBarText}>{t("run.steps")}:{runStore.stepCount}</ThemedText>
+          <SignalStrengthIndicator accuracy={runStore.accuracy} />
         </View>
         <View>
           <ThemedText
@@ -306,6 +304,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "baseline",
+    gap: 12,
+    paddingHorizontal: 10,
+  },
+  topBarText: {
+    fontSize: 14,
+    lineHeight: 16,
   },
   startButton: {
     flex: 1,

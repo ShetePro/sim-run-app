@@ -1,16 +1,22 @@
-import { Dimensions, Text, View } from "react-native";
+import { Dimensions, Text, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import { TodayRunData } from "@/types/runType";
+import { useSettingsStore } from "@/store/settingsStore";
 
 interface TodayActivityCardProps {
   todayData: TodayRunData | null;
 }
 
 export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
+  const router = useRouter();
+  const { settings } = useSettingsStore();
+  const plan = settings.plan;
+  
   if (todayData === null) return null
-  const goal = 5
+  const goal = plan.enabled ? plan.dailyDistance : 5
   const { width } = Dimensions.get("window");
   const { t } = useTranslation();
   const progress = Math.min(todayData.distance / goal, 1);
@@ -27,17 +33,20 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
               {t("home.todayActivity")}
             </Text>
           </View>
-          <View className="flex-row items-center">
+          <TouchableOpacity 
+            onPress={() => router.push("/(views)/plan-settings")}
+            className="flex-row items-center bg-white/10 px-2 py-1 rounded-full"
+          >
             <Ionicons
-              name="partly-sunny"
-              size={16}
+              name={plan.enabled ? "flag" : "flag-outline"}
+              size={14}
               color="white"
-              style={{ opacity: 0.8 }}
+              style={{ opacity: 0.9 }}
             />
-            <Text className="text-white/80 text-xs ml-1">
-              24°C {t("weather.comfortable")}
+            <Text className="text-white/90 text-xs ml-1">
+              {plan.enabled ? t("plan.enabled") : t("plan.setGoal")}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View className="mt-2 mb-6">
