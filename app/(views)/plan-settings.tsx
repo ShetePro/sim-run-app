@@ -186,13 +186,9 @@ export default function PlanSettingsScreen() {
           headerShown: true,
           headerTitle: t("plan.title"),
           headerTitleStyle: { color: "#0f172a" },
-          headerStyle: { backgroundColor: "#fff" },
+          headerStyle: { backgroundColor: "#f9fafb" },
+          headerTintColor: "#6366f1",
           headerShadowVisible: false,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} className="ml-4">
-              <Ionicons name="arrow-back" size={24} color="#6366f1" />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -217,9 +213,10 @@ export default function PlanSettingsScreen() {
         <View className="px-4 pt-3">
           <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
             <SwitchItem
+              title={t("plan.enablePlan")}
+              subtitle={t("plan.enablePlanDesc")}
               icon="flag-outline"
-              iconColor="#6366F1"
-              label={t("plan.enablePlan")}
+              colorScheme="purple"
               value={plan.enabled}
               onValueChange={(value) => updateSetting("plan.enabled", value)}
             />
@@ -399,9 +396,10 @@ export default function PlanSettingsScreen() {
               </Text>
               <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
                 <SwitchItem
+                  title={t("plan.enableReminder")}
+                  subtitle={t("plan.enableReminderDesc")}
                   icon="notifications-outline"
-                  iconColor="#F59E0B"
-                  label={t("plan.enableReminder")}
+                  colorScheme="warning"
                   value={plan.reminderEnabled}
                   onValueChange={(value) => updateSetting("plan.reminderEnabled", value)}
                 />

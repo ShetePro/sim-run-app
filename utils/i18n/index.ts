@@ -164,6 +164,7 @@ const resources = {
       plan: {
         title: "Running Plan",
         enablePlan: "Enable Running Plan",
+        enablePlanDesc: "Set personalized goals to track your progress",
         enabled: "Active",
         setGoal: "Set Goal",
         tapToSetGoal: "Tap to set your running goal",
@@ -188,6 +189,7 @@ const resources = {
         times: "times",
         reminder: "Reminder",
         enableReminder: "Enable Daily Reminder",
+        enableReminderDesc: "Get notified at your preferred time",
         reminderTime: "Reminder Time",
         resetTitle: "Reset Plan",
         resetMessage: "Are you sure you want to reset all plan settings to default?",
@@ -548,6 +550,7 @@ const resources = {
       plan: {
         title: "跑步计划",
         enablePlan: "启用跑步计划",
+        enablePlanDesc: "设置个性化目标，追踪你的运动进度",
         enabled: "已开启",
         setGoal: "设置目标",
         tapToSetGoal: "点击右上角设置跑步目标",
@@ -572,6 +575,7 @@ const resources = {
         times: "次",
         reminder: "提醒设置",
         enableReminder: "开启每日提醒",
+        enableReminderDesc: "在指定时间收到跑步提醒",
         reminderTime: "提醒时间",
         resetTitle: "重置计划",
         resetMessage: "确定要将所有计划设置重置为默认值吗？",
