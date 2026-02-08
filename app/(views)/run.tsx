@@ -14,6 +14,7 @@ import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
 import { getStorageItem } from "@/hooks/useStorageState";
+import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 
 // GPS信号强度指示器组件
 function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
@@ -85,12 +86,32 @@ export default function RunIndexScreen() {
   const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer, isPaused: isTimerPaused } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
+  const {
+    announceStart,
+    announceFinish,
+    announcePause,
+    announceResume,
+    checkAndAnnounce,
+    resetAnnounceState,
+  } = useVoiceAnnounce();
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
       runStore.setPace(seconds / (distance / 1000));
     }
   }, [seconds, distance]);
+
+  // 周期性语音播报检查
+  useEffect(() => {
+    if (seconds > 0 && distance > 0) {
+      checkAndAnnounce({
+        distance,
+        duration: seconds,
+        pace: runStore.pace,
+        calories: calculateCalories(seconds),
+      });
+    }
+  }, [seconds, distance, runStore.pace]);
 
   // 获取用户体重（默认70kg）
   const getUserWeight = () => {
@@ -149,11 +170,20 @@ export default function RunIndexScreen() {
     stopTimer();
     stopPedometer();
 
+    const calories = calculateCalories(seconds);
     const runData = {
       time: seconds,
       pace: runStore.pace,
-      energy: calculateCalories(seconds),
+      energy: calories,
     };
+
+    // 播报结束
+    announceFinish({
+      distance,
+      duration: seconds,
+      pace: runStore.pace,
+      calories,
+    });
 
     // 获取跑步记录ID
     const runId = getCurrentRunId();
@@ -180,19 +210,23 @@ export default function RunIndexScreen() {
   }
   function countdownFinish() {
     setShowCountdown(false);
+    resetAnnounceState();
     startTracking();
     startPedometer();
     startTimer();
+    announceStart();
   }
 
   function onPause() {
     pauseTracking();
     pauseTimer();
+    announcePause();
   }
 
   function onResume() {
     resumeTracking();
     resumeTimer();
+    announceResume();
   }
   return (
     <SafeAreaView

@@ -167,6 +167,13 @@ export default function UserProfileScreen() {
               value={settings.plan.enabled ? t("common.enabled") : t("common.disabled")}
               onPress={() => router.push("/(views)/plan-settings")}
             />
+            <Divider />
+            <MenuItem
+              icon="volume-high-outline"
+              color="#EC4899"
+              label={t("voiceSettings.title") || "语音播报"}
+              onPress={() => router.push("/(views)/voice-settings")}
+            />
           </View>
         </View>
 
