@@ -38,7 +38,14 @@ export function useRun() {
   );
   const [locationSubscription, setLocationSubscription] = useState<any>(null);
   const [routePoints, setRoutePoints] = useState<any[]>([]);
+  const routePointsRef = useRef<any[]>([]);
   const pausedDistanceRef = useRef(0);
+  
+  // 保持 ref 与 state 同步
+  useEffect(() => {
+    routePointsRef.current = routePoints;
+  }, [routePoints]);
+  
   // watch running data from background task
   useEffect(() => {
     // 监听后台任务传回的数据
@@ -54,10 +61,14 @@ export function useRun() {
           timestamp: locationUpdate.timestamp,
         });
         setLocation(newPoint);
+        
+        // 使用 ref 获取最新的 routePoints，避免闭包问题
+        const updatedPoints = [...routePointsRef.current, newPoint];
         updateRun({
-          points: [...routePoints, newPoint],
+          points: updatedPoints,
         });
-        setRoutePoints((prevPoints) => [...prevPoints, newPoint]);
+        setRoutePoints(updatedPoints);
+        
         const actualDistance = (data.distance || distance) - pausedDistanceRef.current;
         setDistance(Math.max(0, actualDistance));
         LiveActivity.update({
@@ -146,11 +157,11 @@ export function useRun() {
     console.log("✅ 已保存跑步数据", runData);
   };
   // 3. 停止位置追踪
-  const stopTracking = (data: {
+  const stopTracking = async (data: {
     time: number;
     pace: number;
     energy: number;
-  }) => {
+  }): Promise<void> => {
     if (!isTracking.current) return;
     if (locationSubscription) {
       locationSubscription.remove();
@@ -159,7 +170,9 @@ export function useRun() {
     LiveActivity.stop();
     const { time, pace, energy } = data;
     const finalDistance = distance - pausedDistanceRef.current;
-    updateRun({
+    
+    // 等待数据库更新完成
+    await updateRun({
       id: runData.id,
       time,
       pace,
@@ -167,14 +180,14 @@ export function useRun() {
       distance: Math.max(0, finalDistance),
       isFinish: 1,
       endTime: Date.now(),
-    }).then(async () => {
-      isTracking.current = false;
-      isPaused.current = false;
-      pausedDistanceRef.current = 0;
-      console.log("跑步会话结束，总点数：", routePoints.length);
-      // 备份数据库到 documentDirectory 以便 iCloud 备份
-      await backupDatabase();
     });
+    
+    isTracking.current = false;
+    isPaused.current = false;
+    pausedDistanceRef.current = 0;
+    console.log("跑步会话结束，总点数：", routePoints.length);
+    // 备份数据库到 documentDirectory 以便 iCloud 备份
+    await backupDatabase();
   };
 
   // 暂停追踪

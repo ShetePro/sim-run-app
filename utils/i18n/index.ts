@@ -114,6 +114,7 @@ const resources = {
         feature2: "Track personal progress",
         feature3: "Analyze workout data",
         action: "Start First Run",
+        quote: "A journey of a thousand miles begins with a single step.",
       },
       run: {
         summary: "Run Summary",
@@ -500,6 +501,7 @@ const resources = {
         feature2: "追踪个人进步",
         feature3: "分析运动数据",
         action: "开始第一次跑步",
+        quote: "千里之行，始于足下",
       },
       run: {
         summary: "跑步总结",

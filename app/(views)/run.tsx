@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
+import { getStorageItem } from "@/hooks/useStorageState";
 
 // GPS信号强度指示器组件
 function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
@@ -91,6 +92,26 @@ export default function RunIndexScreen() {
     }
   }, [seconds, distance]);
 
+  // 获取用户体重（默认70kg）
+  const getUserWeight = () => {
+    const userInfo = getStorageItem("userInfo");
+    if (userInfo) {
+      const parsed = JSON.parse(userInfo);
+      const weight = parseFloat(parsed.weight);
+      if (!isNaN(weight) && weight > 0) {
+        return weight;
+      }
+    }
+    return 70; // 默认体重70kg
+  };
+
+  // 计算卡路里消耗
+  const calculateCalories = (durationSeconds: number) => {
+    const weight = getUserWeight();
+    // MET值：跑步约10，公式：卡路里 = MET * 体重(kg) * 时间(小时)
+    return Math.floor(10 * weight * (durationSeconds / 3600));
+  };
+
   const detailList = useMemo(() => {
     const data = [
       {
@@ -104,7 +125,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: Math.floor(10 * 70 * (seconds / 3600)),
+        value: calculateCalories(seconds),
         unit: t("unit.kcal"),
       },
     ];
@@ -124,21 +145,21 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
-  function onFinish() {
+  async function onFinish() {
     stopTimer();
     stopPedometer();
 
     const runData = {
       time: seconds,
       pace: runStore.pace,
-      energy: Math.floor(10 * 70 * (seconds / 3600)),
+      energy: calculateCalories(seconds),
     };
 
     // 获取跑步记录ID
     const runId = getCurrentRunId();
 
-    // 先保存到数据库，然后跳转到确认页
-    stopTracking(runData);
+    // 先保存到数据库，等待完成后再跳转
+    await stopTracking(runData);
 
     // 只传递 runId，详情页面从数据库查询
     router.push({

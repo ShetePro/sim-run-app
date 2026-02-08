@@ -128,7 +128,7 @@ export function EmptyState({
 
       {/* 底部装饰文字 */}
       <Text className="mt-6 text-sm text-slate-400 dark:text-slate-500 italic">
-        "千里之行，始于足下"
+        "{t("emptyState.quote")}"
       </Text>
     </View>
   );
