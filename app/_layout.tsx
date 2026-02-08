@@ -30,6 +30,7 @@ import '@/utils/location/locationTask'
 import { useSettingsStore, migrateFromLegacy } from "@/store/settingsStore";
 import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
+import { CustomSplashScreen } from "@/components/SplashScreen";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -49,6 +50,8 @@ export default function RootLayout() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isCustomSplashVisible, setIsCustomSplashVisible] = useState(true);
+  const [isAppReady, setIsAppReady] = useState(false);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
   
   useEffect(() => {
@@ -84,7 +87,10 @@ export default function RootLayout() {
   
   useEffect(() => {
     if (loaded && !isCheckingOnboarding) {
+      // 先隐藏原生启动屏，显示自定义启动页
       SplashScreen.hideAsync();
+      // 标记应用准备好，触发自定义启动页退出动画
+      setIsAppReady(true);
     }
   }, [loaded, isCheckingOnboarding]);
   
@@ -128,6 +134,16 @@ export default function RootLayout() {
 
   if (!loaded || isCheckingOnboarding) {
     return null;
+  }
+  
+  // 显示自定义启动过渡页
+  if (isCustomSplashVisible) {
+    return (
+      <CustomSplashScreen
+        isReady={isAppReady}
+        onAnimationComplete={() => setIsCustomSplashVisible(false)}
+      />
+    );
   }
   
   // 显示引导页
