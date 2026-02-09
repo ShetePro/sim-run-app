@@ -204,12 +204,11 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.primaryColor,
     fontSize: 30,
-    fontWeight: "bold",
-    fontFamily: "Poppins-Bold",
+    fontFamily: "LexendBold",
     marginBottom: 15,
   },
   hello: {
-    fontFamily: "Poppins-SemiBold",
+    fontFamily: "LexendSemiBold",
     color: COLORS.black,
     fontSize: 20,
     width: 250,

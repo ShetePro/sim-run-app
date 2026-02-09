@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
-    fontFamily: "LexendBold",
+    fontFamily: "LexendSemiBold",
   },
   defaultSemiBold: {
     fontSize: 16,
