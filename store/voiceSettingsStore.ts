@@ -6,9 +6,6 @@ export type AnnounceFrequency = "off" | "1km" | "2km" | "5km" | "10min" | "30min
 
 export interface VoiceSettings {
   enabled: boolean;
-  volume: number; // 0-1
-  rate: number; // 语速 0.5-2.0
-  pitch: number; // 音调 0.5-2.0
   language: string; // 语言
   frequency: AnnounceFrequency; // 播报频率
   announceDistance: boolean; // 播报距离
@@ -17,14 +14,11 @@ export interface VoiceSettings {
   announceCalories: boolean; // 播报卡路里
   announcePauseResume: boolean; // 播报暂停/恢复
   announceStartFinish: boolean; // 播报开始/结束
-  voiceIdentifier?: string; // iOS 特定语音标识
+  characterId: string; // 选中的语音角色ID
 }
 
 const defaultSettings: VoiceSettings = {
   enabled: true,
-  volume: 1.0,
-  rate: 1.0,
-  pitch: 1.0,
   language: "zh-CN",
   frequency: "1km",
   announceDistance: true,
@@ -33,6 +27,7 @@ const defaultSettings: VoiceSettings = {
   announceCalories: true,
   announcePauseResume: true,
   announceStartFinish: true,
+  characterId: "xiaomei", // 默认使用小美
 };
 
 interface VoiceSettingsState extends VoiceSettings {
