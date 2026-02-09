@@ -44,16 +44,17 @@ export default function UserProfileScreen() {
     }
   }, []);
 
-  // 同步主题设置到 nativewind
+  // 同步主题设置到 nativewind（仅在初始化时执行一次）
   useEffect(() => {
     if (isLoaded && settings.themeMode !== "system") {
       const isDark = settings.themeMode === "dark";
       const currentIsDark = colorScheme === "dark";
       if (isDark !== currentIsDark) {
-        toggleColorScheme();
+        setColorScheme(settings.themeMode);
       }
     }
-  }, [isLoaded, settings.themeMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
 
   // 处理主题切换
   const handleThemeToggle = () => {
