@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
 export default function UserProfileScreen() {
   const router = useRouter();
-  const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
 
@@ -38,28 +38,17 @@ export default function UserProfileScreen() {
   );
 
   // 初始化设置
-  useEffect(() => {
-    if (!isLoaded) {
-      initialize();
-    }
-  }, []);
-
-  // 同步主题设置到 nativewind（仅在初始化时执行一次）
-  useEffect(() => {
-    if (isLoaded && settings.themeMode !== "system") {
-      const isDark = settings.themeMode === "dark";
-      const currentIsDark = colorScheme === "dark";
-      if (isDark !== currentIsDark) {
-        setColorScheme(settings.themeMode);
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoaded) {
+        initialize();
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+    }, [isLoaded, initialize])
+  );
 
-  // 处理主题切换
+  // 处理主题切换 - 只更新设置，不直接操作主题
   const handleThemeToggle = () => {
-    const newTheme = colorScheme === "dark" ? "light" : "dark";
-    setColorScheme(newTheme);
+    const newTheme = settings.themeMode === "dark" ? "light" : "dark";
     updateSetting("themeMode", newTheme);
   };
 
@@ -78,6 +67,10 @@ export default function UserProfileScreen() {
       ]
     );
   };
+
+  // 计算当前是否暗黑模式（优先使用设置，其次系统）
+  const isDarkMode = settings.themeMode === "dark" || 
+    (settings.themeMode === "system" && colorScheme === "dark");
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
@@ -132,7 +125,7 @@ export default function UserProfileScreen() {
             <SwitchItem
               icon="moon"
               title={t("setting.darkMode")}
-              value={colorScheme === "dark"}
+              value={isDarkMode}
               onValueChange={handleThemeToggle}
               colorScheme="purple"
             />
