@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -11,16 +11,24 @@ import Animated, {
 
 interface CountdownProps {
   onFinish?: () => void;
+  onCountChange?: (count: number) => void; // 倒计时数字变化回调
 }
 
 const { width, height } = Dimensions.get("window");
 
-export default function Countdown({ onFinish }: CountdownProps) {
+export default function Countdown({ onFinish, onCountChange }: CountdownProps) {
   const [count, setCount] = useState(3);
+  const prevCountRef = useRef<number | null>(null);
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
+    // 数字变化时触发回调（避免重复播报同一数字）
+    if (prevCountRef.current !== count && onCountChange) {
+      onCountChange(count);
+      prevCountRef.current = count;
+    }
+
     // 每次数字变化时执行动画
     scale.value = 0;
     opacity.value = 0;

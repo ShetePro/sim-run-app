@@ -91,6 +91,7 @@ export default function RunIndexScreen() {
     announceFinish,
     announcePause,
     announceResume,
+    announceCountdown,
     checkAndAnnounce,
     resetAnnounceState,
   } = useVoiceAnnounce();
@@ -233,7 +234,12 @@ export default function RunIndexScreen() {
       className="flex-1 bg-gray-50 dark:bg-slate-900 pb-4 p-2"
       edges={["top"]}
     >
-      {showCountdown && <Countdown onFinish={countdownFinish} />}
+      {showCountdown && (
+        <Countdown
+          onFinish={countdownFinish}
+          onCountChange={(count) => announceCountdown(count)}
+        />
+      )}
       <View
         style={{
           paddingBottom: 20,
