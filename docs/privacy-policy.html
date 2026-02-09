@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私政策 - SimRun</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .lang-btn {
+            padding: 8px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .lang-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .lang-content {
+            display: none;
+        }
+        
+        .lang-content.active {
+            display: block;
+        }
+        
+        h2 {
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            font-size: 1.3em;
+        }
+        
+        h2:first-child {
+            margin-top: 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .highlight p {
+            margin: 0;
+            color: #333;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .contact {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .contact h3 {
+            margin-bottom: 10px;
+        }
+        
+        .contact a {
+            color: #fff;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .content {
+                padding: 25px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 隐私政策</h1>
+            <p>Privacy Policy</p>
+        </div>
+        
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="switchLang('zh')">简体中文</button>
+            <button class="lang-btn" onclick="switchLang('en')">English</button>
+        </div>
+        
+        <div class="content">
+            <!-- 中文内容 -->
+            <div id="zh" class="lang-content active">
+                <div class="highlight">
+                    <p><strong>核心承诺：</strong>SimRun 是一款纯本地应用，您的所有数据仅存储在您的设备上，我们不会收集、上传或分享您的任何个人信息。</p>
+                </div>
+                
+                <h2>1. 我们收集的信息</h2>
+                <p><strong>我们不收集任何个人信息。</strong></p>
+                <p>SimRun 是一款纯本地运行的跑步记录应用，所有功能均在您的设备上完成。我们：</p>
+                <ul>
+                    <li>❌ 不要求注册账号</li>
+                    <li>❌ 不收集个人身份信息（姓名、邮箱、电话等）</li>
+                    <li>❌ 不上传您的跑步数据到任何服务器</li>
+                    <li>❌ 不使用任何第三方分析工具</li>
+                    <li>❌ 不显示广告</li>
+                </ul>
+                
+                <h2>2. 本地存储的数据</h2>
+                <p>以下数据仅存储在您的设备本地：</p>
+                <ul>
+                    <li>GPS 跑步轨迹数据</li>
+                    <li>运动统计数据（距离、时长、配速、卡路里）</li>
+                    <li>应用设置（语言、主题、单位等）</li>
+                    <li>可选：用户头像和昵称（仅用于本地显示）</li>
+                </ul>
+                
+                <h2>3. 权限使用说明</h2>
+                <p>应用需要以下权限来提供核心功能：</p>
+                <ul>
+                    <li><strong>位置权限：</strong>用于记录跑步轨迹。位置数据仅保存在本地数据库，不会上传。</li>
+                    <li><strong>运动传感器：</strong>用于计步功能。数据仅本地使用。</li>
+                    <li><strong>相册权限（可选）：</strong>仅用于选择头像图片，不会上传。</li>
+                    <li><strong>iCloud（可选）：</strong>仅在您开启云同步时，用于备份数据到您的 iCloud 账户。</li>
+                </ul>
+                
+                <h2>4. 数据导出与删除</h2>
+                <p>您对自己的数据拥有完全控制权：</p>
+                <ul>
+                    <li><strong>导出：</strong>支持将跑步记录导出为 GPX、JSON 或 CSV 格式</li>
+                    <li><strong>删除：</strong>可随时删除单条跑步记录或清空所有数据</li>
+                    <li><strong>备份：</strong>可选择备份到 iCloud 或仅从本地存储</li>
+                </ul>
+                
+                <h2>5. 第三方服务</h2>
+                <p>SimRun 使用以下第三方服务：</p>
+                <ul>
+                    <li><strong>Apple MapKit / Google Maps：</strong>用于地图显示（遵循各自隐私政策）</li>
+                    <li><strong>iCloud CloudKit：</strong>仅在启用云同步时使用，数据存储在您的 Apple 账户中</li>
+                </ul>
+                
+                <h2>6. 儿童隐私</h2>
+                <p>SimRun 适合 4 岁以上用户使用。我们不会故意收集 13 岁以下儿童的个人信息。</p>
+                
+                <h2>7. 隐私政策更新</h2>
+                <p>我们可能会不时更新本隐私政策。更新后的政策将在应用内和本页面公布。</p>
+                <p><strong>最后更新日期：</strong>2025年2月</p>
+                
+                <div class="contact">
+                    <h3>📧 联系我们</h3>
+                    <p>如有任何隐私相关问题，请联系我们：<br>
+                    <a href="mailto:support@simrun.app">support@simrun.app</a></p>
+                </div>
+            </div>
+            
+            <!-- 英文内容 -->
+            <div id="en" class="lang-content">
+                <div class="highlight">
+                    <p><strong>Core Commitment:</strong> SimRun is a fully local application. All your data is stored only on your device. We do not collect, upload, or share any of your personal information.</p>
+                </div>
+                
+                <h2>1. Information We Collect</h2>
+                <p><strong>We do not collect any personal information.</strong></p>
+                <p>SimRun is a locally-run running tracking app. All features operate entirely on your device. We:</p>
+                <ul>
+                    <li>❌ Do not require account registration</li>
+                    <li>❌ Do not collect personal identification information (name, email, phone, etc.)</li>
+                    <li>❌ Do not upload your running data to any server</li>
+                    <li>❌ Do not use any third-party analytics tools</li>
+                    <li>❌ Do not display advertisements</li>
+                </ul>
+                
+                <h2>2. Data Stored Locally</h2>
+                <p>The following data is stored only on your device:</p>
+                <ul>
+                    <li>GPS running route data</li>
+                    <li>Workout statistics (distance, duration, pace, calories)</li>
+                    <li>App settings (language, theme, units, etc.)</li>
+                    <li>Optional: User avatar and nickname (for local display only)</li>
+                </ul>
+                
+                <h2>3. Permissions</h2>
+                <p>The app requires the following permissions to provide core features:</p>
+                <ul>
+                    <li><strong>Location:</strong> Used to record running routes. Location data is saved locally only and never uploaded.</li>
+                    <li><strong>Motion Sensors:</strong> Used for step counting. Data is used locally only.</li>
+                    <li><strong>Photo Library (Optional):</strong> Only used for selecting avatar images. Not uploaded.</li>
+                    <li><strong>iCloud (Optional):</strong> Only used when you enable cloud sync to back up data to your iCloud account.</li>
+                </ul>
+                
+                <h2>4. Data Export and Deletion</h2>
+                <p>You have complete control over your data:</p>
+                <ul>
+                    <li><strong>Export:</strong> Support exporting running records as GPX, JSON, or CSV format</li>
+                    <li><strong>Delete:</strong> You can delete individual records or clear all data at any time</li>
+                    <li><strong>Backup:</strong> Optional backup to iCloud or local storage only</li>
+                </ul>
+                
+                <h2>5. Third-Party Services</h2>
+                <p>SimRun uses the following third-party services:</p>
+                <ul>
+                    <li><strong>Apple MapKit / Google Maps:</strong> Used for map display (subject to their respective privacy policies)</li>
+                    <li><strong>iCloud CloudKit:</strong> Only used when cloud sync is enabled. Data is stored in your Apple account.</li>
+                </ul>
+                
+                <h2>6. Children's Privacy</h2>
+                <p>SimRun is suitable for users aged 4 and above. We do not knowingly collect personal information from children under 13.</p>
+                
+                <h2>7. Policy Updates</h2>
+                <p>We may update this privacy policy from time to time. Updates will be announced in the app and on this page.</p>
+                <p><strong>Last Updated:</strong> February 2025</p>
+                
+                <div class="contact">
+                    <h3>📧 Contact Us</h3>
+                    <p>For any privacy-related questions, please contact us at:<br>
+                    <a href="mailto:support@simrun.app">support@simrun.app</a></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 SimRun. All rights reserved.</p>
+            <p>This privacy policy is designed to be transparent and user-friendly.</p>
+        </div>
+    </div>
+    
+    <script>
+        function switchLang(lang) {
+            // 切换按钮状态
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 切换内容
+            document.querySelectorAll('.lang-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

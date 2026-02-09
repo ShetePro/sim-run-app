@@ -159,7 +159,21 @@ export default function UserProfileScreen() {
               value={t("setting.cloudSyncValue") || "iCloud"}
               onPress={() => router.push("/(views)/cloud-sync")}
             />
-
+            <Divider />
+            <MenuItem
+              icon="flag-outline"
+              color="#F59E0B"
+              label={t("setting.editPlan") || "跑步计划"}
+              value={settings.plan.enabled ? t("common.enabled") : t("common.disabled")}
+              onPress={() => router.push("/(views)/plan-settings")}
+            />
+            <Divider />
+            <MenuItem
+              icon="volume-high-outline"
+              color="#EC4899"
+              label={t("voiceSettings.title") || "语音播报"}
+              onPress={() => router.push("/(views)/voice-settings")}
+            />
           </View>
         </View>
 

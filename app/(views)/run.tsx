@@ -13,6 +13,70 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
+import { getStorageItem } from "@/hooks/useStorageState";
+import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
+
+// GPS信号强度指示器组件
+function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
+  // 根据误差米数计算信号等级 (0-4)
+  const getSignalLevel = (acc: number): number => {
+    if (acc <= 0) return 0;
+    if (acc <= 5) return 4;   // 优秀 <5m
+    if (acc <= 10) return 3;  // 良好 5-10m
+    if (acc <= 20) return 2;  // 一般 10-20m
+    if (acc <= 50) return 1;  // 较差 20-50m
+    return 0;                 // 很差 >50m
+  };
+
+  const level = getSignalLevel(accuracy);
+  const totalBars = 4;
+
+  // 根据等级获取颜色
+  const getColor = (barIndex: number) => {
+    if (barIndex >= level) return "rgba(255,255,255,0.2)";
+    if (level === 4) return "#22c55e"; // 绿色-优秀
+    if (level === 3) return "#84cc16"; // 黄绿-良好
+    if (level === 2) return "#f59e0b"; // 橙色-一般
+    return "#ef4444"; // 红色-差
+  };
+
+  return (
+    <View style={signalStyles.container}>
+      <View style={signalStyles.barsContainer}>
+        {Array.from({ length: totalBars }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              signalStyles.bar,
+              {
+                height: 6 + index * 3,
+                backgroundColor: getColor(index),
+              },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const signalStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    height: 16,
+  },
+  barsContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 2,
+    height: 16,
+  },
+  bar: {
+    width: 4,
+    borderRadius: 1,
+  },
+});
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
@@ -22,12 +86,52 @@ export default function RunIndexScreen() {
   const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer, isPaused: isTimerPaused } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
+  const {
+    announceStart,
+    announceFinish,
+    announcePause,
+    announceResume,
+    checkAndAnnounce,
+    resetAnnounceState,
+  } = useVoiceAnnounce();
 
   useEffect(() => {
     if (seconds % 10 === 0 && distance > 10) {
       runStore.setPace(seconds / (distance / 1000));
     }
   }, [seconds, distance]);
+
+  // 周期性语音播报检查
+  useEffect(() => {
+    if (seconds > 0 && distance > 0) {
+      checkAndAnnounce({
+        distance,
+        duration: seconds,
+        pace: runStore.pace,
+        calories: calculateCalories(seconds),
+      });
+    }
+  }, [seconds, distance, runStore.pace]);
+
+  // 获取用户体重（默认70kg）
+  const getUserWeight = () => {
+    const userInfo = getStorageItem("userInfo");
+    if (userInfo) {
+      const parsed = JSON.parse(userInfo);
+      const weight = parseFloat(parsed.weight);
+      if (!isNaN(weight) && weight > 0) {
+        return weight;
+      }
+    }
+    return 70; // 默认体重70kg
+  };
+
+  // 计算卡路里消耗
+  const calculateCalories = (durationSeconds: number) => {
+    const weight = getUserWeight();
+    // MET值：跑步约10，公式：卡路里 = MET * 体重(kg) * 时间(小时)
+    return Math.floor(10 * weight * (durationSeconds / 3600));
+  };
 
   const detailList = useMemo(() => {
     const data = [
@@ -42,7 +146,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: Math.floor(10 * 70 * (seconds / 3600)),
+        value: calculateCalories(seconds),
         unit: t("unit.kcal"),
       },
     ];
@@ -62,21 +166,30 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
-  function onFinish() {
+  async function onFinish() {
     stopTimer();
     stopPedometer();
 
+    const calories = calculateCalories(seconds);
     const runData = {
       time: seconds,
       pace: runStore.pace,
-      energy: Math.floor(10 * 70 * (seconds / 3600)),
+      energy: calories,
     };
+
+    // 播报结束
+    announceFinish({
+      distance,
+      duration: seconds,
+      pace: runStore.pace,
+      calories,
+    });
 
     // 获取跑步记录ID
     const runId = getCurrentRunId();
 
-    // 先保存到数据库，然后跳转到确认页
-    stopTracking(runData);
+    // 先保存到数据库，等待完成后再跳转
+    await stopTracking(runData);
 
     // 只传递 runId，详情页面从数据库查询
     router.push({
@@ -97,19 +210,23 @@ export default function RunIndexScreen() {
   }
   function countdownFinish() {
     setShowCountdown(false);
+    resetAnnounceState();
     startTracking();
     startPedometer();
     startTimer();
+    announceStart();
   }
 
   function onPause() {
     pauseTracking();
     pauseTimer();
+    announcePause();
   }
 
   function onResume() {
     resumeTracking();
     resumeTimer();
+    announceResume();
   }
   return (
     <SafeAreaView
@@ -133,9 +250,9 @@ export default function RunIndexScreen() {
             <ThemedText style={styles.pausedText}>{t("run.paused")}</ThemedText>
           </View>
         )}
-        <View className={"flex flex-row justify-end gap-4"}>
-          <ThemedText>{t("run.steps")}:{runStore.stepCount}</ThemedText>
-          <ThemedText>{t("run.signal")}:{Math.floor(runStore.accuracy)}</ThemedText>
+        <View style={styles.topBar}>
+          <ThemedText style={styles.topBarText}>{t("run.steps")}:{runStore.stepCount}</ThemedText>
+          <SignalStrengthIndicator accuracy={runStore.accuracy} />
         </View>
         <View>
           <ThemedText
@@ -242,6 +359,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "baseline",
+    gap: 12,
+    paddingHorizontal: 10,
+  },
+  topBarText: {
+    fontSize: 14,
+    lineHeight: 16,
   },
   startButton: {
     flex: 1,

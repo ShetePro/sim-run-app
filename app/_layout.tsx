@@ -28,6 +28,9 @@ import { requestLocationPermission } from "@/utils/location/location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import '@/utils/location/locationTask'
 import { useSettingsStore, migrateFromLegacy } from "@/store/settingsStore";
+import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
+import { CustomSplashScreen } from "@/components/SplashScreen";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -44,10 +47,20 @@ LogBox.ignoreLogs(["Require cycle: node_modules/victory"]);
 export default function RootLayout() {
   // const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
   const [colorScheme, setColorScheme] = useState(Appearance.getColorScheme());
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isCustomSplashVisible, setIsCustomSplashVisible] = useState(true);
+  const [isAppReady, setIsAppReady] = useState(false);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
-  Appearance.addChangeListener((theme) => {
-    setColorScheme(() => theme.colorScheme);
-  });
+  
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener((theme) => {
+      setColorScheme(theme.colorScheme);
+    });
+    return () => subscription.remove();
+  }, []);
+  
   const [loaded] = useFonts({
     // SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     // PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
@@ -59,18 +72,56 @@ export default function RootLayout() {
   });
 
   const insets = useSafeAreaInsets();
+  
+  // 检查是否需要显示引导页
   useEffect(() => {
-    if (loaded) {
+    const checkOnboarding = async () => {
+      const hasSeenOnboarding = await getStorageItemAsync(ONBOARDING_KEY);
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+      }
+      setIsCheckingOnboarding(false);
+    };
+    checkOnboarding();
+  }, []);
+  
+  useEffect(() => {
+    if (loaded && !isCheckingOnboarding) {
+      // 先隐藏原生启动屏，显示自定义启动页
       SplashScreen.hideAsync();
+      // 标记应用准备好，触发自定义启动页退出动画
+      setIsAppReady(true);
     }
-    requestLocationPermission();
-    // 初始化设置（从存储加载）
-    useSettingsStore.getState().initialize();
-    // 迁移旧版本设置
-    migrateFromLegacy();
-    // 尝试从 iCloud 备份恢复数据库
-    restoreDatabaseFromICloud();
-  }, [loaded]);
+  }, [loaded, isCheckingOnboarding]);
+  
+  useEffect(() => {
+    // 检查完成后，如果不需要显示引导页，直接初始化
+    if (!isCheckingOnboarding && !showOnboarding) {
+      requestLocationPermission();
+      useSettingsStore.getState().initialize();
+      migrateFromLegacy();
+      restoreDatabaseFromICloud();
+    }
+  }, [isCheckingOnboarding, showOnboarding]);
+  
+  useEffect(() => {
+    // 引导页完成后初始化
+    if (hasCompletedOnboarding) {
+      requestLocationPermission();
+      useSettingsStore.getState().initialize();
+      migrateFromLegacy();
+      restoreDatabaseFromICloud();
+    }
+  }, [hasCompletedOnboarding]);
+  
+  // 处理引导页完成
+  const handleOnboardingComplete = () => {
+    setHasCompletedOnboarding(true);
+    // 延迟隐藏引导页，确保主应用已准备好
+    setTimeout(() => {
+      setShowOnboarding(false);
+    }, 100);
+  };
 
   // 从 iCloud 备份恢复数据库
   const restoreDatabaseFromICloud = async () => {
@@ -81,9 +132,27 @@ export default function RootLayout() {
     }
   };
 
-  if (!loaded) {
+  if (!loaded || isCheckingOnboarding) {
     return null;
   }
+  
+  // 显示自定义启动过渡页
+  if (isCustomSplashVisible) {
+    return (
+      <CustomSplashScreen
+        isReady={isAppReady}
+        onAnimationComplete={() => setIsCustomSplashVisible(false)}
+      />
+    );
+  }
+  
+  // 显示引导页
+  if (showOnboarding) {
+    return (
+      <OnboardingScreen onComplete={handleOnboardingComplete} />
+    );
+  }
+  
   return (
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <SQLiteProvider

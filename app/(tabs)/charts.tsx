@@ -29,7 +29,7 @@ export default function StatsNewScreen() {
   const [startDate, setStartDate] = useState("");
   const [statsData, setStatsData] = useState<any>([]);
   const { queryStatisticsByTime } = useRunStatistics();
-  
+
   const totalDistance = statsData?.reduce((a: number, b: RunRecord) => {
     return a + b.distance / 1000;
   }, 0);
@@ -43,11 +43,11 @@ export default function StatsNewScreen() {
   );
   const avgPace =
     totalDistance > 0.01 ? getPaceLabel(totalTime / totalDistance / 60) : "0";
-    
+
   function changeDate(key: "isoWeek" | "month" | "year") {
     setTimeRange(key);
   }
-  
+
   // 获取本地化的时间标签
   const getAxisLabels = () => {
     if (timeRange === "isoWeek") {
@@ -59,13 +59,13 @@ export default function StatsNewScreen() {
       return t("time.months", { returnObjects: true }) as string[];
     }
   };
-  
+
   const axisLabels = useMemo(() => getAxisLabels(), [timeRange, i18n.language]);
-  
+
   const chartData = useMemo(() => {
     return groupRunsByDay(statsData, timeRange);
   }, [statsData, timeRange]);
-  
+
   useEffect(() => {
     const startDay = dayjs().startOf(timeRange).format("YYYY-MM-DD");
     setStartDate(startDay);
@@ -73,7 +73,7 @@ export default function StatsNewScreen() {
       setStatsData(res);
     });
   }, [timeRange]);
-  
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
       <View className="px-5 pt-6 pb-4 bg-white dark:bg-slate-800">
@@ -100,7 +100,6 @@ export default function StatsNewScreen() {
             unit={t("unit.km")}
             icon="map-marker-distance"
             iconColor="#6366f1"
-            trend="+12%"
           />
           <SummaryCard
             title={t("charts.totalCalories")}
@@ -116,10 +115,10 @@ export default function StatsNewScreen() {
             iconColor="#10b981"
           />
         </View>
-        
-        <ChartSectionTitle 
-          title={t("charts.dailyDistance")} 
-          subtitle={t("charts.weeklyTrend")} 
+
+        <ChartSectionTitle
+          title={t("charts.dailyDistance")}
+          subtitle={t("charts.weeklyTrend")}
         />
         <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-8">
           <RunBarChart
@@ -129,9 +128,9 @@ export default function StatsNewScreen() {
           />
         </View>
 
-        <ChartSectionTitle 
-          title={t("charts.dailyCalories")} 
-          subtitle={t("charts.caloriesBurned")} 
+        <ChartSectionTitle
+          title={t("charts.dailyCalories")}
+          subtitle={t("charts.caloriesBurned")}
         />
         <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-10">
           <KcalChart

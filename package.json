@@ -22,6 +22,8 @@
     "@bacons/apple-targets": "^3.0.6",
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.8",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/slider": "5.0.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
@@ -45,6 +47,7 @@
     "expo-router": "~6.0.10",
     "expo-secure-store": "~14.0.0",
     "expo-sensors": "~15.0.8",
+    "expo-speech": "~14.0.8",
     "expo-splash-screen": "~31.0.10",
     "expo-sqlite": "~16.0.8",
     "expo-status-bar": "~3.0.8",
@@ -81,6 +84,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "prettier": "^3.6.2",
+    "sharp": "^0.34.5",
     "typescript": "~5.9.2"
   },
   "private": true

@@ -44,12 +44,11 @@ export default function HomeScreen() {
         steps: 0,
       };
       res.forEach((run, index) => {
-        todayData.distance += (run.distance + todayData.distance) / 1000;
-        todayData.calories += run.pace;
+        todayData.distance += run.distance / 1000;
+        todayData.calories += run.energy;
         todayData.duration += run.time;
       });
       const { distance, calories, duration } = todayData;
-      todayData.calories = Math.ceil(calories / 1000);
       todayData.pace = distance < 10 ? 0 : duration / distance / 60;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
