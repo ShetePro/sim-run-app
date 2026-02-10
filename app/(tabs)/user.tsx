@@ -46,9 +46,15 @@ export default function UserProfileScreen() {
     }, [isLoaded, initialize])
   );
 
+  // 计算当前是否为深色模式（考虑 system 设置）
+  const isDarkMode =
+    settings.themeMode === "system"
+      ? colorScheme === "dark"
+      : settings.themeMode === "dark";
+
   // 处理主题切换 - 只更新设置，不直接操作主题
   const handleThemeToggle = () => {
-    const newTheme = settings.themeMode === "dark" ? "light" : "dark";
+    const newTheme = isDarkMode ? "light" : "dark";
     updateSetting("themeMode", newTheme);
   };
 
@@ -67,10 +73,6 @@ export default function UserProfileScreen() {
       ]
     );
   };
-
-  // 计算当前是否暗黑模式（优先使用设置，其次系统）
-  const isDarkMode = settings.themeMode === "dark" || 
-    (settings.themeMode === "system" && colorScheme === "dark");
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">

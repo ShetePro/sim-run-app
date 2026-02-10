@@ -1,7 +1,7 @@
 # SimRun - 专注跑步的智能记录应用
 
 <p align="center">
-  <img src="./assets/images/icon.png" width="120" height="120" alt="SimRun Logo">
+  <img src="./assets/images/icon-preview.png" width="120" height="120" alt="SimRun Logo">
 </p>
 
 <p align="center">
