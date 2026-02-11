@@ -32,77 +32,84 @@ function LongPressFinishButton({
   t: any;
 }) {
   const [isPressing, setIsPressing] = useState(false);
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const [progress, setProgress] = useState(0);
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
   const LONG_PRESS_DURATION = 1500; // 1.5秒长按
+
+  const animateProgress = () => {
+    const elapsed = Date.now() - startTimeRef.current;
+    const newProgress = Math.min(elapsed / LONG_PRESS_DURATION, 1);
+
+    setProgress(newProgress);
+
+    if (newProgress < 1 && isPressing) {
+      rafRef.current = requestAnimationFrame(animateProgress);
+    } else if (newProgress >= 1) {
+      // 进度满 100% 才触发结束
+      onFinish();
+    }
+  };
 
   const startProgress = () => {
     setIsPressing(true);
-    progressAnim.setValue(0);
+    setProgress(0);
     scaleAnim.setValue(1);
+    startTimeRef.current = Date.now();
 
-    Animated.parallel([
-      Animated.timing(progressAnim, {
-        toValue: 1,
-        duration: LONG_PRESS_DURATION,
-        easing: Easing.linear,
-        useNativeDriver: false,
-      }),
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(({ finished }) => {
-      if (finished) {
-        onFinish();
-      }
-    });
+    // 使用 requestAnimationFrame 实现精确同步的进度条
+    rafRef.current = requestAnimationFrame(animateProgress);
+
+    // 缩放动画
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
   };
 
   const stopProgress = () => {
     setIsPressing(false);
-    progressAnim.stopAnimation();
-    scaleAnim.stopAnimation();
 
-    Animated.parallel([
-      Animated.timing(progressAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // 取消动画帧
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    // 停止并重置动画
+    scaleAnim.stopAnimation();
+    setProgress(0);
+
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0%", "100%"],
-  });
+  const progressWidth = `${progress * 100}%`;
 
   return (
     <Pressable
-      style={[styles.finishButton, { transform: [{ scale: scaleAnim }] }]}
+      style={styles.finishButton}
       onPressIn={startProgress}
       onPressOut={stopProgress}
-      delayLongPress={LONG_PRESS_DURATION}
     >
       {/* 进度背景 */}
-      <Animated.View
-        style={[styles.progressBackground, { width: progressWidth }]}
+      <View
+        style={[styles.progressBackground, { width: progressWidth as any }]}
       />
-      <View style={styles.buttonContent}>
+      {/* 按钮内容容器 - 应用缩放动画 */}
+      <Animated.View
+        style={[styles.buttonContent, { transform: [{ scale: scaleAnim }] }]}
+      >
         <Ionicons name="stop" size={20} color="#fff" />
         <ThemedText style={styles.buttonText}>
           {isPressing ? t("run.holdToFinish") : t("run.finish")}
         </ThemedText>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
