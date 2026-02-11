@@ -33,13 +33,35 @@ export const LiveActivity = {
    * 更新数据
    * 建议在 TaskManager 或 Zustand 状态变化时调用
    */
-  update: async (params: LiveActivityParams) => {
-    try {
-      await updateLiveActivity(params);
-    } catch (e) {
-      // 忽略错误，避免因为更新频繁导致 crash
-    }
-  },
+  update: (() => {
+    let lastUpdateTime = 0;
+    const MIN_UPDATE_INTERVAL = 3000; // 最少 3 秒更新一次
+    let isUpdating = false;
+
+    return async (params: LiveActivityParams) => {
+      // 频率限制
+      const now = Date.now();
+      if (now - lastUpdateTime < MIN_UPDATE_INTERVAL) {
+        return;
+      }
+      lastUpdateTime = now;
+
+      // 防止并发更新
+      if (isUpdating) {
+        return;
+      }
+
+      isUpdating = true;
+      try {
+        await updateLiveActivity(params);
+      } catch (e) {
+        // 忽略错误，避免因为更新频繁导致 crash
+        console.log("LiveActivity update skipped:", e);
+      } finally {
+        isUpdating = false;
+      }
+    };
+  })(),
 
   /**
    * 关闭灵动岛
