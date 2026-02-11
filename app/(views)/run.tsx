@@ -1,11 +1,18 @@
-import { StyleSheet, View, Pressable, Image } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Pressable,
+  Image,
+  Animated,
+  Easing,
+} from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Map from "@/components/map/Map";
 import { useRun } from "@/hooks/useRun";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 import Countdown from "@/components/Countdown";
@@ -16,16 +23,100 @@ import { Ionicons } from "@expo/vector-icons";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 
+// 长按结束按钮组件
+function LongPressFinishButton({
+  onFinish,
+  t,
+}: {
+  onFinish: () => void;
+  t: any;
+}) {
+  const [isPressing, setIsPressing] = useState(false);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const LONG_PRESS_DURATION = 1500; // 1.5秒长按
+
+  const startProgress = () => {
+    setIsPressing(true);
+    progressAnim.setValue(0);
+    scaleAnim.setValue(1);
+
+    Animated.parallel([
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: LONG_PRESS_DURATION,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(({ finished }) => {
+      if (finished) {
+        onFinish();
+      }
+    });
+  };
+
+  const stopProgress = () => {
+    setIsPressing(false);
+    progressAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+
+    Animated.parallel([
+      Animated.timing(progressAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
+
+  return (
+    <Pressable
+      style={[styles.finishButton, { transform: [{ scale: scaleAnim }] }]}
+      onPressIn={startProgress}
+      onPressOut={stopProgress}
+      delayLongPress={LONG_PRESS_DURATION}
+    >
+      {/* 进度背景 */}
+      <Animated.View
+        style={[styles.progressBackground, { width: progressWidth }]}
+      />
+      <View style={styles.buttonContent}>
+        <Ionicons name="stop" size={20} color="#fff" />
+        <ThemedText style={styles.buttonText}>
+          {isPressing ? t("run.holdToFinish") : t("run.finish")}
+        </ThemedText>
+      </View>
+    </Pressable>
+  );
+}
+
 // GPS信号强度指示器组件
 function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
   // 根据误差米数计算信号等级 (0-4)
   const getSignalLevel = (acc: number): number => {
     if (acc <= 0) return 0;
-    if (acc <= 5) return 4;   // 优秀 <5m
-    if (acc <= 10) return 3;  // 良好 5-10m
-    if (acc <= 20) return 2;  // 一般 10-20m
-    if (acc <= 50) return 1;  // 较差 20-50m
-    return 0;                 // 很差 >50m
+    if (acc <= 5) return 4; // 优秀 <5m
+    if (acc <= 10) return 3; // 良好 5-10m
+    if (acc <= 20) return 2; // 一般 10-20m
+    if (acc <= 50) return 1; // 较差 20-50m
+    return 0; // 很差 >50m
   };
 
   const level = getSignalLevel(accuracy);
@@ -80,10 +171,28 @@ const signalStyles = StyleSheet.create({
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, stopTracking, pauseTracking, resumeTracking, getCurrentRunId, distance, heading, routePoints, isPaused } = useRun();
+  const {
+    location,
+    startTracking,
+    stopTracking,
+    pauseTracking,
+    resumeTracking,
+    getCurrentRunId,
+    distance,
+    heading,
+    routePoints,
+    isPaused,
+  } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
-  const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer, isPaused: isTimerPaused } = useTick();
+  const {
+    seconds,
+    startTimer,
+    stopTimer,
+    pauseTimer,
+    resumeTimer,
+    isPaused: isTimerPaused,
+  } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
   const {
@@ -257,7 +366,9 @@ export default function RunIndexScreen() {
           </View>
         )}
         <View style={styles.topBar}>
-          <ThemedText style={styles.topBarText}>{t("run.steps")}:{runStore.stepCount}</ThemedText>
+          <ThemedText style={styles.topBarText}>
+            {t("run.steps")}:{runStore.stepCount}
+          </ThemedText>
           <SignalStrengthIndicator accuracy={runStore.accuracy} />
         </View>
         <View>
@@ -323,14 +434,7 @@ export default function RunIndexScreen() {
                   </ThemedText>
                 </View>
               </Pressable>
-              <Pressable style={styles.finishButton} onPress={onFinish}>
-                <View style={styles.buttonContent}>
-                  <Ionicons name="stop" size={20} color="#fff" />
-                  <ThemedText style={styles.buttonText}>
-                    {t("run.finish")}
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <LongPressFinishButton onFinish={onFinish} t={t} />
             </>
           ) : (
             /* 跑步中状态：暂停按钮 */
@@ -343,14 +447,7 @@ export default function RunIndexScreen() {
                   </ThemedText>
                 </View>
               </Pressable>
-              <Pressable style={styles.finishButton} onPress={onFinish}>
-                <View style={styles.buttonContent}>
-                  <Ionicons name="stop" size={20} color="#fff" />
-                  <ThemedText style={styles.buttonText}>
-                    {t("run.finish")}
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <LongPressFinishButton onFinish={onFinish} t={t} />
             </>
           )}
         </View>
@@ -443,5 +540,13 @@ const styles = StyleSheet.create({
     color: "#F59E0B",
     fontSize: 16,
     fontWeight: "600",
+  },
+  progressBackground: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 10,
   },
 });

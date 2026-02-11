@@ -1,6 +1,9 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { getStorageItemAsync, setStorageItemAsync } from "@/hooks/useStorageState";
+import {
+  getStorageItemAsync,
+  setStorageItemAsync,
+} from "@/hooks/useStorageState";
 
 // 设置存储 key（与 settingsStore 保持一致）
 const SETTINGS_STORAGE_KEY = "app-settings";
@@ -121,6 +124,7 @@ const resources = {
         detail: "Run Detail",
         start: "Start",
         finish: "Finish",
+        holdToFinish: "Hold to finish",
         pause: "Pause",
         resume: "Resume",
         paused: "Paused",
@@ -147,19 +151,23 @@ const resources = {
         getStarted: "Get Started",
         gps: {
           title: "GPS Tracking",
-          description: "SimRun uses precise GPS to record your running routes. Track every step and watch your progress on the map.",
+          description:
+            "SimRun uses precise GPS to record your running routes. Track every step and watch your progress on the map.",
         },
         location: {
           title: "Background Location",
-          description: "To keep tracking your run when the screen is locked, we need \"Always\" location permission. Your data stays on your device.",
+          description:
+            'To keep tracking your run when the screen is locked, we need "Always" location permission. Your data stays on your device.',
         },
         privacy: {
           title: "Privacy First",
-          description: "All your data is stored locally on your device. No account required. No data uploaded to any server. Your privacy is our priority.",
+          description:
+            "All your data is stored locally on your device. No account required. No data uploaded to any server. Your privacy is our priority.",
         },
         start: {
           title: "Ready to Run?",
-          description: "Everything is set up. Start your first run and let SimRun help you track your fitness journey!",
+          description:
+            "Everything is set up. Start your first run and let SimRun help you track your fitness journey!",
         },
       },
       plan: {
@@ -172,7 +180,8 @@ const resources = {
         setYourFirstGoal: "Set Your First Goal",
         welcomeTitle: "Set Your Running Goal",
         welcomeSubtitle: "Challenge yourself and stay motivated",
-        welcomeDesc: "Set personalized running goals to help you maintain consistency and achieve your fitness targets.",
+        welcomeDesc:
+          "Set personalized running goals to help you maintain consistency and achieve your fitness targets.",
         quickSelect: "Quick Setup",
         beginner: "Beginner",
         regular: "Regular",
@@ -193,7 +202,8 @@ const resources = {
         enableReminderDesc: "Get notified at your preferred time",
         reminderTime: "Reminder Time",
         resetTitle: "Reset Plan",
-        resetMessage: "Are you sure you want to reset all plan settings to default?",
+        resetMessage:
+          "Are you sure you want to reset all plan settings to default?",
         reset: "Reset",
         resetToDefault: "Reset to Default",
       },
@@ -226,9 +236,11 @@ const resources = {
         upload: "Backup Now",
         restore: "Restore",
         restoreTitle: "Restore Data",
-        restoreConfirm: "This will overwrite all data on this device with the cloud backup. Continue?",
+        restoreConfirm:
+          "This will overwrite all data on this device with the cloud backup. Continue?",
         restoreSuccess: "Restore Success",
-        restoreSuccessMessage: "Data has been restored. Please restart the app to apply changes.",
+        restoreSuccessMessage:
+          "Data has been restored. Please restart the app to apply changes.",
         syncSettings: "Sync Settings",
         autoSync: "Auto Sync",
         autoSyncDesc: "Backup after each run",
@@ -393,7 +405,8 @@ const resources = {
       },
       voice: {
         startRunning: "Start running! Enjoy your workout!",
-        finishRunning: "Workout complete! You ran {{distance}} kilometers in {{time}}.",
+        finishRunning:
+          "Workout complete! You ran {{distance}} kilometers in {{time}}.",
         finishPace: " Average pace {{pace}} per kilometer.",
         finishCalories: " Calories burned {{calories}} kcal.",
         paused: "Workout paused",
@@ -431,7 +444,8 @@ const resources = {
         testVoice: "Test Voice",
         testing: "Testing...",
         testVoiceContent: "Voice test successful",
-        testVoiceHint: "If no sound, check device volume and ensure voice is enabled in system settings.",
+        testVoiceHint:
+          "If no sound, check device volume and ensure voice is enabled in system settings.",
         reset: "Reset to Default",
         tips: "Voice Coach helps you stay informed without looking at your phone during workouts.",
         frequencyOptions: {
@@ -560,6 +574,7 @@ const resources = {
         detail: "跑步详情",
         start: "开始",
         finish: "结束",
+        holdToFinish: "长按结束",
         pause: "暂停",
         resume: "继续",
         paused: "已暂停",
@@ -586,19 +601,23 @@ const resources = {
         getStarted: "开始使用",
         gps: {
           title: "GPS 轨迹记录",
-          description: "SimRun 使用高精度 GPS 记录您的跑步路线。追踪每一步，在地图上见证您的运动轨迹。",
+          description:
+            "SimRun 使用高精度 GPS 记录您的跑步路线。追踪每一步，在地图上见证您的运动轨迹。",
         },
         location: {
           title: "后台定位权限",
-          description: "为了在锁屏时继续记录跑步数据，我们需要\"始终\"位置权限。您的数据仅保存在本地设备。",
+          description:
+            '为了在锁屏时继续记录跑步数据，我们需要"始终"位置权限。您的数据仅保存在本地设备。',
         },
         privacy: {
           title: "隐私优先",
-          description: "您的所有数据都存储在本地设备上。无需注册账号，数据不会上传到任何服务器。保护您的隐私是我们的首要任务。",
+          description:
+            "您的所有数据都存储在本地设备上。无需注册账号，数据不会上传到任何服务器。保护您的隐私是我们的首要任务。",
         },
         start: {
           title: "准备好开始了吗？",
-          description: "一切准备就绪！开始您的第一次跑步，让 SimRun 帮您记录运动之旅！",
+          description:
+            "一切准备就绪！开始您的第一次跑步，让 SimRun 帮您记录运动之旅！",
         },
       },
       plan: {
@@ -665,7 +684,8 @@ const resources = {
         upload: "立即备份",
         restore: "恢复数据",
         restoreTitle: "恢复数据",
-        restoreConfirm: "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
+        restoreConfirm:
+          "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
         restoreSuccess: "恢复成功",
         restoreSuccessMessage: "数据已成功恢复，请重启应用以应用更改。",
         syncSettings: "同步设置",
@@ -887,7 +907,9 @@ const resources = {
 // 从 settings 存储中获取语言
 const getLanguageFromSettings = async (): Promise<string | null> => {
   try {
-    const stored = await getStorageItemAsync(SETTINGS_STORAGE_KEY) as string | null;
+    const stored = (await getStorageItemAsync(SETTINGS_STORAGE_KEY)) as
+      | string
+      | null;
     if (stored) {
       const parsed = JSON.parse(stored);
       return parsed.language || null;
@@ -905,7 +927,7 @@ const initI18n = async () => {
 
   // 如果没找到，尝试旧 key（兼容旧版本）
   if (!savedLang) {
-    savedLang = await getStorageItemAsync("app-language") as string | null;
+    savedLang = (await getStorageItemAsync("app-language")) as string | null;
   }
 
   i18n.use(initReactI18next).init({
