@@ -15,18 +15,17 @@ interface LiveActivityParams {
   duration: string;
 }
 
-
 export const LiveActivity = {
   /**
    * 启动灵动岛
    * 建议在点击“开始跑步”按钮时调用
    */
-  start: () => {
+  start: async () => {
     try {
-      startLiveActivity();
+      await startLiveActivity();
       console.log("JS: 请求启动灵动岛");
     } catch (e) {
-      console.error("JS: 启动灵动岛失败");
+      console.error("JS: 启动灵动岛失败", e);
     }
   },
 
@@ -34,9 +33,9 @@ export const LiveActivity = {
    * 更新数据
    * 建议在 TaskManager 或 Zustand 状态变化时调用
    */
-  update: (params: LiveActivityParams) => {
+  update: async (params: LiveActivityParams) => {
     try {
-      updateLiveActivity(params)
+      await updateLiveActivity(params);
     } catch (e) {
       // 忽略错误，避免因为更新频繁导致 crash
     }
@@ -44,14 +43,14 @@ export const LiveActivity = {
 
   /**
    * 关闭灵动岛
-   * 建议在点击“结束跑步”或“保存记录”时调用
+   * 建议在点击"结束跑步"或"保存记录"时调用
    */
-  stop: () => {
+  stop: async () => {
     try {
-      stopLiveActivity();
+      await stopLiveActivity();
       console.log("JS: 请求关闭灵动岛");
     } catch (e) {
-      console.error("JS: 关闭灵动岛失败");
+      console.error("JS: 关闭灵动岛失败", e);
     }
   },
 };

@@ -12,6 +12,9 @@ public struct RunAttributes: ActivityAttributes {
 }
 public class ActivityControllerModule: Module {
   private var currentActivity: Any?
+  private var expirationDate: Date?
+  private var expirationTask: Task<Void, Never>?
+  
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
 
@@ -22,6 +25,54 @@ public class ActivityControllerModule: Module {
       name: UIApplication.willTerminateNotification,
       object: nil
     )
+    
+    // 启动时清理可能残留的 Activity
+    Task {
+      await cleanUpStaleActivities()
+    }
+  }
+  
+  /// 恢复或清理 Activity（App 启动时调用）
+  /// 如果 Activity 存在，恢复它并设置过期时间
+  @available(iOS 16.1, *)
+  private func cleanUpStaleActivities() async {
+    // 尝试恢复当前 Activity（如果存在）
+    if let existingActivity = Activity<RunAttributes>.activities.first {
+      self.currentActivity = existingActivity
+      print("🔄 恢复现有 Activity: \(existingActivity.id)")
+      
+      // 恢复后设置过期任务（1小时后）
+      // 如果用户继续跑步，update 会被调用并延长过期时间
+      await MainActor.run {
+        self.scheduleExpiration()
+      }
+      print("✅ Activity 已恢复，过期时间已设置")
+    }
+  }
+  
+  /// 设置自动过期任务
+  private func scheduleExpiration() {
+    // 取消之前的任务
+    expirationTask?.cancel()
+    
+    // 设置新的过期时间（5分钟后）
+    expirationDate = Date().addingTimeInterval(300) // 5分钟
+    
+    expirationTask = Task {
+      try? await Task.sleep(nanoseconds: 300 * 1_000_000_000) // 5分钟
+      
+      await MainActor.run {
+        if #available(iOS 16.1, *) {
+          Task {
+            if let activity = self.currentActivity as? Activity<RunAttributes> {
+              await activity.end(dismissalPolicy: .immediate)
+              self.currentActivity = nil
+              print("⏰ Activity 已自动过期并关闭")
+            }
+          }
+        }
+      }
+    }
   }
   public func definition() -> ModuleDefinition {
     Name("ActivityController")
@@ -46,6 +97,8 @@ public class ActivityControllerModule: Module {
             pushType: nil
           )
           self.currentActivity = activity
+          // 启动时设置1小时后自动过期
+          self.scheduleExpiration()
           print("✅ 灵动岛已开启 ID: \(activity.id)")
         } catch {
           print("❌ 开启失败: \(error)")
@@ -61,6 +114,11 @@ public class ActivityControllerModule: Module {
         let newState = RunAttributes.ContentState(distance: distance, duration: duration, pace: pace)
         Task {
           await activity.update(using: newState)
+          // 每次更新时重置过期时间（延长1小时）
+          await MainActor.run {
+            self.scheduleExpiration()
+          }
+          print("🔄 Activity 已更新，过期时间已延长1小时")
         }
       }
     }
@@ -70,6 +128,9 @@ public class ActivityControllerModule: Module {
       let activity = self.currentActivity as? Activity<RunAttributes> {
 
         Task {
+          // 取消自动过期任务
+          self.expirationTask?.cancel()
+          self.expirationTask = nil
           await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
           self.currentActivity = nil
           print("🛑 灵动岛已结束")
@@ -79,21 +140,9 @@ public class ActivityControllerModule: Module {
   }
   @objc
   private func handleAppKill() {
-    if #available(iOS 16.1, *) {
-      Task {
-        // 1. 这里的关键是：直接遍历 Activity<RunAttributes>.activities
-        // 这样即使 self.currentActivity 丢了，也能关掉锁屏上的“僵尸”活动
-        for activity in Activity<RunAttributes>.activities {
-          print("🛑 正在关闭活动 ID: \(activity.id)")
-
-          // 2. 使用 .immediate 策略：立即从锁屏和灵动岛移除，不留痕迹
-          await activity.end(dismissalPolicy: .immediate)
-        }
-
-        // 3. 清理本地变量
-        self.currentActivity = nil
-        print("✅ 所有灵动岛及锁屏通知已彻底清理")
-      }
-    }
+    // App 被杀时，不立即结束 Activity
+    // 让它按照 scheduleExpiration 设置的过期时间自动结束
+    // 这样如果用户还在跑步（持续更新），Activity 会继续存在
+    print("👋 App 被杀，Activity 将在过期后自动关闭（如果不再更新）")
   }
 }
