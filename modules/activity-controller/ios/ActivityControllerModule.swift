@@ -12,8 +12,6 @@ public struct RunAttributes: ActivityAttributes {
 }
 public class ActivityControllerModule: Module {
   private var currentActivity: Any?
-  private var expirationDate: Date?
-  private var expirationTask: Task<Void, Never>?
   
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
@@ -45,31 +43,6 @@ public class ActivityControllerModule: Module {
     }
     self.currentActivity = nil
   }
-  
-  /// 设置自动过期任务
-  private func scheduleExpiration() {
-    // 取消之前的任务
-    expirationTask?.cancel()
-    
-    // 设置新的过期时间（5分钟后）
-    expirationDate = Date().addingTimeInterval(300) // 5分钟
-    
-    expirationTask = Task {
-      try? await Task.sleep(nanoseconds: 300 * 1_000_000_000) // 5分钟
-      
-      await MainActor.run {
-        if #available(iOS 16.1, *) {
-          Task {
-            if let activity = self.currentActivity as? Activity<RunAttributes> {
-              await activity.end(dismissalPolicy: .immediate)
-              self.currentActivity = nil
-              print("⏰ Activity 已自动过期并关闭")
-            }
-          }
-        }
-      }
-    }
-  }
   public func definition() -> ModuleDefinition {
     Name("ActivityController")
 
@@ -93,8 +66,6 @@ public class ActivityControllerModule: Module {
             pushType: nil
           )
           self.currentActivity = activity
-          // 启动时设置1小时后自动过期
-          self.scheduleExpiration()
           print("✅ 灵动岛已开启 ID: \(activity.id)")
         } catch {
           print("❌ 开启失败: \(error)")
@@ -123,9 +94,7 @@ public class ActivityControllerModule: Module {
         Task { @MainActor in
           do {
             try await activity.update(using: newState)
-            // 重置过期时间
-            self.scheduleExpiration()
-            print("🔄 Activity 已更新，过期时间已延长")
+            print("🔄 Activity 已更新")
           } catch {
             print("❌ Activity 更新失败: \(error)")
           }
@@ -138,9 +107,6 @@ public class ActivityControllerModule: Module {
       let activity = self.currentActivity as? Activity<RunAttributes> {
 
         Task {
-          // 取消自动过期任务
-          self.expirationTask?.cancel()
-          self.expirationTask = nil
           await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
           self.currentActivity = nil
           print("🛑 灵动岛已结束")
@@ -153,9 +119,6 @@ public class ActivityControllerModule: Module {
     // App 被杀时，立即结束 Activity
     // 注意：willTerminateNotification 是同步的，必须使用信号量阻塞主线程等待异步完成
     if #available(iOS 16.1, *) {
-      // 取消自动过期任务
-      expirationTask?.cancel()
-      
       // 创建信号量，阻塞主线程
       let semaphore = DispatchSemaphore(value: 0)
       
