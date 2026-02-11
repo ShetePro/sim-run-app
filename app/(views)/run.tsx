@@ -228,7 +228,7 @@ export default function RunIndexScreen() {
         distance,
         duration: seconds,
         pace: runStore.pace,
-        calories: calculateCalories(seconds),
+        calories: calculateCalories(distance, seconds),
       });
     }
   }, [seconds, distance, runStore.pace]);
@@ -246,12 +246,58 @@ export default function RunIndexScreen() {
     return 70; // 默认体重70kg
   };
 
-  // 计算卡路里消耗
-  const calculateCalories = (durationSeconds: number) => {
+  // 计算卡路里消耗（基于距离和时间增量）
+  const calculateCalories = (currentDistance: number, currentTime: number) => {
     const weight = getUserWeight();
-    // MET值：跑步约10，公式：卡路里 = MET * 体重(kg) * 时间(小时)
-    return Math.floor(10 * weight * (durationSeconds / 3600));
+    const lastCalc = lastCalorieCalcRef.current;
+
+    // 计算增量
+    const distanceDelta = currentDistance - lastCalc.distance; // 米
+    const timeDelta = currentTime - lastCalc.time; // 秒
+
+    // 距离增量太小，认为没运动（原地不动）
+    if (distanceDelta < 10 || timeDelta <= 0) {
+      return lastCalc.calories;
+    }
+
+    // 计算实时配速（秒/公里）
+    const pacePerKm = timeDelta / (distanceDelta / 1000);
+
+    // 根据配速确定 MET 值
+    let met = 8; // 默认值（慢跑）
+    if (pacePerKm > 720)
+      met = 4; // >12:00/km 慢走
+    else if (pacePerKm > 540)
+      met = 6; // 9:00-12:00/km 快走
+    else if (pacePerKm > 420)
+      met = 8; // 7:00-9:00/km 慢跑
+    else if (pacePerKm > 360)
+      met = 10; // 6:00-7:00/km 中速跑
+    else met = 12; // <6:00/km 快跑
+
+    // 计算增量卡路里
+    const hours = timeDelta / 3600;
+    const calorieIncrement = Math.floor(met * weight * hours);
+
+    // 更新累计值
+    const newTotalCalories = lastCalc.calories + calorieIncrement;
+    lastCalorieCalcRef.current = {
+      distance: currentDistance,
+      time: currentTime,
+      calories: newTotalCalories,
+    };
+
+    return newTotalCalories;
   };
+
+  const isFinishingRef = useRef(false);
+
+  // 记录上次卡路里计算状态（用于增量计算）- 必须在 calculateCalories 之前定义
+  const lastCalorieCalcRef = useRef({
+    distance: 0,
+    time: 0,
+    calories: 0,
+  });
 
   const detailList = useMemo(() => {
     const data = [
@@ -266,7 +312,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: calculateCalories(seconds),
+        value: calculateCalories(distance, seconds),
         unit: t("unit.kcal"),
       },
     ];
@@ -286,7 +332,6 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
-  const isFinishingRef = useRef(false);
 
   async function onFinish() {
     // 防止重复触发
@@ -299,7 +344,7 @@ export default function RunIndexScreen() {
     stopTimer();
     stopPedometer();
 
-    const calories = calculateCalories(seconds);
+    const calories = calculateCalories(distance, seconds);
     const runData = {
       time: seconds,
       pace: runStore.pace,
@@ -340,6 +385,8 @@ export default function RunIndexScreen() {
   function countdownFinish() {
     setShowCountdown(false);
     resetAnnounceState();
+    // 重置卡路里计算状态
+    lastCalorieCalcRef.current = { distance: 0, time: 0, calories: 0 };
     startTracking();
     startPedometer();
     startTimer();
