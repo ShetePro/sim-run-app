@@ -22,7 +22,7 @@ export default function HistoryScreen() {
       const recordsMap: {
         [key: string]: HistoryRecord;
       } = {};
-      console.log(runs, 'runs');
+      console.log(runs, "runs");
       runs.forEach((item) => {
         if (item.startTime) {
           const date = getDateLabel(item.startTime);
@@ -61,6 +61,24 @@ export default function HistoryScreen() {
       return dateFormat(dateTime);
     }
   }
+  const handleDeleteRecord = async (id: number) => {
+    try {
+      await deleteRun(id);
+      // 更新本地状态，移除已删除的记录
+      setHistoryRecords((prevRecords) => {
+        const updatedRecords = prevRecords
+          .map((record) => ({
+            ...record,
+            list: record.list.filter((item) => item.id !== id),
+          }))
+          .filter((record) => record.list.length > 0);
+        return updatedRecords;
+      });
+    } catch (error) {
+      console.error("Failed to delete record:", error);
+    }
+  };
+
   function renderItem() {
     return historyRecords.map((record) => {
       return (
@@ -70,7 +88,11 @@ export default function HistoryScreen() {
           </ThemedText>
           <View>
             {record.list.map((item) => (
-              <HistoryItem key={item.id} record={item} />
+              <HistoryItem
+                key={item.id}
+                record={item}
+                onDelete={handleDeleteRecord}
+              />
             ))}
           </View>
         </View>
@@ -87,7 +109,10 @@ export default function HistoryScreen() {
       >
         <EmptyState
           title={t("history.emptyTitle") || "还没有跑步记录"}
-          subtitle={t("history.emptySubtitle") || "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️"}
+          subtitle={
+            t("history.emptySubtitle") ||
+            "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️"
+          }
           icon="walk-outline"
           actionLabel={t("history.startRun") || "开始第一次跑步"}
         />
@@ -102,7 +127,8 @@ export default function HistoryScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        className="flex-1 pb-20 pl-5 pr-5"
+        className="flex-1 pl-5 pr-5"
+        contentContainerStyle={{ paddingBottom: 80 }}
       >
         {renderItem()}
       </ScrollView>

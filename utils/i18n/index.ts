@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import * as Localization from "expo-localization";
 import {
   getStorageItemAsync,
   setStorageItemAsync,
@@ -7,6 +8,20 @@ import {
 
 // 设置存储 key（与 settingsStore 保持一致）
 const SETTINGS_STORAGE_KEY = "app-settings";
+
+// 根据系统语言获取默认语言
+const getDefaultLanguage = (): string => {
+  const locales = Localization.getLocales();
+  if (locales.length > 0) {
+    const languageCode = locales[0].languageCode;
+    // 如果系统语言以 "zh" 开头（中文），返回 "cn"
+    if (languageCode && languageCode.startsWith("zh")) {
+      return "cn";
+    }
+  }
+  // 否则返回英文
+  return "en";
+};
 
 const resources = {
   en: {
@@ -109,6 +124,9 @@ const resources = {
         emptyTitle: "No Running Records Yet",
         emptySubtitle: "Take your first step and start recording every run! 🏃‍♂️",
         startRun: "Start First Run",
+        delete: "Delete",
+        deleteTitle: "Delete Record?",
+        deleteMessage: "This record will be permanently deleted. Are you sure?",
       },
       emptyState: {
         title: "No Running Records Yet",
@@ -251,6 +269,14 @@ const resources = {
         backupSize: "Backup Size",
         cloudProvider: "Cloud Provider",
         tips: "Backups are stored in iCloud and can be restored when switching devices. iCloud backup usually happens automatically when the device is charging and connected to WiFi.",
+        importTitle: "Import Data",
+        importMessage:
+          "Import running records from JSON or GPX files. Supports SimRun data files exported from other devices.",
+        import: "Select File",
+        importSuccess: "Import Successful",
+        importFailed: "Import Failed",
+        importFromFile: "Import from File",
+        importSupportedFormats: "Supports JSON, GPX formats",
       },
       mapSettings: {
         title: "Map Settings",
@@ -559,6 +585,9 @@ const resources = {
         emptyTitle: "还没有跑步记录",
         emptySubtitle: "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️",
         startRun: "开始第一次跑步",
+        delete: "删除",
+        deleteTitle: "删除记录?",
+        deleteMessage: "该记录将被永久删除，确定要继续吗？",
       },
       emptyState: {
         title: "还没有跑步记录",
@@ -698,6 +727,14 @@ const resources = {
         backupSize: "备份大小",
         cloudProvider: "云服务",
         tips: "备份文件存储在 iCloud 中，可在更换设备时恢复数据。iCloud 备份通常在设备充电且连接 WiFi 时自动进行。",
+        importTitle: "导入数据",
+        importMessage:
+          "从 JSON 或 GPX 文件导入跑步记录。支持从其他设备导出的 SimRun 数据文件。",
+        import: "选择文件",
+        importSuccess: "导入成功",
+        importFailed: "导入失败",
+        importFromFile: "从文件导入",
+        importSupportedFormats: "支持 JSON、GPX 格式",
       },
       mapSettings: {
         title: "地图设置",
@@ -932,7 +969,7 @@ const initI18n = async () => {
 
   i18n.use(initReactI18next).init({
     resources,
-    lng: savedLang || "cn",
+    lng: savedLang || getDefaultLanguage(),
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
