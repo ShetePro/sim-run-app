@@ -36,6 +36,7 @@ function LongPressFinishButton({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rafRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const triggeredRef = useRef(false);
   const LONG_PRESS_DURATION = 1500; // 1.5秒长按
 
   const animateProgress = () => {
@@ -46,8 +47,9 @@ function LongPressFinishButton({
 
     if (newProgress < 1 && isPressing) {
       rafRef.current = requestAnimationFrame(animateProgress);
-    } else if (newProgress >= 1) {
-      // 进度满 100% 才触发结束
+    } else if (newProgress >= 1 && !triggeredRef.current) {
+      // 进度满 100% 才触发结束，且只触发一次
+      triggeredRef.current = true;
       onFinish();
     }
   };
@@ -56,6 +58,7 @@ function LongPressFinishButton({
     setIsPressing(true);
     setProgress(0);
     scaleAnim.setValue(1);
+    triggeredRef.current = false;
     startTimeRef.current = Date.now();
 
     // 使用 requestAnimationFrame 实现精确同步的进度条
@@ -283,7 +286,16 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
+  const isFinishingRef = useRef(false);
+
   async function onFinish() {
+    // 防止重复触发
+    if (isFinishingRef.current) {
+      console.log("onFinish 已被调用，跳过重复触发");
+      return;
+    }
+    isFinishingRef.current = true;
+
     stopTimer();
     stopPedometer();
 
