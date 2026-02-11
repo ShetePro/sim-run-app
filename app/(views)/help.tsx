@@ -4,8 +4,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  TextInput,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,11 +18,18 @@ interface FAQItem {
 }
 
 export default function HelpScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  // 根据语言获取使用指南链接
+  const getUserGuideUrl = () => {
+    const lang = i18n.language;
+    if (lang === "cn") {
+      return "https://github.com/ShetePro/sim-run-app/blob/main/USER_GUIDE.md";
+    }
+    return "https://github.com/ShetePro/sim-run-app/blob/main/USER_GUIDE_EN.md";
+  };
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
 
   const faqs: FAQItem[] = [
     {
@@ -45,17 +50,6 @@ export default function HelpScreen() {
     },
   ];
 
-  const handleSendFeedback = () => {
-    if (!feedback.trim()) {
-      Alert.alert(t("common.error"), t("help.feedbackEmpty"));
-      return;
-    }
-    // 发送反馈逻辑
-    Alert.alert(t("common.success"), t("help.feedbackSent"));
-    setFeedback("");
-    setContactEmail("");
-  };
-
   const openEmail = () => {
     Linking.openURL("sheteprolin@gmail.com");
   };
@@ -72,7 +66,10 @@ export default function HelpScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900" edges={["top"]}>
+    <SafeAreaView
+      className="flex-1 bg-gray-50 dark:bg-slate-900"
+      edges={["top"]}
+    >
       {/* 顶部导航 */}
       <View className="flex-row items-center px-4 py-3 bg-white dark:bg-slate-800">
         <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
@@ -85,7 +82,8 @@ export default function HelpScreen() {
 
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
         {/* 快速操作 */}
-        {renderSection(t("help.quickActions"), (
+        {renderSection(
+          t("help.quickActions"),
           <>
             <TouchableOpacity
               onPress={openEmail}
@@ -106,7 +104,7 @@ export default function HelpScreen() {
             </TouchableOpacity>
             <Divider />
             <TouchableOpacity
-              onPress={() => Linking.openURL("https://simrun.app/guide")}
+              onPress={() => Linking.openURL(getUserGuideUrl())}
               className="flex-row items-center p-4"
             >
               <View className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center">
@@ -122,16 +120,19 @@ export default function HelpScreen() {
               </View>
               <Ionicons name="open-outline" size={18} color="#CBD5E1" />
             </TouchableOpacity>
-          </>
-        ))}
+          </>,
+        )}
 
         {/* FAQ */}
-        {renderSection(t("help.faq.title"), (
+        {renderSection(
+          t("help.faq.title"),
           <>
             {faqs.map((faq, index) => (
               <View key={index}>
                 <TouchableOpacity
-                  onPress={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
+                  onPress={() =>
+                    setExpandedFAQ(expandedFAQ === index ? null : index)
+                  }
                   className="p-4"
                 >
                   <View className="flex-row items-center justify-between">
@@ -139,7 +140,9 @@ export default function HelpScreen() {
                       {faq.question}
                     </Text>
                     <Ionicons
-                      name={expandedFAQ === index ? "chevron-up" : "chevron-down"}
+                      name={
+                        expandedFAQ === index ? "chevron-up" : "chevron-down"
+                      }
                       size={20}
                       color="#9ca3af"
                     />
@@ -153,60 +156,32 @@ export default function HelpScreen() {
                 {index < faqs.length - 1 && <Divider />}
               </View>
             ))}
-          </>
-        ))}
+          </>,
+        )}
 
-        {/* 反馈表单 */}
-        {renderSection(t("help.feedback.title"), (
-          <View className="p-4">
-            <Text className="text-slate-600 dark:text-slate-300 text-sm mb-4">
-              {t("help.feedback.desc")}
-            </Text>
-
-            {/* 邮箱输入 */}
-            <View className="mb-4">
-              <Text className="text-slate-500 dark:text-slate-400 text-xs mb-2">
-                {t("help.feedback.email")} ({t("common.optional")})
-              </Text>
-              <TextInput
-                value={contactEmail}
-                onChangeText={setContactEmail}
-                placeholder="your@email.com"
-                placeholderTextColor="#9ca3af"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                className="bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 text-slate-800 dark:text-white"
-              />
+        {/* 提交反馈 - 跳转到 GitHub Issues */}
+        {renderSection(
+          t("help.feedback.title"),
+          <TouchableOpacity
+            onPress={() =>
+              Linking.openURL("https://github.com/ShetePro/sim-run-app/issues")
+            }
+            className="flex-row items-center p-4"
+          >
+            <View className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
+              <Ionicons name="logo-github" size={20} color="#f97316" />
             </View>
-
-            {/* 反馈内容 */}
-            <View className="mb-4">
-              <Text className="text-slate-500 dark:text-slate-400 text-xs mb-2">
-                {t("help.feedback.content")}
+            <View className="ml-3 flex-1">
+              <Text className="text-base text-slate-700 dark:text-slate-200 font-medium">
+                {t("help.feedback.github") || "在 GitHub 提交反馈"}
               </Text>
-              <TextInput
-                value={feedback}
-                onChangeText={setFeedback}
-                placeholder={t("help.feedback.placeholder")}
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                className="bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 text-slate-800 dark:text-white h-28"
-              />
+              <Text className="text-slate-400 text-sm mt-0.5">
+                github.com/ShetePro/sim-run-app/issues
+              </Text>
             </View>
-
-            {/* 提交按钮 */}
-            <TouchableOpacity
-              onPress={handleSendFeedback}
-              className="bg-indigo-600 rounded-xl py-3 items-center"
-            >
-              <Text className="text-white font-semibold text-base">
-                {t("help.feedback.submit")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+            <Ionicons name="open-outline" size={18} color="#CBD5E1" />
+          </TouchableOpacity>,
+        )}
 
         {/* 底部提示 */}
         <View className="px-6 py-8">
