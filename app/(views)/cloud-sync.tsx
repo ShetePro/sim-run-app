@@ -21,6 +21,9 @@ import {
   formatFileSize,
 } from "@/store/cloudSyncStore";
 import { useFocusEffect } from "expo-router";
+import { importRunFromFile, ImportResult } from "@/utils/importRun";
+import { useRunDB } from "@/hooks/useSQLite";
+import { RunRecord } from "@/types/runType";
 
 export default function CloudSyncScreen() {
   const router = useRouter();
@@ -43,6 +46,8 @@ export default function CloudSyncScreen() {
     checkNetworkStatus,
   } = useCloudSyncStore();
 
+  const { addRun, updateRun } = useRunDB();
+
   const formattedSyncTime = useFormattedSyncTime();
 
   // 初始化
@@ -59,7 +64,7 @@ export default function CloudSyncScreen() {
         refreshBackupInfo();
         checkNetworkStatus();
       }
-    }, [isLoaded])
+    }, [isLoaded]),
   );
 
   // 处理同步按钮
@@ -75,7 +80,7 @@ export default function CloudSyncScreen() {
   const handleRestore = () => {
     Alert.alert(
       t("cloudSync.restoreTitle") || "恢复数据",
-      t("cloudSync.restoreConfirm") || 
+      t("cloudSync.restoreConfirm") ||
         "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
       [
         {
@@ -91,12 +96,13 @@ export default function CloudSyncScreen() {
             if (success) {
               Alert.alert(
                 t("cloudSync.restoreSuccess") || "恢复成功",
-                t("cloudSync.restoreSuccessMessage") || "数据已成功恢复，请重启应用以应用更改。"
+                t("cloudSync.restoreSuccessMessage") ||
+                  "数据已成功恢复，请重启应用以应用更改。",
               );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -108,6 +114,60 @@ export default function CloudSyncScreen() {
   // 切换仅 WiFi 同步
   const toggleWifiOnly = async (value: boolean) => {
     await updateSettings({ wifiOnly: value });
+  };
+
+  // 处理从文件导入
+  const handleImportFromFile = async () => {
+    Alert.alert(
+      t("cloudSync.importTitle") || "导入数据",
+      t("cloudSync.importMessage") ||
+        "从 JSON 或 GPX 文件导入跑步记录。支持从其他设备导出的 SimRun 数据文件。",
+      [
+        {
+          text: t("common.cancel") || "取消",
+          style: "cancel",
+        },
+        {
+          text: t("cloudSync.import") || "选择文件",
+          onPress: async () => {
+            const result: ImportResult = await importRunFromFile();
+            if (result.success && result.data) {
+              try {
+                // 保存到数据库
+                const runId = await addRun({
+                  ...result.data.run,
+                  startTime: result.data.run.startTime || Date.now(),
+                } as RunRecord);
+
+                // 更新轨迹点
+                await updateRun({
+                  id: runId,
+                  points: result.data.trackPoints,
+                });
+
+                Alert.alert(
+                  t("cloudSync.importSuccess") || "导入成功",
+                  result.message,
+                );
+                // 刷新备份信息
+                await refreshBackupInfo();
+              } catch (error) {
+                console.error("保存导入数据失败:", error);
+                Alert.alert(
+                  t("cloudSync.importFailed") || "导入失败",
+                  "保存数据到数据库失败",
+                );
+              }
+            } else if (result.message !== "用户取消了选择") {
+              Alert.alert(
+                t("cloudSync.importFailed") || "导入失败",
+                result.message,
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   // 获取状态颜色
@@ -135,11 +195,13 @@ export default function CloudSyncScreen() {
       case "success":
         return t("cloudSync.syncSuccess") || "同步成功";
       case "error":
-        return syncState.errorMessage || t("cloudSync.syncFailed") || "同步失败";
+        return (
+          syncState.errorMessage || t("cloudSync.syncFailed") || "同步失败"
+        );
       default:
-        return metadata.exists 
-          ? (t("cloudSync.synced") || "已同步") 
-          : (t("cloudSync.notSynced") || "未同步");
+        return metadata.exists
+          ? t("cloudSync.synced") || "已同步"
+          : t("cloudSync.notSynced") || "未同步";
     }
   };
 
@@ -173,10 +235,7 @@ export default function CloudSyncScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* --- 头部导航 --- */}
         <View className="flex-row items-center px-4 py-3 bg-white dark:bg-slate-800">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="p-2 -ml-2"
-          >
+          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
             <Ionicons
               name="chevron-back"
               size={24}
@@ -196,10 +255,15 @@ export default function CloudSyncScreen() {
               className="w-14 h-14 rounded-full items-center justify-center"
               style={{ backgroundColor: `${getStatusColor()}20` }}
             >
-              {syncState.status === "uploading" || syncState.status === "downloading" ? (
+              {syncState.status === "uploading" ||
+              syncState.status === "downloading" ? (
                 <ActivityIndicator size="small" color={getStatusColor()} />
               ) : (
-                <Ionicons name={getStatusIcon()} size={28} color={getStatusColor()} />
+                <Ionicons
+                  name={getStatusIcon()}
+                  size={28}
+                  color={getStatusColor()}
+                />
               )}
             </View>
             <View className="ml-4 flex-1">
@@ -210,7 +274,8 @@ export default function CloudSyncScreen() {
                 {getStatusText()}
               </Text>
             </View>
-            {syncState.status === "uploading" || syncState.status === "downloading" ? (
+            {syncState.status === "uploading" ||
+            syncState.status === "downloading" ? (
               <Text className="text-sm font-medium text-blue-500">
                 {syncState.progress}%
               </Text>
@@ -218,7 +283,8 @@ export default function CloudSyncScreen() {
           </View>
 
           {/* 进度条 */}
-          {(syncState.status === "uploading" || syncState.status === "downloading") && (
+          {(syncState.status === "uploading" ||
+            syncState.status === "downloading") && (
             <View className="mt-4 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <View
                 className="h-full bg-blue-500 rounded-full"
@@ -254,9 +320,13 @@ export default function CloudSyncScreen() {
         <View className="mx-4 mt-4 flex-row gap-3">
           <TouchableOpacity
             onPress={handleSync}
-            disabled={syncState.status === "uploading" || syncState.status === "downloading"}
+            disabled={
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
+            }
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
-              syncState.status === "uploading" || syncState.status === "downloading"
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
                 ? "bg-blue-300 dark:bg-blue-900/50"
                 : "bg-blue-500"
             }`}
@@ -268,9 +338,15 @@ export default function CloudSyncScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleRestore}
-            disabled={!metadata.exists || syncState.status === "uploading" || syncState.status === "downloading"}
+            disabled={
+              !metadata.exists ||
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
+            }
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
-              !metadata.exists || syncState.status === "uploading" || syncState.status === "downloading"
+              !metadata.exists ||
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
                 ? "bg-slate-300 dark:bg-slate-700"
                 : "bg-slate-600 dark:bg-slate-500"
             }`}
@@ -280,6 +356,31 @@ export default function CloudSyncScreen() {
               {t("cloudSync.restore") || "恢复数据"}
             </Text>
           </TouchableOpacity>
+        </View>
+
+        {/* --- 从文件导入 --- */}
+        <View className="mx-4 mt-4">
+          <TouchableOpacity
+            onPress={handleImportFromFile}
+            disabled={
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
+            }
+            className={`flex-row items-center justify-center py-3 rounded-xl ${
+              syncState.status === "uploading" ||
+              syncState.status === "downloading"
+                ? "bg-emerald-300 dark:bg-emerald-900/50"
+                : "bg-emerald-500"
+            }`}
+          >
+            <Ionicons name="document-text-outline" size={20} color="#fff" />
+            <Text className="ml-2 text-white font-semibold">
+              {t("cloudSync.importFromFile") || "从文件导入"}
+            </Text>
+          </TouchableOpacity>
+          <Text className="text-center text-xs text-slate-400 mt-2">
+            {t("cloudSync.importSupportedFormats") || "支持 JSON、GPX 格式"}
+          </Text>
         </View>
 
         {/* --- 自动同步设置 --- */}
@@ -340,7 +441,11 @@ export default function CloudSyncScreen() {
                   {t("cloudSync.cloudProvider") || "云服务"}
                 </Text>
                 <View className="flex-row items-center">
-                  <Ionicons name="logo-apple" size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <Ionicons
+                    name="logo-apple"
+                    size={14}
+                    color={isDark ? "#9CA3AF" : "#6B7280"}
+                  />
                   <Text className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
                     iCloud
                   </Text>
@@ -356,7 +461,7 @@ export default function CloudSyncScreen() {
             <Ionicons name="information-circle" size={20} color="#3B82F6" />
             <View className="ml-2 flex-1">
               <Text className="text-sm text-blue-800 dark:text-blue-200 leading-5">
-                {t("cloudSync.tips") || 
+                {t("cloudSync.tips") ||
                   "备份文件存储在 iCloud 中，可在更换设备时恢复数据。iCloud 备份通常在设备充电且连接 WiFi 时自动进行。"}
               </Text>
             </View>
