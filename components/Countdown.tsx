@@ -23,9 +23,11 @@ export default function Countdown({
   onCountChange,
   minDuration = DEFAULT_MIN_DURATION,
 }: CountdownProps) {
-  const [count, setCount] = useState(3);
+  // 使用 ref 替代 state 追踪计数，避免 useEffect 依赖问题
+  const currentCountRef = useRef(3);
+  const hasStartedRef = useRef(false);
+
   const [displayCount, setDisplayCount] = useState(3);
-  const isRunningRef = useRef(true);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
@@ -39,58 +41,46 @@ export default function Countdown({
       withTiming(1, { duration: 200 }),
     );
 
-    opacity.value = withSequence(withTiming(1, { duration: 200 }));
+    opacity.value = withTiming(1, { duration: 200 });
   }, []);
 
   // 处理倒计时逻辑
   useEffect(() => {
-    if (!isRunningRef.current) return;
+    // 防止重复执行
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
 
-    let isMounted = true;
+    const processNext = async () => {
+      const count = currentCountRef.current;
 
-    const processCount = async () => {
-      while (isMounted && isRunningRef.current && count >= 0) {
-        const startTime = Date.now();
-
-        // 显示当前数字
-        setDisplayCount(count);
-        runAnimation();
-
-        // 触发回调（语音播报）
-        if (onCountChange) {
-          await onCountChange(count);
-        }
-
-        // 确保最少显示时间
-        const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, minDuration - elapsed);
-
-        if (remainingTime > 0) {
-          await new Promise((resolve) => setTimeout(resolve, remainingTime));
-        }
-
-        if (!isMounted || !isRunningRef.current) break;
-
-        // 进入下一个数字
-        if (count > 0) {
-          setCount((prev) => prev - 1);
-        } else {
-          // 倒计时结束
-          break;
-        }
-      }
-
-      if (isMounted && isRunningRef.current) {
+      if (count < 0) {
         onFinish?.();
+        return;
       }
+
+      // 显示当前数字
+      setDisplayCount(count);
+      runAnimation();
+
+      // 触发回调（语音播报）
+      if (onCountChange) {
+        await onCountChange(count);
+      }
+
+      // 递减计数
+      currentCountRef.current = count - 1;
+
+      // 延迟后执行下一个
+      setTimeout(processNext, minDuration);
     };
 
-    processCount();
+    processNext();
 
+    // 清理函数
     return () => {
-      isMounted = false;
+      hasStartedRef.current = false;
     };
-  }, [count, onCountChange, onFinish, minDuration, runAnimation]);
+  }, []); // 空依赖，只执行一次
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
