@@ -1,8 +1,16 @@
 import { useCallback, useRef, useEffect } from "react";
 import * as Speech from "expo-speech";
-import { useVoiceSettingsStore, AnnounceFrequency } from "@/store/voiceSettingsStore";
+import {
+  useVoiceSettingsStore,
+  AnnounceFrequency,
+} from "@/store/voiceSettingsStore";
 import { useTranslation } from "react-i18next";
 import { secondFormatHours } from "@/utils/util";
+import {
+  getCharacterById,
+  getVoiceIdForLanguage,
+  getLanguageCode,
+} from "@/constants/voiceCharacters";
 
 interface AnnounceData {
   distance: number; // 米
@@ -11,26 +19,13 @@ interface AnnounceData {
   calories: number;
 }
 
-// 获取语音标识符（iOS）
-const getVoiceIdentifier = (language: string): string | undefined => {
-  // iOS 上可以选择特定语音
-  if (language === "zh-CN") {
-    // 中文普通话
-    return "com.apple.voice.compact.zh-CN.Tingting";
-  } else if (language === "en-US") {
-    // 英文
-    return "com.apple.voice.compact.en-US.Samantha";
-  }
-  return undefined;
-};
-
 export function useVoiceAnnounce() {
   const { t, i18n } = useTranslation();
   const settings = useVoiceSettingsStore();
-  
+
   // 记录上一次播报的状态
-  const lastDistanceRef = useRef(0); // 上次播报时的距离（米）
-  const lastTimeRef = useRef(0); // 上次播报时的时间（秒）
+  const lastDistanceRef = useRef(0);
+  const lastTimeRef = useRef(0);
   const isSpeakingRef = useRef(false);
 
   // 清理
@@ -40,51 +35,198 @@ export function useVoiceAnnounce() {
     };
   }, []);
 
+  // 获取当前语音配置 - 使用 settings 中保存的语言
+  const getCurrentVoiceConfig = useCallback(() => {
+    const character = getCharacterById(settings.characterId);
+    // 使用 settings 中保存的语言
+    const language = settings.language;
+
+    if (!character) {
+      return { voiceId: undefined, langCode: language };
+    }
+
+    const voiceId = getVoiceIdForLanguage(character, language);
+    const langCode = getLanguageCode(character, language);
+
+    return { voiceId, langCode };
+  }, [settings.characterId, settings.language]);
+
   // 基础播报函数
   const speak = useCallback(
     async (text: string, priority: "high" | "normal" = "normal") => {
       if (!settings.enabled) return;
-      
+
+      // 空文本检查
+      if (!text || text.trim().length === 0) {
+        console.log("[VoiceAnnounce] Empty text, skipping speech");
+        return;
+      }
+
       // 高优先级播报会打断当前播报
       if (isSpeakingRef.current && priority === "normal") {
         return;
       }
-      
+
       if (isSpeakingRef.current) {
         await Speech.stop();
       }
 
       isSpeakingRef.current = true;
-      
+
+      const { voiceId, langCode } = getCurrentVoiceConfig();
+
       const options: Speech.SpeechOptions = {
-        language: settings.language || i18n.language,
-        rate: settings.rate,
-        pitch: settings.pitch,
-        volume: settings.volume,
+        language: langCode,
+        useApplicationAudioSession: false,
         onDone: () => {
+          console.log("[VoiceAnnounce] Speech completed");
           isSpeakingRef.current = false;
         },
-        onError: () => {
+        onError: (error) => {
+          console.error("[VoiceAnnounce] Speech error:", error);
+          isSpeakingRef.current = false;
+
+          // 如果语音ID错误，尝试不使用特定voice重试
+          if (voiceId) {
+            console.log("[VoiceAnnounce] Retrying without specific voice...");
+            Speech.speak(text, {
+              language: langCode,
+              useApplicationAudioSession: false,
+              onDone: () => {
+                isSpeakingRef.current = false;
+              },
+              onError: () => {
+                isSpeakingRef.current = false;
+              },
+            });
+          }
+        },
+        onStopped: () => {
+          console.log("[VoiceAnnounce] Speech stopped");
           isSpeakingRef.current = false;
         },
       };
 
-      // iOS 特定语音
-      const voice = getVoiceIdentifier(settings.language || i18n.language);
-      if (voice) {
-        // @ts-ignore - voice 属性在类型定义中可能没有
-        options.voice = voice;
+      // 只在有voiceId时添加voice参数
+      if (voiceId) {
+        (options as any).voice = voiceId;
       }
 
-      Speech.speak(text, options);
+      console.log(
+        '[VoiceAnnounce] Speaking: "' +
+          text +
+          '" with voice: ' +
+          (voiceId || "default") +
+          ", lang: " +
+          langCode,
+      );
+
+      try {
+        Speech.speak(text, options);
+      } catch (error) {
+        console.error("[VoiceAnnounce] Exception during speak:", error);
+        isSpeakingRef.current = false;
+      }
     },
-    [settings, i18n.language]
+    [settings.enabled, settings.characterId, getCurrentVoiceConfig],
   );
 
   // 格式化数字（保留一位小数）
   const formatNumber = (num: number): string => {
     return num.toFixed(1);
   };
+
+  // 倒计时播报
+  const announceCountdown = useCallback(
+    (count: number) => {
+      if (!settings.enabled) return;
+
+      let text = "";
+      switch (count) {
+        case 3:
+          text = t("voice.countdownThree");
+          break;
+        case 2:
+          text = t("voice.countdownTwo");
+          break;
+        case 1:
+          text = t("voice.countdownOne");
+          break;
+        case 0:
+          text = t("voice.countdownGo");
+          break;
+        default:
+          return;
+      }
+
+      speak(text, "high");
+    },
+    [settings.enabled, speak, t],
+  );
+
+  // 带完成回调的倒计时播报
+  const announceCountdownWithCallback = useCallback(
+    (count: number, onComplete?: () => void) => {
+      if (!settings.enabled) {
+        onComplete?.();
+        return;
+      }
+
+      let text = "";
+      switch (count) {
+        case 3:
+          text = t("voice.countdownThree");
+          break;
+        case 2:
+          text = t("voice.countdownTwo");
+          break;
+        case 1:
+          text = t("voice.countdownOne");
+          break;
+        case 0:
+          text = t("voice.countdownGo");
+          break;
+        default:
+          onComplete?.();
+          return;
+      }
+
+      // 停止当前播报
+      Speech.stop();
+
+      const { voiceId, langCode } = getCurrentVoiceConfig();
+
+      const options: Speech.SpeechOptions = {
+        language: langCode,
+        useApplicationAudioSession: false,
+        onDone: () => {
+          console.log("[VoiceAnnounce] Countdown speech completed:", count);
+          onComplete?.();
+        },
+        onError: () => {
+          console.error("[VoiceAnnounce] Countdown speech error:", count);
+          onComplete?.();
+        },
+        onStopped: () => {
+          onComplete?.();
+        },
+      };
+
+      if (voiceId) {
+        (options as any).voice = voiceId;
+      }
+
+      console.log('[VoiceAnnounce] Countdown speaking: "' + text + '"');
+
+      try {
+        Speech.speak(text, options);
+      } catch (error) {
+        console.error("[VoiceAnnounce] Exception during countdown:", error);
+        onComplete?.();
+      }
+    },
+    [settings.enabled, getCurrentVoiceConfig, t],
+  );
 
   // 跑步开始播报
   const announceStart = useCallback(() => {
@@ -97,24 +239,33 @@ export function useVoiceAnnounce() {
   const announceFinish = useCallback(
     (data: AnnounceData) => {
       if (!settings.announceStartFinish) return;
-      
+
       const distanceKm = (data.distance / 1000).toFixed(2);
       const timeStr = secondFormatHours(data.duration);
       const paceStr = secondFormatHours(data.pace);
-      
-      let text = t("voice.finishRunning", { distance: distanceKm, time: timeStr });
-      
+
+      let text = t("voice.finishRunning", {
+        distance: distanceKm,
+        time: timeStr,
+      });
+
       if (settings.announcePace && data.pace > 0) {
         text += t("voice.finishPace", { pace: paceStr });
       }
-      
+
       if (settings.announceCalories && data.calories > 0) {
         text += t("voice.finishCalories", { calories: data.calories });
       }
-      
+
       speak(text, "high");
     },
-    [settings.announceStartFinish, settings.announcePace, settings.announceCalories, speak, t]
+    [
+      settings.announceStartFinish,
+      settings.announcePace,
+      settings.announceCalories,
+      speak,
+      t,
+    ],
   );
 
   // 暂停播报
@@ -133,33 +284,39 @@ export function useVoiceAnnounce() {
   const buildPeriodicAnnouncement = useCallback(
     (data: AnnounceData, isMilestone: boolean = false): string => {
       const parts: string[] = [];
-      
+
       // 距离播报
       if (settings.announceDistance) {
         const distanceKm = data.distance / 1000;
-        if (isMilestone && Math.abs(distanceKm - Math.round(distanceKm)) < 0.01) {
-          // 整数公里里程碑
-          parts.push(t("voice.milestoneDistance", { distance: Math.round(distanceKm) }));
+        if (
+          isMilestone &&
+          Math.abs(distanceKm - Math.round(distanceKm)) < 0.01
+        ) {
+          parts.push(
+            t("voice.milestoneDistance", { distance: Math.round(distanceKm) }),
+          );
         } else {
-          parts.push(t("voice.distance", { distance: formatNumber(distanceKm) }));
+          parts.push(
+            t("voice.distance", { distance: formatNumber(distanceKm) }),
+          );
         }
       }
-      
+
       // 用时播报
       if (settings.announceTime) {
         parts.push(t("voice.time", { time: secondFormatHours(data.duration) }));
       }
-      
+
       // 配速播报
       if (settings.announcePace && data.pace > 0) {
         parts.push(t("voice.pace", { pace: secondFormatHours(data.pace) }));
       }
-      
+
       // 卡路里播报
       if (settings.announceCalories && data.calories > 0) {
         parts.push(t("voice.calories", { calories: data.calories }));
       }
-      
+
       return parts.join("，");
     },
     [
@@ -168,7 +325,7 @@ export function useVoiceAnnounce() {
       settings.announcePace,
       settings.announceCalories,
       t,
-    ]
+    ],
   );
 
   // 周期性播报检查
@@ -184,7 +341,6 @@ export function useVoiceAnnounce() {
       let isMilestone = false;
 
       if (frequency === "1km") {
-        // 每公里播报
         const km = Math.floor(currentDistance / 1000);
         const lastKm = Math.floor(lastDistanceRef.current / 1000);
         if (km > lastKm && currentDistance >= 1000) {
@@ -192,7 +348,6 @@ export function useVoiceAnnounce() {
           isMilestone = true;
         }
       } else if (frequency === "2km") {
-        // 每2公里播报
         const km = Math.floor(currentDistance / 1000);
         const lastKm = Math.floor(lastDistanceRef.current / 1000);
         if (km > lastKm && km % 2 === 0 && currentDistance >= 2000) {
@@ -200,7 +355,6 @@ export function useVoiceAnnounce() {
           isMilestone = true;
         }
       } else if (frequency === "5km") {
-        // 每5公里播报
         const km = Math.floor(currentDistance / 1000);
         const lastKm = Math.floor(lastDistanceRef.current / 1000);
         if (km > lastKm && km % 5 === 0 && currentDistance >= 5000) {
@@ -208,14 +362,12 @@ export function useVoiceAnnounce() {
           isMilestone = true;
         }
       } else if (frequency === "10min") {
-        // 每10分钟播报
         const min = Math.floor(currentTime / 600);
         const lastMin = Math.floor(lastTimeRef.current / 600);
         if (min > lastMin && min % 1 === 0 && currentTime >= 600) {
           shouldAnnounce = true;
         }
       } else if (frequency === "30min") {
-        // 每30分钟播报
         const min = Math.floor(currentTime / 1800);
         const lastMin = Math.floor(lastTimeRef.current / 1800);
         if (min > lastMin && min % 1 === 0 && currentTime >= 1800) {
@@ -230,18 +382,32 @@ export function useVoiceAnnounce() {
         lastTimeRef.current = currentTime;
       }
     },
-    [settings.enabled, settings.frequency, buildPeriodicAnnouncement, speak]
+    [settings.enabled, settings.frequency, buildPeriodicAnnouncement, speak],
   );
 
   // 手动触发播报（用于测试）
   const announceManual = useCallback(
     (data: AnnounceData) => {
-      const text = buildPeriodicAnnouncement(data, false);
+      const parts: string[] = [];
+
+      const distanceKm = data.distance / 1000;
+      parts.push(t("voice.distance", { distance: formatNumber(distanceKm) }));
+      parts.push(t("voice.time", { time: secondFormatHours(data.duration) }));
+
+      if (data.pace > 0) {
+        parts.push(t("voice.pace", { pace: secondFormatHours(data.pace) }));
+      }
+
+      if (data.calories > 0) {
+        parts.push(t("voice.calories", { calories: data.calories }));
+      }
+
+      const text = parts.join("，");
       speak(text, "high");
       lastDistanceRef.current = data.distance;
       lastTimeRef.current = data.duration;
     },
-    [buildPeriodicAnnouncement, speak]
+    [speak, t],
   );
 
   // 重置播报状态
@@ -258,16 +424,13 @@ export function useVoiceAnnounce() {
   }, []);
 
   return {
-    // 状态
     isSpeaking: () => isSpeakingRef.current,
     settings,
-    
-    // 控制方法
     speak,
     stopSpeaking,
     resetAnnounceState,
-    
-    // 场景播报
+    announceCountdown,
+    announceCountdownWithCallback,
     announceStart,
     announceFinish,
     announcePause,

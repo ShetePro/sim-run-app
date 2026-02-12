@@ -40,18 +40,18 @@ export function useRun() {
   const [routePoints, setRoutePoints] = useState<any[]>([]);
   const routePointsRef = useRef<any[]>([]);
   const pausedDistanceRef = useRef(0);
-  
+
   // 保持 ref 与 state 同步
   useEffect(() => {
     routePointsRef.current = routePoints;
   }, [routePoints]);
-  
+
   // watch running data from background task
   useEffect(() => {
     // 监听后台任务传回的数据
     const subscription = DeviceEventEmitter.addListener(
       RUNNING_UPDATE_EVENT,
-      (data) => {
+      async (data) => {
         console.log("触发emit 事件", data);
         if (!isTracking.current || isPaused.current) return;
         const locationUpdate = data;
@@ -61,21 +61,26 @@ export function useRun() {
           timestamp: locationUpdate.timestamp,
         });
         setLocation(newPoint);
-        
+
         // 使用 ref 获取最新的 routePoints，避免闭包问题
         const updatedPoints = [...routePointsRef.current, newPoint];
         updateRun({
           points: updatedPoints,
         });
         setRoutePoints(updatedPoints);
-        
-        const actualDistance = (data.distance || distance) - pausedDistanceRef.current;
+
+        const actualDistance =
+          (data.distance || distance) - pausedDistanceRef.current;
         setDistance(Math.max(0, actualDistance));
-        LiveActivity.update({
-          distance: Number((actualDistance / 1000).toFixed(2)),
-          duration: secondFormatHours(useRunStore.getState().duration),
-          pace: secondFormatHours(useRunStore.getState().pace),
-        });
+        try {
+          await LiveActivity.update({
+            distance: Number((actualDistance / 1000).toFixed(2)),
+            duration: secondFormatHours(useRunStore.getState().duration),
+            pace: secondFormatHours(useRunStore.getState().pace),
+          });
+        } catch (e) {
+          console.log("LiveActivity update error:", e);
+        }
       },
     );
 
@@ -133,7 +138,7 @@ export function useRun() {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) return;
     isTracking.current = true;
-    LiveActivity.start();
+    await LiveActivity.start();
     setRoutePoints([]); // 开始新会话时清空路径
     console.log(Date.now(), "开始跑步时间");
     runData.id = await addRun({
@@ -148,7 +153,7 @@ export function useRun() {
               lat: currenLocation.latitude,
               lng: currenLocation.longitude,
               heading: heading,
-              timestamp: Date.now()
+              timestamp: Date.now(),
             },
           ]
         : [],
@@ -167,10 +172,10 @@ export function useRun() {
       locationSubscription.remove();
       setLocationSubscription(null);
     }
-    LiveActivity.stop();
+    await LiveActivity.stop();
     const { time, pace, energy } = data;
     const finalDistance = distance - pausedDistanceRef.current;
-    
+
     // 等待数据库更新完成
     await updateRun({
       id: runData.id,
@@ -181,7 +186,7 @@ export function useRun() {
       isFinish: 1,
       endTime: Date.now(),
     });
-    
+
     isTracking.current = false;
     isPaused.current = false;
     pausedDistanceRef.current = 0;

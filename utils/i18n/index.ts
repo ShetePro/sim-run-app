@@ -1,9 +1,27 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { getStorageItemAsync, setStorageItemAsync } from "@/hooks/useStorageState";
+import * as Localization from "expo-localization";
+import {
+  getStorageItemAsync,
+  setStorageItemAsync,
+} from "@/hooks/useStorageState";
 
 // 设置存储 key（与 settingsStore 保持一致）
 const SETTINGS_STORAGE_KEY = "app-settings";
+
+// 根据系统语言获取默认语言
+const getDefaultLanguage = (): string => {
+  const locales = Localization.getLocales();
+  if (locales.length > 0) {
+    const languageCode = locales[0].languageCode;
+    // 如果系统语言以 "zh" 开头（中文），返回 "cn"
+    if (languageCode && languageCode.startsWith("zh")) {
+      return "cn";
+    }
+  }
+  // 否则返回英文
+  return "en";
+};
 
 const resources = {
   en: {
@@ -106,6 +124,9 @@ const resources = {
         emptyTitle: "No Running Records Yet",
         emptySubtitle: "Take your first step and start recording every run! 🏃‍♂️",
         startRun: "Start First Run",
+        delete: "Delete",
+        deleteTitle: "Delete Record?",
+        deleteMessage: "This record will be permanently deleted. Are you sure?",
       },
       emptyState: {
         title: "No Running Records Yet",
@@ -121,6 +142,7 @@ const resources = {
         detail: "Run Detail",
         start: "Start",
         finish: "Finish",
+        holdToFinish: "Hold to finish",
         pause: "Pause",
         resume: "Resume",
         paused: "Paused",
@@ -147,19 +169,23 @@ const resources = {
         getStarted: "Get Started",
         gps: {
           title: "GPS Tracking",
-          description: "SimRun uses precise GPS to record your running routes. Track every step and watch your progress on the map.",
+          description:
+            "SimRun uses precise GPS to record your running routes. Track every step and watch your progress on the map.",
         },
         location: {
           title: "Background Location",
-          description: "To keep tracking your run when the screen is locked, we need \"Always\" location permission. Your data stays on your device.",
+          description:
+            'To keep tracking your run when the screen is locked, we need "Always" location permission. Your data stays on your device.',
         },
         privacy: {
           title: "Privacy First",
-          description: "All your data is stored locally on your device. No account required. No data uploaded to any server. Your privacy is our priority.",
+          description:
+            "All your data is stored locally on your device. No account required. No data uploaded to any server. Your privacy is our priority.",
         },
         start: {
           title: "Ready to Run?",
-          description: "Everything is set up. Start your first run and let SimRun help you track your fitness journey!",
+          description:
+            "Everything is set up. Start your first run and let SimRun help you track your fitness journey!",
         },
       },
       plan: {
@@ -172,7 +198,8 @@ const resources = {
         setYourFirstGoal: "Set Your First Goal",
         welcomeTitle: "Set Your Running Goal",
         welcomeSubtitle: "Challenge yourself and stay motivated",
-        welcomeDesc: "Set personalized running goals to help you maintain consistency and achieve your fitness targets.",
+        welcomeDesc:
+          "Set personalized running goals to help you maintain consistency and achieve your fitness targets.",
         quickSelect: "Quick Setup",
         beginner: "Beginner",
         regular: "Regular",
@@ -193,7 +220,8 @@ const resources = {
         enableReminderDesc: "Get notified at your preferred time",
         reminderTime: "Reminder Time",
         resetTitle: "Reset Plan",
-        resetMessage: "Are you sure you want to reset all plan settings to default?",
+        resetMessage:
+          "Are you sure you want to reset all plan settings to default?",
         reset: "Reset",
         resetToDefault: "Reset to Default",
       },
@@ -223,12 +251,17 @@ const resources = {
         notSynced: "Not Synced",
         lastSync: "Last Sync",
         backupTime: "Backup Time",
+        backupStatus: "Backup Status",
+        backupExists: "Backed Up",
+        noBackup: "No Backup",
         upload: "Backup Now",
         restore: "Restore",
         restoreTitle: "Restore Data",
-        restoreConfirm: "This will overwrite all data on this device with the cloud backup. Continue?",
+        restoreConfirm:
+          "This will overwrite all data on this device with the cloud backup. Continue?",
         restoreSuccess: "Restore Success",
-        restoreSuccessMessage: "Data has been restored. Please restart the app to apply changes.",
+        restoreSuccessMessage:
+          "Data has been restored. Please restart the app to apply changes.",
         syncSettings: "Sync Settings",
         autoSync: "Auto Sync",
         autoSyncDesc: "Backup after each run",
@@ -239,6 +272,14 @@ const resources = {
         backupSize: "Backup Size",
         cloudProvider: "Cloud Provider",
         tips: "Backups are stored in iCloud and can be restored when switching devices. iCloud backup usually happens automatically when the device is charging and connected to WiFi.",
+        importTitle: "Import Data",
+        importMessage:
+          "Import running records from JSON or GPX files. Supports SimRun data files exported from other devices.",
+        import: "Select File",
+        importSuccess: "Import Successful",
+        importFailed: "Import Failed",
+        importFromFile: "Import from File",
+        importSupportedFormats: "Supports JSON, GPX formats",
       },
       mapSettings: {
         title: "Map Settings",
@@ -393,7 +434,8 @@ const resources = {
       },
       voice: {
         startRunning: "Start running! Enjoy your workout!",
-        finishRunning: "Workout complete! You ran {{distance}} kilometers in {{time}}.",
+        finishRunning:
+          "Workout complete! You ran {{distance}} kilometers in {{time}}.",
         finishPace: " Average pace {{pace}} per kilometer.",
         finishCalories: " Calories burned {{calories}} kcal.",
         paused: "Workout paused",
@@ -403,16 +445,18 @@ const resources = {
         time: "Time {{time}}",
         pace: "Pace {{pace}} per kilometer",
         calories: "Calories {{calories}} kcal",
+        countdownThree: "3",
+        countdownTwo: "2",
+        countdownOne: "1",
+        countdownGo: "Go!",
       },
       voiceSettings: {
         title: "Voice Coach",
         enableVoice: "Enable Voice Coach",
         enableVoiceDesc: "Get audio updates during your workout",
-        frequencyTitle: "Announcement Frequency",
-        voiceParams: "Voice Settings",
-        volume: "Volume",
-        rate: "Speech Rate",
-        pitch: "Pitch",
+        frequency: "Announcement Frequency",
+        selectVoice: "Choose Your Coach",
+        currentVoice: "Current Voice",
         announceContent: "What to Announce",
         announceStartFinish: "Start & Finish",
         announceStartFinishDesc: "Announce when workout begins and ends",
@@ -428,6 +472,9 @@ const resources = {
         announceCaloriesDesc: "Include calories burned in announcements",
         testVoice: "Test Voice",
         testing: "Testing...",
+        testVoiceContent: "Voice test successful",
+        testVoiceHint:
+          "If no sound, check device volume and ensure voice is enabled in system settings.",
         reset: "Reset to Default",
         tips: "Voice Coach helps you stay informed without looking at your phone during workouts.",
         frequencyOptions: {
@@ -541,6 +588,9 @@ const resources = {
         emptyTitle: "还没有跑步记录",
         emptySubtitle: "迈开第一步，开始记录你的每一次奔跑吧！🏃‍♂️",
         startRun: "开始第一次跑步",
+        delete: "删除",
+        deleteTitle: "删除记录?",
+        deleteMessage: "该记录将被永久删除，确定要继续吗？",
       },
       emptyState: {
         title: "还没有跑步记录",
@@ -556,6 +606,7 @@ const resources = {
         detail: "跑步详情",
         start: "开始",
         finish: "结束",
+        holdToFinish: "长按结束",
         pause: "暂停",
         resume: "继续",
         paused: "已暂停",
@@ -582,19 +633,23 @@ const resources = {
         getStarted: "开始使用",
         gps: {
           title: "GPS 轨迹记录",
-          description: "SimRun 使用高精度 GPS 记录您的跑步路线。追踪每一步，在地图上见证您的运动轨迹。",
+          description:
+            "SimRun 使用高精度 GPS 记录您的跑步路线。追踪每一步，在地图上见证您的运动轨迹。",
         },
         location: {
           title: "后台定位权限",
-          description: "为了在锁屏时继续记录跑步数据，我们需要\"始终\"位置权限。您的数据仅保存在本地设备。",
+          description:
+            '为了在锁屏时继续记录跑步数据，我们需要"始终"位置权限。您的数据仅保存在本地设备。',
         },
         privacy: {
           title: "隐私优先",
-          description: "您的所有数据都存储在本地设备上。无需注册账号，数据不会上传到任何服务器。保护您的隐私是我们的首要任务。",
+          description:
+            "您的所有数据都存储在本地设备上。无需注册账号，数据不会上传到任何服务器。保护您的隐私是我们的首要任务。",
         },
         start: {
           title: "准备好开始了吗？",
-          description: "一切准备就绪！开始您的第一次跑步，让 SimRun 帮您记录运动之旅！",
+          description:
+            "一切准备就绪！开始您的第一次跑步，让 SimRun 帮您记录运动之旅！",
         },
       },
       plan: {
@@ -658,10 +713,14 @@ const resources = {
         notSynced: "未同步",
         lastSync: "上次同步",
         backupTime: "备份时间",
+        backupStatus: "备份状态",
+        backupExists: "已备份",
+        noBackup: "未备份",
         upload: "立即备份",
         restore: "恢复数据",
         restoreTitle: "恢复数据",
-        restoreConfirm: "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
+        restoreConfirm:
+          "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
         restoreSuccess: "恢复成功",
         restoreSuccessMessage: "数据已成功恢复，请重启应用以应用更改。",
         syncSettings: "同步设置",
@@ -674,6 +733,14 @@ const resources = {
         backupSize: "备份大小",
         cloudProvider: "云服务",
         tips: "备份文件存储在 iCloud 中，可在更换设备时恢复数据。iCloud 备份通常在设备充电且连接 WiFi 时自动进行。",
+        importTitle: "导入数据",
+        importMessage:
+          "从 JSON 或 GPX 文件导入跑步记录。支持从其他设备导出的 SimRun 数据文件。",
+        import: "选择文件",
+        importSuccess: "导入成功",
+        importFailed: "导入失败",
+        importFromFile: "从文件导入",
+        importSupportedFormats: "支持 JSON、GPX 格式",
       },
       mapSettings: {
         title: "地图设置",
@@ -836,16 +903,18 @@ const resources = {
         time: "用时{{time}}",
         pace: "配速{{pace}}每公里",
         calories: "热量{{calories}}千卡",
+        countdownThree: "3",
+        countdownTwo: "2",
+        countdownOne: "1",
+        countdownGo: "出发！",
       },
       voiceSettings: {
         title: "语音播报",
         enableVoice: "开启语音播报",
         enableVoiceDesc: "运动过程中播放语音播报",
-        frequencyTitle: "播报频率",
-        voiceParams: "语音设置",
-        volume: "音量",
-        rate: "语速",
-        pitch: "音调",
+        frequency: "播报频率",
+        selectVoice: "选择你的语音教练",
+        currentVoice: "当前语音",
         announceContent: "播报内容",
         announceStartFinish: "开始和结束",
         announceStartFinishDesc: "运动开始和结束时播报",
@@ -861,6 +930,8 @@ const resources = {
         announceCaloriesDesc: "播报消耗热量",
         testVoice: "测试语音",
         testing: "正在测试...",
+        testVoiceContent: "语音测试成功",
+        testVoiceHint: "如无声音，请检查设备音量并确保系统设置中已启用语音。",
         reset: "恢复默认设置",
         tips: "语音播报让您在运动中无需看屏幕也能了解运动状态。",
         frequencyOptions: {
@@ -879,7 +950,9 @@ const resources = {
 // 从 settings 存储中获取语言
 const getLanguageFromSettings = async (): Promise<string | null> => {
   try {
-    const stored = await getStorageItemAsync(SETTINGS_STORAGE_KEY) as string | null;
+    const stored = (await getStorageItemAsync(SETTINGS_STORAGE_KEY)) as
+      | string
+      | null;
     if (stored) {
       const parsed = JSON.parse(stored);
       return parsed.language || null;
@@ -897,12 +970,12 @@ const initI18n = async () => {
 
   // 如果没找到，尝试旧 key（兼容旧版本）
   if (!savedLang) {
-    savedLang = await getStorageItemAsync("app-language") as string | null;
+    savedLang = (await getStorageItemAsync("app-language")) as string | null;
   }
 
   i18n.use(initReactI18next).init({
     resources,
-    lng: savedLang || "cn",
+    lng: savedLang || getDefaultLanguage(),
     interpolation: {
       escapeValue: false, // react already safes from xss
     },

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -22,65 +22,63 @@ import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
 export default function UserProfileScreen() {
   const router = useRouter();
-  const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
 
   // 使用 state 存储用户信息，页面聚焦时刷新
-  const [userInfo, setUserInfo] = useState(getStorageItem("userInfo", true) || {});
+  const [userInfo, setUserInfo] = useState(
+    getStorageItem("userInfo", true) || {},
+  );
 
   // 页面聚焦时刷新用户数据
   useFocusEffect(
     useCallback(() => {
       const freshUserInfo = getStorageItem("userInfo", true) || {};
       setUserInfo(freshUserInfo);
-    }, [])
+    }, []),
   );
 
   // 初始化设置
-  useEffect(() => {
-    if (!isLoaded) {
-      initialize();
-    }
-  }, []);
-
-  // 同步主题设置到 nativewind
-  useEffect(() => {
-    if (isLoaded && settings.themeMode !== "system") {
-      const isDark = settings.themeMode === "dark";
-      const currentIsDark = colorScheme === "dark";
-      if (isDark !== currentIsDark) {
-        toggleColorScheme();
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoaded) {
+        initialize();
       }
-    }
-  }, [isLoaded, settings.themeMode]);
+    }, [isLoaded, initialize]),
+  );
 
-  // 处理主题切换
+  // 计算当前是否为深色模式（考虑 system 设置）
+  const isDarkMode =
+    settings.themeMode === "system"
+      ? colorScheme === "dark"
+      : settings.themeMode === "dark";
+
+  // 处理主题切换 - 只更新设置，不直接操作主题
   const handleThemeToggle = () => {
-    const newTheme = colorScheme === "dark" ? "light" : "dark";
-    setColorScheme(newTheme);
+    const newTheme = isDarkMode ? "light" : "dark";
     updateSetting("themeMode", newTheme);
   };
 
   // 处理注销
   const handleLogout = () => {
-    Alert.alert(
-      t("setting.logout"),
-      "确定要退出当前账号吗？",
-      [
-        { text: t("common.cancel") || "取消", style: "cancel" },
-        {
-          text: t("setting.logout"),
-          style: "destructive",
-          onPress: () => console.log("Logged out"),
-        },
-      ]
-    );
+    Alert.alert(t("setting.logout"), "确定要退出当前账号吗？", [
+      { text: t("common.cancel") || "取消", style: "cancel" },
+      {
+        text: t("setting.logout"),
+        style: "destructive",
+        onPress: () => console.log("Logged out"),
+      },
+    ]);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 80 }}
+      >
         {/* --- 头部：个人信息与概览 --- */}
         <View className="px-6 pt-8 pb-6 bg-white dark:bg-slate-800 rounded-b-3xl mb-6">
           <View className="flex-row items-center mb-6">
@@ -131,7 +129,7 @@ export default function UserProfileScreen() {
             <SwitchItem
               icon="moon"
               title={t("setting.darkMode")}
-              value={colorScheme === "dark"}
+              value={isDarkMode}
               onValueChange={handleThemeToggle}
               colorScheme="purple"
             />
@@ -148,7 +146,10 @@ export default function UserProfileScreen() {
               icon="map-outline"
               color="#10B981"
               label={t("setting.map")}
-              value={t(`mapSettings.mapType.${settings.map.mapType}`) || settings.map.mapType}
+              value={
+                t(`mapSettings.mapType.${settings.map.mapType}`) ||
+                settings.map.mapType
+              }
               onPress={() => router.push("/(views)/map-settings")}
             />
             <Divider />
@@ -164,7 +165,11 @@ export default function UserProfileScreen() {
               icon="flag-outline"
               color="#F59E0B"
               label={t("setting.editPlan") || "跑步计划"}
-              value={settings.plan.enabled ? t("common.enabled") : t("common.disabled")}
+              value={
+                settings.plan.enabled
+                  ? t("common.enabled")
+                  : t("common.disabled")
+              }
               onPress={() => router.push("/(views)/plan-settings")}
             />
             <Divider />

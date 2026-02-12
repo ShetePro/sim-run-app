@@ -1,11 +1,18 @@
-import { StyleSheet, View, Pressable, Image } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Pressable,
+  Image,
+  Animated,
+  Easing,
+} from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Map from "@/components/map/Map";
 import { useRun } from "@/hooks/useRun";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 import Countdown from "@/components/Countdown";
@@ -16,16 +23,118 @@ import { Ionicons } from "@expo/vector-icons";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 
+// 长按结束按钮组件
+function LongPressFinishButton({
+  onFinish,
+  t,
+}: {
+  onFinish: () => void;
+  t: any;
+}) {
+  const [progress, setProgress] = useState(0);
+  const [isPressing, setIsPressing] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const triggeredRef = useRef(false);
+  const isPressingRef = useRef(false);
+  const LONG_PRESS_DURATION = 1500; // 1.5秒长按
+
+  // 使用 ref 同步 pressing 状态，避免闭包问题
+  useEffect(() => {
+    isPressingRef.current = isPressing;
+  }, [isPressing]);
+
+  const animateProgress = useCallback(() => {
+    const elapsed = Date.now() - startTimeRef.current;
+    const newProgress = Math.min(elapsed / LONG_PRESS_DURATION, 1);
+
+    setProgress(newProgress);
+
+    if (newProgress < 1 && isPressingRef.current) {
+      rafRef.current = requestAnimationFrame(animateProgress);
+    } else if (newProgress >= 1 && !triggeredRef.current) {
+      // 进度满 100% 才触发结束，且只触发一次
+      triggeredRef.current = true;
+      onFinish();
+    }
+  }, [onFinish]);
+
+  const startProgress = useCallback(() => {
+    setIsPressing(true);
+    isPressingRef.current = true;
+    setProgress(0);
+    scaleAnim.setValue(1);
+    triggeredRef.current = false;
+    startTimeRef.current = Date.now();
+
+    // 使用 requestAnimationFrame 实现精确同步的进度条
+    rafRef.current = requestAnimationFrame(animateProgress);
+
+    // 缩放动画
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [animateProgress]);
+
+  const stopProgress = useCallback(() => {
+    setIsPressing(false);
+    isPressingRef.current = false;
+
+    // 取消动画帧
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    // 停止并重置动画
+    scaleAnim.stopAnimation();
+    setProgress(0);
+
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const progressWidth = `${progress * 100}%`;
+
+  return (
+    <Pressable
+      style={styles.finishButton}
+      onPressIn={startProgress}
+      onPressOut={stopProgress}
+    >
+      {/* 进度背景 */}
+      <View
+        style={[styles.progressBackground, { width: progressWidth as any }]}
+      />
+      {/* 按钮内容容器 - 应用缩放动画 */}
+      <Animated.View
+        style={[styles.buttonContent, { transform: [{ scale: scaleAnim }] }]}
+      >
+        <Ionicons name="stop" size={20} color="#fff" />
+        <ThemedText style={styles.buttonText}>
+          {isPressing ? t("run.holdToFinish") : t("run.finish")}
+        </ThemedText>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 // GPS信号强度指示器组件
 function SignalStrengthIndicator({ accuracy }: { accuracy: number }) {
   // 根据误差米数计算信号等级 (0-4)
   const getSignalLevel = (acc: number): number => {
     if (acc <= 0) return 0;
-    if (acc <= 5) return 4;   // 优秀 <5m
-    if (acc <= 10) return 3;  // 良好 5-10m
-    if (acc <= 20) return 2;  // 一般 10-20m
-    if (acc <= 50) return 1;  // 较差 20-50m
-    return 0;                 // 很差 >50m
+    if (acc <= 5) return 4; // 优秀 <5m
+    if (acc <= 10) return 3; // 良好 5-10m
+    if (acc <= 20) return 2; // 一般 10-20m
+    if (acc <= 50) return 1; // 较差 20-50m
+    return 0; // 很差 >50m
   };
 
   const level = getSignalLevel(accuracy);
@@ -80,17 +189,37 @@ const signalStyles = StyleSheet.create({
 
 export default function RunIndexScreen() {
   const { t } = useTranslation();
-  const { location, startTracking, stopTracking, pauseTracking, resumeTracking, getCurrentRunId, distance, heading, routePoints, isPaused } = useRun();
+  const {
+    location,
+    startTracking,
+    stopTracking,
+    pauseTracking,
+    resumeTracking,
+    getCurrentRunId,
+    distance,
+    heading,
+    routePoints,
+    isPaused,
+  } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
-  const { seconds, startTimer, stopTimer, pauseTimer, resumeTimer, isPaused: isTimerPaused } = useTick();
+  const {
+    seconds,
+    startTimer,
+    stopTimer,
+    pauseTimer,
+    resumeTimer,
+    isPaused: isTimerPaused,
+  } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
+  const [hasStarted, setHasStarted] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
   const {
     announceStart,
     announceFinish,
     announcePause,
     announceResume,
+    announceCountdownWithCallback,
     checkAndAnnounce,
     resetAnnounceState,
   } = useVoiceAnnounce();
@@ -108,7 +237,7 @@ export default function RunIndexScreen() {
         distance,
         duration: seconds,
         pace: runStore.pace,
-        calories: calculateCalories(seconds),
+        calories: calculateCalories(distance, seconds),
       });
     }
   }, [seconds, distance, runStore.pace]);
@@ -126,12 +255,58 @@ export default function RunIndexScreen() {
     return 70; // 默认体重70kg
   };
 
-  // 计算卡路里消耗
-  const calculateCalories = (durationSeconds: number) => {
+  // 计算卡路里消耗（基于距离和时间增量）
+  const calculateCalories = (currentDistance: number, currentTime: number) => {
     const weight = getUserWeight();
-    // MET值：跑步约10，公式：卡路里 = MET * 体重(kg) * 时间(小时)
-    return Math.floor(10 * weight * (durationSeconds / 3600));
+    const lastCalc = lastCalorieCalcRef.current;
+
+    // 计算增量
+    const distanceDelta = currentDistance - lastCalc.distance; // 米
+    const timeDelta = currentTime - lastCalc.time; // 秒
+
+    // 距离增量太小，认为没运动（原地不动）
+    if (distanceDelta < 10 || timeDelta <= 0) {
+      return lastCalc.calories;
+    }
+
+    // 计算实时配速（秒/公里）
+    const pacePerKm = timeDelta / (distanceDelta / 1000);
+
+    // 根据配速确定 MET 值
+    let met = 8; // 默认值（慢跑）
+    if (pacePerKm > 720)
+      met = 4; // >12:00/km 慢走
+    else if (pacePerKm > 540)
+      met = 6; // 9:00-12:00/km 快走
+    else if (pacePerKm > 420)
+      met = 8; // 7:00-9:00/km 慢跑
+    else if (pacePerKm > 360)
+      met = 10; // 6:00-7:00/km 中速跑
+    else met = 12; // <6:00/km 快跑
+
+    // 计算增量卡路里
+    const hours = timeDelta / 3600;
+    const calorieIncrement = Math.floor(met * weight * hours);
+
+    // 更新累计值
+    const newTotalCalories = lastCalc.calories + calorieIncrement;
+    lastCalorieCalcRef.current = {
+      distance: currentDistance,
+      time: currentTime,
+      calories: newTotalCalories,
+    };
+
+    return newTotalCalories;
   };
+
+  const isFinishingRef = useRef(false);
+
+  // 记录上次卡路里计算状态（用于增量计算）- 必须在 calculateCalories 之前定义
+  const lastCalorieCalcRef = useRef({
+    distance: 0,
+    time: 0,
+    calories: 0,
+  });
 
   const detailList = useMemo(() => {
     const data = [
@@ -146,7 +321,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: calculateCalories(seconds),
+        value: calculateCalories(distance, seconds),
         unit: t("unit.kcal"),
       },
     ];
@@ -166,11 +341,19 @@ export default function RunIndexScreen() {
       );
     });
   }, [distance, seconds, runStore.pace]);
+
   async function onFinish() {
+    // 防止重复触发
+    if (isFinishingRef.current) {
+      console.log("onFinish 已被调用，跳过重复触发");
+      return;
+    }
+    isFinishingRef.current = true;
+
     stopTimer();
     stopPedometer();
 
-    const calories = calculateCalories(seconds);
+    const calories = calculateCalories(distance, seconds);
     const runData = {
       time: seconds,
       pace: runStore.pace,
@@ -207,10 +390,14 @@ export default function RunIndexScreen() {
 
   function onStart() {
     setShowCountdown(true);
+    setHasStarted(false);
   }
   function countdownFinish() {
     setShowCountdown(false);
+    setHasStarted(true);
     resetAnnounceState();
+    // 重置卡路里计算状态
+    lastCalorieCalcRef.current = { distance: 0, time: 0, calories: 0 };
     startTracking();
     startPedometer();
     startTimer();
@@ -233,7 +420,19 @@ export default function RunIndexScreen() {
       className="flex-1 bg-gray-50 dark:bg-slate-900 pb-4 p-2"
       edges={["top"]}
     >
-      {showCountdown && <Countdown onFinish={countdownFinish} />}
+      {showCountdown && (
+        <Countdown
+          onFinish={countdownFinish}
+          onCountChange={async (count) => {
+            return new Promise((resolve) => {
+              announceCountdownWithCallback(count, () => {
+                resolve();
+              });
+            });
+          }}
+          minDuration={800}
+        />
+      )}
       <View
         style={{
           paddingBottom: 20,
@@ -251,7 +450,9 @@ export default function RunIndexScreen() {
           </View>
         )}
         <View style={styles.topBar}>
-          <ThemedText style={styles.topBarText}>{t("run.steps")}:{runStore.stepCount}</ThemedText>
+          <ThemedText style={styles.topBarText}>
+            {t("run.steps")}:{runStore.stepCount}
+          </ThemedText>
           <SignalStrengthIndicator accuracy={runStore.accuracy} />
         </View>
         <View>
@@ -288,7 +489,7 @@ export default function RunIndexScreen() {
           style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
         />
         <View className={"flex flex-row gap-4 mt-4"}>
-          {seconds === 0 ? (
+          {!showCountdown && !hasStarted ? (
             <>
               {/* 未开始状态：开始按钮 + 取消按钮 */}
               <Pressable style={styles.startButton} onPress={onStart}>
@@ -317,14 +518,7 @@ export default function RunIndexScreen() {
                   </ThemedText>
                 </View>
               </Pressable>
-              <Pressable style={styles.finishButton} onPress={onFinish}>
-                <View style={styles.buttonContent}>
-                  <Ionicons name="stop" size={20} color="#fff" />
-                  <ThemedText style={styles.buttonText}>
-                    {t("run.finish")}
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <LongPressFinishButton onFinish={onFinish} t={t} />
             </>
           ) : (
             /* 跑步中状态：暂停按钮 */
@@ -337,14 +531,7 @@ export default function RunIndexScreen() {
                   </ThemedText>
                 </View>
               </Pressable>
-              <Pressable style={styles.finishButton} onPress={onFinish}>
-                <View style={styles.buttonContent}>
-                  <Ionicons name="stop" size={20} color="#fff" />
-                  <ThemedText style={styles.buttonText}>
-                    {t("run.finish")}
-                  </ThemedText>
-                </View>
-              </Pressable>
+              <LongPressFinishButton onFinish={onFinish} t={t} />
             </>
           )}
         </View>
@@ -437,5 +624,13 @@ const styles = StyleSheet.create({
     color: "#F59E0B",
     fontSize: 16,
     fontWeight: "600",
+  },
+  progressBackground: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 10,
   },
 });

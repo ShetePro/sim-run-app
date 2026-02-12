@@ -11,10 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ],
+        "UIBackgroundModes": ["location", "fetch", "processing"],
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your route even when the screen is off.",
@@ -84,13 +81,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/icon-preview.png",
+          "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#4f46e5",
           "dark": {
-            "image": "./assets/images/icon.png",
-            "backgroundColor": "#0f172a"
+            "image": "./assets/images/icon-preview.png",
+            "backgroundColor": "#1e1b4b"
           }
         }
       ],

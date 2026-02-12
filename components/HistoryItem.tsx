@@ -1,4 +1,4 @@
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Alert } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ThemedText } from "@/components/ThemedText";
 import { secondFormatHours } from "@/utils/util";
@@ -8,9 +8,10 @@ import { RunRecord } from "@/types/runType";
 
 interface HistoryItemProps {
   record: RunRecord;
+  onDelete?: (id: number) => void;
 }
 
-function HistoryItem({ record }: HistoryItemProps) {
+function HistoryItem({ record, onDelete }: HistoryItemProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const distance = (record.distance / 1000).toFixed(2);
@@ -28,9 +29,31 @@ function HistoryItem({ record }: HistoryItemProps) {
     }
   };
 
+  const handleLongPress = () => {
+    if (record.id && onDelete) {
+      Alert.alert(
+        t("history.deleteTitle") || "删除记录",
+        t("history.deleteMessage") ||
+          "确定要删除这条跑步记录吗？此操作不可撤销。",
+        [
+          {
+            text: t("common.cancel") || "取消",
+            style: "cancel",
+          },
+          {
+            text: t("history.delete") || "删除",
+            style: "destructive",
+            onPress: () => onDelete(record.id!),
+          },
+        ],
+      );
+    }
+  };
+
   return (
     <TouchableOpacity
       onPress={handlePress}
+      onLongPress={handleLongPress}
       activeOpacity={0.7}
       className={
         "flex flex-row items-center bg-white dark:bg-slate-800 p-4 rounded-[24px] mb-4 shadow-sm"

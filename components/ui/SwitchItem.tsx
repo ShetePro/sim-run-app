@@ -37,83 +37,44 @@ const COLOR_SCHEMES: Record<Exclude<SwitchColorScheme, "custom">, string> = {
 export interface SwitchItemProps {
   /** 标题 */
   title: string;
-  
+
   /** 副标题/描述 */
   subtitle?: string;
-  
+
   /** 当前开关值 - 支持双向绑定 */
   value: boolean;
-  
+
   /** 值变化回调 */
   onValueChange: (value: boolean) => void;
-  
+
   /** 图标名称 (Ionicons) */
   icon?: keyof typeof Ionicons.glyphMap;
-  
+
   /** 颜色主题 */
   colorScheme?: SwitchColorScheme;
-  
+
   /** 自定义颜色 (当 colorScheme 为 'custom' 时使用) */
   customColor?: string;
-  
+
   /** 是否禁用 */
   disabled?: boolean;
-  
+
   /** 是否加载中 */
   loading?: boolean;
-  
+
   /** 自定义样式类名 */
   className?: string;
-  
+
   /** 是否显示分隔线（用于列表中） */
   showDivider?: boolean;
-  
+
   /** 点击整个行触发切换 */
   toggleOnRowPress?: boolean;
-  
+
   /** 额外的 Switch 属性 */
   switchProps?: Omit<SwitchProps, 'value' | 'onValueChange' | 'disabled'>;
 }
 
-/**
- * 统一的开关列表项组件
- * 
- * 使用示例:
- * ```tsx
- * // 基础用法
- * <SwitchItem
- *   title="自动同步"
- *   value={autoSync}
- *   onValueChange={setAutoSync}
- * />
- * 
- * // 带图标和副标题
- * <SwitchItem
- *   icon="sync-outline"
- *   title="自动同步"
- *   subtitle="跑步结束后自动备份"
- *   value={autoSync}
- *   onValueChange={setAutoSync}
- *   colorScheme="success"
- * />
- * 
- * // 双向绑定 (推荐)
- * const [enabled, setEnabled] = useState(false);
- * <SwitchItem
- *   title="深色模式"
- *   value={enabled}
- *   onValueChange={setEnabled}
- * />
- * 
- * // 使用 Zustand Store
- * <SwitchItem
- *   title="自动同步"
- *   value={settings.autoSync}
- *   onValueChange={(value) => updateSettings({ autoSync: value })}
- *   colorScheme="success"
- * />
- * ```
- */
 export const SwitchItem: React.FC<SwitchItemProps> = ({
   title,
   subtitle,
@@ -130,8 +91,8 @@ export const SwitchItem: React.FC<SwitchItemProps> = ({
   switchProps,
 }) => {
   // 获取主题色
-  const themeColor = colorScheme === "custom" 
-    ? customColor || "#3B82F6" 
+  const themeColor = colorScheme === "custom"
+    ? customColor || "#3B82F6"
     : COLOR_SCHEMES[colorScheme];
 
   // 处理值变化
@@ -189,14 +150,14 @@ export const SwitchItem: React.FC<SwitchItemProps> = ({
           value={value}
           onValueChange={handleValueChange}
           disabled={disabled}
-          trackColor={{ 
-            false: "#767577", 
-            true: themeColor 
+          trackColor={{
+            false: "#767577",
+            true: themeColor
           }}
           thumbColor={value ? "#fff" : "#f4f3f4"}
           ios_backgroundColor="#767577"
           // 确保动画效果一致
-          style={{ 
+          style={{
             transform: [{ scale: 1 }], // 防止缩放导致的渲染问题
           }}
           {...switchProps}

@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Dimensions,
 } from "react-native";
-import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,20 @@ import {
   useVoiceSettingsStore,
   AnnounceFrequency,
 } from "@/store/voiceSettingsStore";
-import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
+import * as Speech from "expo-speech";
+import {
+  VOICE_CHARACTERS,
+  VoiceCharacter,
+  getCharacterById,
+  getVoiceIdForLanguage,
+  getLanguageCode,
+  getCharacterName,
+  getCharacterDescription,
+  setAvailableVoices,
+} from "@/constants/voiceCharacters";
+
+const { width } = Dimensions.get("window");
+const CARD_WIDTH = (width - 48) / 2; // 两列布局
 
 const FREQUENCY_OPTIONS: { value: AnnounceFrequency; labelKey: string }[] = [
   { value: "off", labelKey: "voiceSettings.frequencyOptions.off" },
@@ -30,14 +43,39 @@ const FREQUENCY_OPTIONS: { value: AnnounceFrequency; labelKey: string }[] = [
 
 export default function VoiceSettingsScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
-  
+
   const settings = useVoiceSettingsStore();
-  const { speak, announceManual } = useVoiceAnnounce();
-  
   const [testSpeaking, setTestSpeaking] = useState(false);
+  const [availableVoiceIds, setAvailableVoiceIds] = useState<Set<string>>(new Set());
+
+  // 同步应用语言到语音设置
+  useEffect(() => {
+    // 当应用语言变化时，更新语音语言设置
+    const appLanguage = i18n.language;
+    if (settings.language !== appLanguage) {
+      console.log("[VoiceSettings] Syncing language:", appLanguage);
+      updateSetting("language", appLanguage);
+    }
+  }, [i18n.language]);
+
+  // 加载可用语音列表
+  useEffect(() => {
+    const loadVoices = async () => {
+      try {
+        const voices = await Speech.getAvailableVoicesAsync();
+        const voiceIds = new Set(voices.map((v: any) => v.identifier.toLowerCase()));
+        setAvailableVoiceIds(voiceIds);
+        setAvailableVoices(voices as any);
+        console.log("[VoiceSettings] Loaded voices:", voices.length);
+      } catch (error) {
+        console.error("[VoiceSettings] Error loading voices:", error);
+      }
+    };
+    loadVoices();
+  }, []);
 
   // 更新设置
   const updateSetting = useCallback(
@@ -45,10 +83,138 @@ export default function VoiceSettingsScreen() {
       key: K,
       value: (typeof settings)[K]
     ) => {
+      console.log("[VoiceSettings] Updating " + String(key) + ":", value);
       settings.updateSettings({ [key]: value });
     },
     [settings]
   );
+
+  // 选择角色
+  const selectCharacter = useCallback(
+    (character: VoiceCharacter) => {
+      console.log("[VoiceSettings] Selected character:", character.id);
+      updateSetting("characterId", character.id);
+
+      // 播放预览
+      previewCharacter(character);
+    },
+    [updateSetting, previewCharacter]
+  );
+
+  // 判断是否为中文
+  const isChinese = (lang: string) => lang === "cn" || lang.startsWith("zh");
+
+  // 预览角色语音
+  const previewCharacter = useCallback(
+    async (character: VoiceCharacter) => {
+      await Speech.stop();
+
+      // 使用设置中保存的语言
+      const lang = settings.language;
+      const previewText = isChinese(lang)
+        ? "你好，我是" + character.nameZh
+        : "Hi, I'm " + character.nameEn;
+
+      const voiceId = getVoiceIdForLanguage(character, lang);
+      const langCode = getLanguageCode(character, lang);
+
+      console.log(
+        "[VoiceSettings] Previewing:",
+        character.name,
+        "with voice:",
+        voiceId,
+        "lang:",
+        langCode
+      );
+
+      const options: Speech.SpeechOptions = {
+        language: langCode,
+        useApplicationAudioSession: false,
+      };
+
+      if (voiceId) {
+        (options as any).voice = voiceId;
+      }
+
+      try {
+        Speech.speak(previewText, options);
+      } catch (error) {
+        console.error("[VoiceSettings] Preview error:", error);
+        // 失败时使用默认语音重试
+        Speech.speak(previewText, {
+          language: lang,
+          useApplicationAudioSession: false,
+        });
+      }
+    },
+    [settings.language]
+  );
+
+  // 测试语音
+  const handleTestVoice = useCallback(async () => {
+    if (testSpeaking) return;
+
+    const character = getCharacterById(settings.characterId);
+    console.log("[VoiceSettings] Test voice with character:", character?.name);
+
+    setTestSpeaking(true);
+
+    // 使用设置中保存的语言
+    const lang = settings.language;
+
+    try {
+      await Speech.stop();
+
+      const testText = isChinese(lang)
+        ? t("voiceSettings.testVoiceContent")
+        : "Voice test successful";
+
+      const voiceId = character
+        ? getVoiceIdForLanguage(character, lang)
+        : undefined;
+      const langCode = character
+        ? getLanguageCode(character, lang)
+        : lang;
+
+      console.log("[VoiceSettings] Testing with voice:", voiceId, "lang:", langCode);
+
+      const options: Speech.SpeechOptions = {
+        language: langCode,
+        useApplicationAudioSession: false,
+        onDone: () => setTestSpeaking(false),
+        onError: (error) => {
+          console.error("[VoiceSettings] Test error:", error);
+          setTestSpeaking(false);
+          // 出错时使用默认设置重试
+          Speech.speak(testText, {
+            language: lang,
+            useApplicationAudioSession: false,
+          });
+        },
+      };
+
+      if (voiceId) {
+        (options as any).voice = voiceId;
+      }
+
+      Speech.speak(testText, options);
+    } catch (error) {
+      console.error("[VoiceSettings] Exception:", error);
+      setTestSpeaking(false);
+      // 出错时使用默认设置重试
+      try {
+        const testText = isChinese(lang)
+          ? t("voiceSettings.testVoiceContent")
+          : "Voice test successful";
+        Speech.speak(testText, {
+          language: lang,
+          useApplicationAudioSession: false,
+        });
+      } catch (e) {
+        // 忽略
+      }
+    }
+  }, [settings.characterId, settings.language, testSpeaking, t]);
 
   // 频率选择器
   const renderFrequencySelector = () => (
@@ -77,61 +243,65 @@ export default function VoiceSettingsScreen() {
     </View>
   );
 
-  // 滑块组件
-  const renderSlider = (
-    label: string,
-    value: number,
-    min: number,
-    max: number,
-    step: number,
-    onChange: (val: number) => void,
-    formatValue: (val: number) => string
-  ) => (
-    <View className="py-2">
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-slate-600 dark:text-slate-300 text-sm">
-          {label}
-        </Text>
-        <Text className="text-indigo-600 dark:text-indigo-400 font-medium">
-          {formatValue(value)}
-        </Text>
-      </View>
-      <View className="flex-row items-center">
-        <Text className="text-xs text-slate-400 w-8">{formatValue(min)}</Text>
-        <Slider
-          style={{ flex: 1, height: 40 }}
-          minimumValue={min}
-          maximumValue={max}
-          step={step}
-          value={value}
-          onValueChange={onChange}
-          minimumTrackTintColor="#6366F1"
-          maximumTrackTintColor={isDark ? "#475569" : "#E5E7EB"}
-          thumbTintColor="#6366F1"
-        />
-        <Text className="text-xs text-slate-400 w-8 text-right">
-          {formatValue(max)}
-        </Text>
-      </View>
-    </View>
-  );
+  // 渲染角色卡片
+  const renderCharacterCard = (character: VoiceCharacter) => {
+    const isSelected = settings.characterId === character.id;
+    // 使用设置中保存的语言显示名称和描述
+    const lang = settings.language;
+    const name = getCharacterName(character, lang);
+    const description = getCharacterDescription(character, lang);
 
-  // 测试语音
-  const handleTestVoice = useCallback(() => {
-    if (testSpeaking) return;
-    
-    setTestSpeaking(true);
-    announceManual({
-      distance: 5250, // 5.25公里
-      duration: 1800, // 30分钟
-      pace: 342, // 5分42秒/公里
-      calories: 320,
-    });
-    
-    setTimeout(() => {
-      setTestSpeaking(false);
-    }, 5000);
-  }, [announceManual, testSpeaking]);
+    return (
+      <TouchableOpacity
+        key={character.id}
+        onPress={() => selectCharacter(character)}
+        style={{ width: CARD_WIDTH }}
+        className={`rounded-2xl p-4 mb-3 ${
+          isSelected
+            ? "border-2 border-indigo-500 dark:border-indigo-400"
+            : "border border-slate-200 dark:border-slate-700"
+        }`}
+        activeOpacity={0.8}
+      >
+        {/* 头像背景 */}
+        <View
+          className="w-16 h-16 rounded-full items-center justify-center mb-3 self-center"
+          style={{ backgroundColor: character.color + "20" }}
+        >
+          <Text className="text-4xl">{character.emoji}</Text>
+        </View>
+
+        {/* 名字 */}
+        <Text
+          className={`text-center font-bold text-base mb-1 ${
+            isSelected
+              ? "text-indigo-600 dark:text-indigo-400"
+              : "text-slate-800 dark:text-slate-200"
+          }`}
+        >
+          {name}
+        </Text>
+
+        {/* 描述 */}
+        <Text
+          className="text-center text-xs text-slate-500 dark:text-slate-400"
+          numberOfLines={2}
+        >
+          {description}
+        </Text>
+
+        {/* 选中标记 */}
+        {isSelected && (
+          <View className="absolute top-2 right-2 w-6 h-6 rounded-full bg-indigo-500 items-center justify-center">
+            <Ionicons name="checkmark" size={16} color="#fff" />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  // 当前选中的角色
+  const currentCharacter = getCharacterById(settings.characterId);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
@@ -167,6 +337,44 @@ export default function VoiceSettingsScreen() {
 
         {settings.enabled && (
           <>
+            {/* --- 当前语音角色展示 --- */}
+            {currentCharacter && (
+              <View className="px-5 mt-4 mb-2">
+                <View
+                  className="rounded-2xl p-6 flex-row items-center"
+                  style={{ backgroundColor: currentCharacter.color + "15" }}
+                >
+                  <View
+                    className="w-20 h-20 rounded-full items-center justify-center mr-4"
+                    style={{ backgroundColor: currentCharacter.color + "30" }}
+                  >
+                    <Text className="text-5xl">{currentCharacter.emoji}</Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-slate-500 dark:text-slate-400 text-sm mb-1">
+                      {t("voiceSettings.currentVoice")}
+                    </Text>
+                    <Text className="text-xl font-bold text-slate-800 dark:text-white mb-1">
+                      {getCharacterName(currentCharacter, settings.language)}
+                    </Text>
+                    <Text className="text-sm text-slate-600 dark:text-slate-300">
+                      {getCharacterDescription(currentCharacter, settings.language)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* --- 选择语音角色 --- */}
+            <View className="px-5 mt-4 mb-2">
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-3 ml-2">
+                {t("voiceSettings.selectVoice")}
+              </Text>
+              <View className="flex-row flex-wrap justify-between">
+                {VOICE_CHARACTERS.map(renderCharacterCard)}
+              </View>
+            </View>
+
             {/* --- 播报频率 --- */}
             <View className="px-5 mt-4 mb-2">
               <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
@@ -174,44 +382,6 @@ export default function VoiceSettingsScreen() {
               </Text>
               <View className="bg-white dark:bg-slate-800 rounded-xl p-4">
                 {renderFrequencySelector()}
-              </View>
-            </View>
-
-            {/* --- 语音参数 --- */}
-            <View className="px-5 mt-4 mb-2">
-              <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
-                {t("voiceSettings.voiceParams")}
-              </Text>
-              <View className="bg-white dark:bg-slate-800 rounded-xl p-4">
-                {renderSlider(
-                  t("voiceSettings.volume"),
-                  settings.volume,
-                  0,
-                  1,
-                  0.1,
-                  (val) => updateSetting("volume", val),
-                  (val) => `${Math.round(val * 100)}%`
-                )}
-                <Divider />
-                {renderSlider(
-                  t("voiceSettings.rate"),
-                  settings.rate,
-                  0.5,
-                  2,
-                  0.1,
-                  (val) => updateSetting("rate", val),
-                  (val) => `${val.toFixed(1)}x`
-                )}
-                <Divider />
-                {renderSlider(
-                  t("voiceSettings.pitch"),
-                  settings.pitch,
-                  0.5,
-                  2,
-                  0.1,
-                  (val) => updateSetting("pitch", val),
-                  (val) => `${val.toFixed(1)}`
-                )}
               </View>
             </View>
 
@@ -288,32 +458,35 @@ export default function VoiceSettingsScreen() {
                 />
               </View>
             </View>
-
-            {/* --- 测试语音 --- */}
-            <View className="px-5 mt-4 mb-2">
-              <TouchableOpacity
-                onPress={handleTestVoice}
-                disabled={testSpeaking}
-                className={`flex-row items-center justify-center py-4 rounded-xl ${
-                  testSpeaking
-                    ? "bg-indigo-300 dark:bg-indigo-800"
-                    : "bg-indigo-500"
-                }`}
-              >
-                <Ionicons
-                  name={testSpeaking ? "volume-high" : "play"}
-                  size={20}
-                  color="#fff"
-                />
-                <Text className="ml-2 text-white font-semibold">
-                  {testSpeaking
-                    ? t("voiceSettings.testing")
-                    : t("voiceSettings.testVoice")}
-                </Text>
-              </TouchableOpacity>
-            </View>
           </>
         )}
+
+        {/* --- 测试语音 --- */}
+        <View className="px-5 mt-4 mb-2">
+          <TouchableOpacity
+            onPress={handleTestVoice}
+            disabled={testSpeaking}
+            className={`flex-row items-center justify-center py-4 rounded-xl ${
+              testSpeaking
+                ? "bg-indigo-300 dark:bg-indigo-800"
+                : "bg-indigo-500"
+            }`}
+          >
+            <Ionicons
+              name={testSpeaking ? "volume-high" : "play"}
+              size={20}
+              color="#fff"
+            />
+            <Text className="ml-2 text-white font-semibold">
+              {testSpeaking
+                ? t("voiceSettings.testing")
+                : t("voiceSettings.testVoice")}
+            </Text>
+          </TouchableOpacity>
+          <Text className="text-center text-slate-400 text-xs mt-3 px-4">
+            {t("voiceSettings.testVoiceHint")}
+          </Text>
+        </View>
 
         {/* --- 重置按钮 --- */}
         <View className="px-5 mt-6 mb-8">

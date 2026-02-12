@@ -12,6 +12,7 @@ public struct RunAttributes: ActivityAttributes {
 }
 public class ActivityControllerModule: Module {
   private var currentActivity: Any?
+  
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
 
@@ -22,6 +23,25 @@ public class ActivityControllerModule: Module {
       name: UIApplication.willTerminateNotification,
       object: nil
     )
+    
+    // 启动时清理可能残留的 Activity
+    if #available(iOS 16.1, *) {
+      Task {
+        await cleanUpStaleActivities()
+      }
+    }
+  }
+  
+  /// App 启动时清理残留的 Activity
+  /// 如果 Activity 存在但 App 刚刚启动，说明 App 之前被杀，直接结束它
+  @available(iOS 16.1, *)
+  private func cleanUpStaleActivities() async {
+    // 如果存在 Activity，直接结束它（因为 App 刚刚启动，说明之前被杀或重启）
+    for activity in Activity<RunAttributes>.activities {
+      await activity.end(dismissalPolicy: .immediate)
+      print("🧹 App 启动时清理残留的 Activity: \(activity.id)")
+    }
+    self.currentActivity = nil
   }
   public func definition() -> ModuleDefinition {
     Name("ActivityController")
@@ -55,12 +75,29 @@ public class ActivityControllerModule: Module {
 
     // --- 🔄 update ---
     Function("updateLiveActivity") { (distance: Double, duration: String, pace: String) in
-      if #available(iOS 16.1, *),
-      let activity = self.currentActivity as? Activity<RunAttributes> {
+      if #available(iOS 16.1, *) {
+        guard let activity = self.currentActivity as? Activity<RunAttributes> else {
+          print("⚠️ 没有活动的 Activity，跳过更新")
+          return
+        }
+        
+        // 检查 Activity 是否仍然有效
+        if activity.activityState != .active {
+          print("⚠️ Activity 已结束或无效，跳过更新")
+          self.currentActivity = nil
+          return
+        }
 
         let newState = RunAttributes.ContentState(distance: distance, duration: duration, pace: pace)
-        Task {
-          await activity.update(using: newState)
+        
+        // 使用 @MainActor 确保在主线程执行
+        Task { @MainActor in
+          do {
+            try await activity.update(using: newState)
+            print("🔄 Activity 已更新")
+          } catch {
+            print("❌ Activity 更新失败: \(error)")
+          }
         }
       }
     }
@@ -79,21 +116,27 @@ public class ActivityControllerModule: Module {
   }
   @objc
   private func handleAppKill() {
+    // App 被杀时，立即结束 Activity
+    // 注意：willTerminateNotification 是同步的，必须使用信号量阻塞主线程等待异步完成
     if #available(iOS 16.1, *) {
+      // 创建信号量，阻塞主线程
+      let semaphore = DispatchSemaphore(value: 0)
+      
+      // 结束所有 Activity（包括可能不在 currentActivity 中的）
       Task {
-        // 1. 这里的关键是：直接遍历 Activity<RunAttributes>.activities
-        // 这样即使 self.currentActivity 丢了，也能关掉锁屏上的“僵尸”活动
         for activity in Activity<RunAttributes>.activities {
-          print("🛑 正在关闭活动 ID: \(activity.id)")
-
-          // 2. 使用 .immediate 策略：立即从锁屏和灵动岛移除，不留痕迹
           await activity.end(dismissalPolicy: .immediate)
+          print("🛑 App 被杀，Activity 已结束: \(activity.id)")
         }
-
-        // 3. 清理本地变量
         self.currentActivity = nil
-        print("✅ 所有灵动岛及锁屏通知已彻底清理")
+        
+        // 发送信号，允许主线程继续
+        semaphore.signal()
       }
+      
+      // 阻塞主线程最多 2 秒，等待异步任务完成
+      _ = semaphore.wait(timeout: .now() + 2)
+      print("✅ App 终止，Live Activity 清理完成")
     }
   }
 }

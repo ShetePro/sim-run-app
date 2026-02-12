@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getStorageItemAsync, setStorageItemAsync } from "@/hooks/useStorageState";
+import { colorScheme as nativeWindColorScheme } from "nativewind";
 import i18n from "@/utils/i18n";
 
 // ==================== 类型定义 ====================
@@ -238,6 +239,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         if (merged.language) {
           i18n.changeLanguage(merged.language);
         }
+        
+        // 同步主题到 nativewind
+        if (merged.themeMode) {
+          nativeWindColorScheme.set(merged.themeMode === "system" ? "system" : merged.themeMode);
+        }
       } else {
         // 首次使用，保存默认设置
         await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
@@ -265,6 +271,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (path === "language") {
       i18n.changeLanguage(value as Language);
     }
+    
+    // 特殊处理：主题变更时同步应用到 nativewind
+    if (path === "themeMode") {
+      const themeMode = value as ThemeMode;
+      if (themeMode === "system") {
+        nativeWindColorScheme.set("system");
+      } else {
+        nativeWindColorScheme.set(themeMode);
+      }
+    }
   },
 
   updateSettings: async (partial) => {
@@ -278,12 +294,23 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (partial.language) {
       i18n.changeLanguage(partial.language);
     }
+    
+    // 同步主题变更
+    if (partial.themeMode) {
+      if (partial.themeMode === "system") {
+        nativeWindColorScheme.set("system");
+      } else {
+        nativeWindColorScheme.set(partial.themeMode);
+      }
+    }
   },
 
   resetSettings: async () => {
     await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
     set({ settings: DEFAULT_SETTINGS });
     i18n.changeLanguage(DEFAULT_SETTINGS.language);
+    // 重置主题
+    nativeWindColorScheme.set(DEFAULT_SETTINGS.themeMode === "system" ? "system" : DEFAULT_SETTINGS.themeMode);
   },
 
   resetGroup: async (group) => {
