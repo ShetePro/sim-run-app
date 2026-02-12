@@ -303,16 +303,16 @@ export default function CloudSyncScreen() {
                 {formattedSyncTime}
               </Text>
             </View>
-            {metadata.modificationTime && (
-              <View className="flex-row justify-between items-center mt-2">
-                <Text className="text-sm text-slate-500 dark:text-slate-400">
-                  {t("cloudSync.backupTime") || "备份时间"}
-                </Text>
-                <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {new Date(metadata.modificationTime).toLocaleString("zh-CN")}
-                </Text>
-              </View>
-            )}
+            <View className="flex-row justify-between items-center mt-2">
+              <Text className="text-sm text-slate-500 dark:text-slate-400">
+                {t("cloudSync.backupStatus") || "备份状态"}
+              </Text>
+              <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {metadata.exists
+                  ? t("cloudSync.backupExists") || "已备份"
+                  : t("cloudSync.noBackup") || "未备份"}
+              </Text>
+            </View>
           </View>
         </View>
 
