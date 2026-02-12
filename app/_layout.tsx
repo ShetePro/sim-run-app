@@ -55,6 +55,7 @@ export default function RootLayout() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isCustomSplashVisible, setIsCustomSplashVisible] = useState(true);
   const [isAppReady, setIsAppReady] = useState(false);
+  const [appKey, setAppKey] = useState(0); // 用于强制重新渲染
   const appStateRef = useRef(AppState.currentState);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
@@ -74,6 +75,8 @@ export default function RootLayout() {
       ) {
         // 应用从后台恢复到前台
         console.log("📱 应用从后台恢复到前台");
+        // 强制重新渲染整个应用树
+        setAppKey((prev) => prev + 1);
         // 重新初始化状态
         useSettingsStore.getState().initialize();
       }
@@ -174,7 +177,10 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
+    <SafeAreaProvider
+      key={appKey}
+      style={{ backgroundColor: theme.colors.background }}
+    >
       <SQLiteProvider databaseName="simrun.db" onInit={initializeSQLite}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ThemeProvider value={theme}>
