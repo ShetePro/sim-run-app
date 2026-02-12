@@ -7,14 +7,14 @@ import { useFonts } from "expo-font";
 import { Slot, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "react-native-reanimated";
 import "../styles/global.css";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Appearance, LogBox } from "react-native";
+import { Appearance, LogBox, AppState } from "react-native";
 import { SessionProvider } from "@/components/SessionProvider";
 import Toast from "react-native-toast-message";
 import "@/utils/i18n";
@@ -26,9 +26,12 @@ import isoWeek from "dayjs/plugin/isoWeek";
 import "dayjs/locale/zh-cn";
 import { requestLocationPermission } from "@/utils/location/location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import '@/utils/location/locationTask'
+import "@/utils/location/locationTask";
 import { useSettingsStore, migrateFromLegacy } from "@/store/settingsStore";
-import { OnboardingScreen, ONBOARDING_KEY } from "@/components/OnboardingScreen";
+import {
+  OnboardingScreen,
+  ONBOARDING_KEY,
+} from "@/components/OnboardingScreen";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { CustomSplashScreen } from "@/components/SplashScreen";
 
@@ -52,15 +55,34 @@ export default function RootLayout() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isCustomSplashVisible, setIsCustomSplashVisible] = useState(true);
   const [isAppReady, setIsAppReady] = useState(false);
+  const appStateRef = useRef(AppState.currentState);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
-  
+
   useEffect(() => {
     const subscription = Appearance.addChangeListener((theme) => {
       setColorScheme(theme.colorScheme);
     });
     return () => subscription.remove();
   }, []);
-  
+
+  // 监听应用状态变化（后台/前台切换）
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        // 应用从后台恢复到前台
+        console.log("📱 应用从后台恢复到前台");
+        // 重新初始化状态
+        useSettingsStore.getState().initialize();
+      }
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   const [loaded] = useFonts({
     // SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     // PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
@@ -72,7 +94,7 @@ export default function RootLayout() {
   });
 
   const insets = useSafeAreaInsets();
-  
+
   // 检查是否需要显示引导页
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -84,7 +106,7 @@ export default function RootLayout() {
     };
     checkOnboarding();
   }, []);
-  
+
   useEffect(() => {
     if (loaded && !isCheckingOnboarding) {
       // 先隐藏原生启动屏，显示自定义启动页
@@ -93,7 +115,7 @@ export default function RootLayout() {
       setIsAppReady(true);
     }
   }, [loaded, isCheckingOnboarding]);
-  
+
   useEffect(() => {
     // 检查完成后，如果不需要显示引导页，直接初始化
     if (!isCheckingOnboarding && !showOnboarding) {
@@ -103,7 +125,7 @@ export default function RootLayout() {
       restoreDatabaseFromICloud();
     }
   }, [isCheckingOnboarding, showOnboarding]);
-  
+
   useEffect(() => {
     // 引导页完成后初始化
     if (hasCompletedOnboarding) {
@@ -113,7 +135,7 @@ export default function RootLayout() {
       restoreDatabaseFromICloud();
     }
   }, [hasCompletedOnboarding]);
-  
+
   // 处理引导页完成
   const handleOnboardingComplete = () => {
     setHasCompletedOnboarding(true);
@@ -135,7 +157,7 @@ export default function RootLayout() {
   if (!loaded || isCheckingOnboarding) {
     return null;
   }
-  
+
   // 显示自定义启动过渡页
   if (isCustomSplashVisible) {
     return (
@@ -145,21 +167,15 @@ export default function RootLayout() {
       />
     );
   }
-  
+
   // 显示引导页
   if (showOnboarding) {
-    return (
-      <OnboardingScreen onComplete={handleOnboardingComplete} />
-    );
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
-  
+
   return (
     <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
-      <SQLiteProvider
-        databaseName="simrun.db"
-        onInit={initializeSQLite}
-        useSuspense
-      >
+      <SQLiteProvider databaseName="simrun.db" onInit={initializeSQLite}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ThemeProvider value={theme}>
             <SessionProvider>
