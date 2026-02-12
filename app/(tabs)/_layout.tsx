@@ -1,12 +1,10 @@
-import { Redirect, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import TabBar from "@/components/tab-bar/TabBar";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useSession } from "@/components/SessionProvider";
-import { ThemedText } from "@/components/ThemedText";
 import { useTranslation } from "react-i18next";
 
 function TabLayout() {
@@ -19,7 +17,7 @@ function TabLayout() {
   // if (!session) {
   //   return <Redirect href="/SignIn" />;
   // }
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
