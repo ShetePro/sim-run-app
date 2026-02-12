@@ -17,6 +17,7 @@ export type RunRecord = {
   endTime?: number;
   title?: string;
   note?: string;
+  steps?: number; // 步数（可选，用于演示数据）
 };
 
 export type TodayRunData = {
@@ -25,4 +26,4 @@ export type TodayRunData = {
   pace: number;
   calories: number;
   steps: number;
-}
+};

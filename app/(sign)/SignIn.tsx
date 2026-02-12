@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Text,
   Pressable,
-  ActivityIndicator,
 } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useSession } from "@/components/SessionProvider";
@@ -87,7 +86,9 @@ function SignIn({ t }: WithTranslation) {
         overflow: "hidden",
       }}
     >
-      <View className={"mt-10 mb-10 z-10 pl-10 pr-10 flex flex-col h-full gap-5"}>
+      <View
+        className={"mt-10 mb-10 z-10 pl-10 pr-10 flex flex-col h-full gap-5"}
+      >
         <View className={"flex flex-col items-center"}>
           <Text style={styles.title}>{t("title")}</Text>
           <Text style={styles.hello}>{t("welcome")}</Text>
