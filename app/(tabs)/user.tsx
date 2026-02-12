@@ -4,12 +4,10 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 import { LifeCountCard } from "@/components/card/LifeCountCard";

@@ -5,7 +5,7 @@ import { getDistance } from "geolib";
 import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 
-export const LOCATION_TASK_NAME = "RUNNING_TRACKER_TASK";
+export const LOCATION_TASK_NAME = "SIM_RUN_RUNNING_TRACKER_TASK";
 const filter = new IndustrialKalmanFilter();
 // 存储内存中的变量（仅限任务运行期间）
 let lastPoint: { latitude: number; longitude: number } | null = null;

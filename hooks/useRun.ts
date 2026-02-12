@@ -13,6 +13,7 @@ import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 import { LiveActivity } from "@/utils/LiveActivityController";
 import { backupDatabase } from "@/utils/backup";
+import { LOCATION_TASK_NAME } from "@/utils/location/locationTask";
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -110,7 +111,7 @@ export function useRun() {
         setHeading(data.trueHeading);
       });
       const locationUpdateTask = await Location.startLocationUpdatesAsync(
-        "RUNNING_TRACKER_TASK",
+        LOCATION_TASK_NAME,
         {
           accuracy: Location.Accuracy.BestForNavigation,
           activityType: Location.ActivityType.AutomotiveNavigation,
