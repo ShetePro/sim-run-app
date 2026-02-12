@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Map from "@/components/map/Map";
 import { useRun } from "@/hooks/useRun";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { secondFormatHours } from "@/utils/util";
 import { useTick } from "@/hooks/useTick";
 import Countdown from "@/components/Countdown";
@@ -31,32 +31,38 @@ function LongPressFinishButton({
   onFinish: () => void;
   t: any;
 }) {
-  const [isPressing, setIsPressing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isPressing, setIsPressing] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rafRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const triggeredRef = useRef(false);
+  const isPressingRef = useRef(false);
   const LONG_PRESS_DURATION = 1500; // 1.5秒长按
 
-  const animateProgress = () => {
+  // 使用 ref 同步 pressing 状态，避免闭包问题
+  useEffect(() => {
+    isPressingRef.current = isPressing;
+  }, [isPressing]);
+
+  const animateProgress = useCallback(() => {
     const elapsed = Date.now() - startTimeRef.current;
     const newProgress = Math.min(elapsed / LONG_PRESS_DURATION, 1);
 
     setProgress(newProgress);
 
-    if (newProgress < 1 && isPressing) {
+    if (newProgress < 1 && isPressingRef.current) {
       rafRef.current = requestAnimationFrame(animateProgress);
     } else if (newProgress >= 1 && !triggeredRef.current) {
       // 进度满 100% 才触发结束，且只触发一次
       triggeredRef.current = true;
       onFinish();
     }
-  };
+  }, [onFinish]);
 
-  const startProgress = () => {
-    console.log("[LongPress] onPressIn triggered");
+  const startProgress = useCallback(() => {
     setIsPressing(true);
+    isPressingRef.current = true;
     setProgress(0);
     scaleAnim.setValue(1);
     triggeredRef.current = false;
@@ -71,11 +77,11 @@ function LongPressFinishButton({
       duration: 100,
       useNativeDriver: true,
     }).start();
-  };
+  }, [animateProgress]);
 
-  const stopProgress = () => {
-    console.log("[LongPress] onPressOut triggered");
+  const stopProgress = useCallback(() => {
     setIsPressing(false);
+    isPressingRef.current = false;
 
     // 取消动画帧
     if (rafRef.current) {
@@ -92,29 +98,23 @@ function LongPressFinishButton({
       duration: 100,
       useNativeDriver: true,
     }).start();
-  };
+  }, []);
 
   const progressWidth = `${progress * 100}%`;
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.finishButton,
-        pressed && { opacity: 0.8 },
-      ]}
+      style={styles.finishButton}
       onPressIn={startProgress}
       onPressOut={stopProgress}
-      onResponderTerminationRequest={() => false}
     >
       {/* 进度背景 */}
       <View
         style={[styles.progressBackground, { width: progressWidth as any }]}
-        pointerEvents="none"
       />
       {/* 按钮内容容器 - 应用缩放动画 */}
       <Animated.View
         style={[styles.buttonContent, { transform: [{ scale: scaleAnim }] }]}
-        pointerEvents="none"
       >
         <Ionicons name="stop" size={20} color="#fff" />
         <ThemedText style={styles.buttonText}>
@@ -212,13 +212,14 @@ export default function RunIndexScreen() {
     isPaused: isTimerPaused,
   } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
+  const [hasStarted, setHasStarted] = useState<boolean>(false);
   const { startPedometer, stopPedometer } = usePedometer();
   const {
     announceStart,
     announceFinish,
     announcePause,
     announceResume,
-    announceCountdown,
+    announceCountdownWithCallback,
     checkAndAnnounce,
     resetAnnounceState,
   } = useVoiceAnnounce();
@@ -389,9 +390,11 @@ export default function RunIndexScreen() {
 
   function onStart() {
     setShowCountdown(true);
+    setHasStarted(false);
   }
   function countdownFinish() {
     setShowCountdown(false);
+    setHasStarted(true);
     resetAnnounceState();
     // 重置卡路里计算状态
     lastCalorieCalcRef.current = { distance: 0, time: 0, calories: 0 };
@@ -420,7 +423,14 @@ export default function RunIndexScreen() {
       {showCountdown && (
         <Countdown
           onFinish={countdownFinish}
-          onCountChange={(count) => announceCountdown(count)}
+          onCountChange={async (count) => {
+            return new Promise((resolve) => {
+              announceCountdownWithCallback(count, () => {
+                resolve();
+              });
+            });
+          }}
+          minDuration={800}
         />
       )}
       <View
@@ -472,25 +482,14 @@ export default function RunIndexScreen() {
         >
           {detailList}
         </View>
-        <View
-          style={{
-            flex: 1,
-            overflow: "hidden",
-            borderRadius: 18,
-            marginHorizontal: 10,
-          }}
-        >
-          <Map
-            location={location}
-            heading={heading}
-            path={routePoints}
-            style={{ flex: 1 }}
-          />
-        </View>
-        <View
-          style={{ flexDirection: "row", gap: 16, marginTop: 16, zIndex: 10 }}
-        >
-          {seconds === 0 ? (
+        <Map
+          location={location}
+          heading={heading}
+          path={routePoints}
+          style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
+        />
+        <View className={"flex flex-row gap-4 mt-4"}>
+          {!showCountdown && !hasStarted ? (
             <>
               {/* 未开始状态：开始按钮 + 取消按钮 */}
               <Pressable style={styles.startButton} onPress={onStart}>
@@ -569,14 +568,11 @@ const styles = StyleSheet.create({
   },
   finishButton: {
     flex: 1,
+    marginTop: 20,
     backgroundColor: "#dc282d",
     padding: 15,
     borderRadius: 10,
     height: 50,
-    minHeight: 50,
-    minWidth: 100,
-    justifyContent: "center",
-    alignItems: "center",
   },
   cancelButton: {
     flex: 1,
