@@ -11,10 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ],
+        "UIBackgroundModes": ["location", "fetch", "processing"],
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your route even when the screen is off.",

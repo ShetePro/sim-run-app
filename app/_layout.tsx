@@ -7,7 +7,7 @@ import { useFonts } from "expo-font";
 import { Slot, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import "react-native-reanimated";
 import "../styles/global.css";
 import {
@@ -34,6 +34,7 @@ import {
 } from "@/components/OnboardingScreen";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { CustomSplashScreen } from "@/components/SplashScreen";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 dayjs.extend(isoWeek);
 dayjs.locale("zh-cn");
@@ -55,7 +56,6 @@ export default function RootLayout() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isCustomSplashVisible, setIsCustomSplashVisible] = useState(true);
   const [isAppReady, setIsAppReady] = useState(false);
-  const [appKey, setAppKey] = useState(0); // 用于强制重新渲染
   const appStateRef = useRef(AppState.currentState);
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
@@ -75,8 +75,6 @@ export default function RootLayout() {
       ) {
         // 应用从后台恢复到前台
         console.log("📱 应用从后台恢复到前台");
-        // 强制重新渲染整个应用树
-        setAppKey((prev) => prev + 1);
         // 重新初始化状态
         useSettingsStore.getState().initialize();
       }
@@ -87,10 +85,6 @@ export default function RootLayout() {
   }, []);
 
   const [loaded] = useFonts({
-    // SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    // PoppinsRegular: require("../assets/fonts/Poppins-Regular.ttf"),
-    // PoppinsBold: require("../assets/fonts/Poppins-Bold.ttf"),
-    // PoppinsSemiBold: require("../assets/fonts/Poppins-SemiBold.ttf"),
     LexendRegular: require("../assets/fonts/Lexend-Regular.ttf"),
     LexendBold: require("../assets/fonts/Lexend-Bold.ttf"),
     LexendSemiBold: require("../assets/fonts/Lexend-SemiBold.ttf"),
@@ -98,89 +92,107 @@ export default function RootLayout() {
 
   const insets = useSafeAreaInsets();
 
-  // 检查是否需要显示引导页
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      const hasSeenOnboarding = await getStorageItemAsync(ONBOARDING_KEY);
-      if (!hasSeenOnboarding) {
-        setShowOnboarding(true);
-      }
-      setIsCheckingOnboarding(false);
-    };
-    checkOnboarding();
+  // 主初始化函数
+  const initializeApp = useCallback(async () => {
+    try {
+      console.log("[App] 开始初始化应用...");
+
+      // 1. 请求权限
+      await requestLocationPermission();
+
+      // 2. 初始化设置 store
+      await useSettingsStore.getState().initialize();
+
+      // 3. 迁移旧数据
+      await migrateFromLegacy();
+
+      // 4. 从 iCloud 恢复数据库
+      await restoreDatabaseFromICloud();
+
+      console.log("[App] 应用初始化完成");
+    } catch (error) {
+      console.error("[App] 初始化失败:", error);
+    }
   }, []);
 
-  useEffect(() => {
-    if (loaded && !isCheckingOnboarding) {
-      // 先隐藏原生启动屏，显示自定义启动页
-      SplashScreen.hideAsync();
-      // 标记应用准备好，触发自定义启动页退出动画
-      setIsAppReady(true);
+  // 从 iCloud 备份恢复数据库
+  const restoreDatabaseFromICloud = async () => {
+    try {
+      const hasBackup = await checkBackupExists();
+      if (hasBackup) {
+        console.log("🔄 发现数据库备份，正在恢复...");
+        await restoreDatabase();
+        console.log("✅ 数据库恢复完成");
+      }
+    } catch (error) {
+      console.error("❌ 恢复数据库失败:", error);
     }
-  }, [loaded, isCheckingOnboarding]);
+  };
 
+  // 统一的启动准备逻辑
   useEffect(() => {
-    // 检查完成后，如果不需要显示引导页，直接初始化
-    if (!isCheckingOnboarding && !showOnboarding) {
-      requestLocationPermission();
-      useSettingsStore.getState().initialize();
-      migrateFromLegacy();
-      restoreDatabaseFromICloud();
+    async function prepare() {
+      try {
+        console.log("[App] 开始准备应用...");
+
+        // 检查引导页
+        const hasSeenOnboarding = await getStorageItemAsync(ONBOARDING_KEY);
+        if (!hasSeenOnboarding) {
+          setShowOnboarding(true);
+        }
+        setIsCheckingOnboarding(false);
+
+        console.log("[App] 引导页检查完成");
+      } catch (error) {
+        console.error("[App] 准备应用失败:", error);
+        setIsCheckingOnboarding(false);
+      } finally {
+        // 关键：无论成功失败都隐藏启动屏
+        console.log("[App] 隐藏启动屏...");
+        await SplashScreen.hideAsync();
+        setIsAppReady(true);
+      }
     }
-  }, [isCheckingOnboarding, showOnboarding]);
 
+    if (loaded) {
+      prepare();
+    }
+  }, [loaded]);
+
+  // 初始化应用（非引导页状态）
   useEffect(() => {
-    // 引导页完成后初始化
+    if (
+      isAppReady &&
+      !isCheckingOnboarding &&
+      !showOnboarding &&
+      !hasCompletedOnboarding
+    ) {
+      initializeApp();
+    }
+  }, [
+    isAppReady,
+    isCheckingOnboarding,
+    showOnboarding,
+    hasCompletedOnboarding,
+    initializeApp,
+  ]);
+
+  // 初始化应用（引导页完成后）
+  useEffect(() => {
     if (hasCompletedOnboarding) {
-      requestLocationPermission();
-      useSettingsStore.getState().initialize();
-      migrateFromLegacy();
-      restoreDatabaseFromICloud();
+      initializeApp();
     }
-  }, [hasCompletedOnboarding]);
+  }, [hasCompletedOnboarding, initializeApp]);
 
   // 处理引导页完成
   const handleOnboardingComplete = () => {
     setHasCompletedOnboarding(true);
-    // 延迟隐藏引导页，确保主应用已准备好
-    setTimeout(() => {
-      setShowOnboarding(false);
-    }, 100);
+    setShowOnboarding(false);
   };
 
-  // 从 iCloud 备份恢复数据库
-  const restoreDatabaseFromICloud = async () => {
-    const hasBackup = await checkBackupExists();
-    if (hasBackup) {
-      console.log("🔄 发现数据库备份，正在恢复...");
-      await restoreDatabase();
-    }
-  };
-
-  if (!loaded || isCheckingOnboarding) {
-    return null;
-  }
-
-  // 显示自定义启动过渡页
-  if (isCustomSplashVisible) {
-    return (
-      <CustomSplashScreen
-        isReady={isAppReady}
-        onAnimationComplete={() => setIsCustomSplashVisible(false)}
-      />
-    );
-  }
-
-  // 显示引导页
-  if (showOnboarding) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  }
-
-  return (
-    <SafeAreaProvider
-      key={appKey}
-      style={{ backgroundColor: theme.colors.background }}
-    >
+  // 渲染主应用
+  const renderContent = () => (
+    <SafeAreaProvider style={{ backgroundColor: theme.colors.background }}>
       <SQLiteProvider databaseName="simrun.db" onInit={initializeSQLite}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ThemeProvider value={theme}>
@@ -201,4 +213,33 @@ export default function RootLayout() {
       </SQLiteProvider>
     </SafeAreaProvider>
   );
+
+  // 应用加载中时返回 null（启动屏会显示）
+  if (!loaded || isCheckingOnboarding) {
+    return null;
+  }
+
+  // 显示自定义启动过渡页
+  if (isCustomSplashVisible) {
+    return (
+      <ErrorBoundary>
+        <CustomSplashScreen
+          isReady={isAppReady}
+          onAnimationComplete={() => setIsCustomSplashVisible(false)}
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  // 显示引导页
+  if (showOnboarding) {
+    return (
+      <ErrorBoundary>
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      </ErrorBoundary>
+    );
+  }
+
+  // 主应用（包裹 ErrorBoundary）
+  return <ErrorBoundary>{renderContent()}</ErrorBoundary>;
 }
