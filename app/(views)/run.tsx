@@ -55,6 +55,7 @@ function LongPressFinishButton({
   };
 
   const startProgress = () => {
+    console.log("[LongPress] onPressIn triggered");
     setIsPressing(true);
     setProgress(0);
     scaleAnim.setValue(1);
@@ -73,6 +74,7 @@ function LongPressFinishButton({
   };
 
   const stopProgress = () => {
+    console.log("[LongPress] onPressOut triggered");
     setIsPressing(false);
 
     // 取消动画帧
@@ -96,17 +98,23 @@ function LongPressFinishButton({
 
   return (
     <Pressable
-      style={styles.finishButton}
+      style={({ pressed }) => [
+        styles.finishButton,
+        pressed && { opacity: 0.8 },
+      ]}
       onPressIn={startProgress}
       onPressOut={stopProgress}
+      onResponderTerminationRequest={() => false}
     >
       {/* 进度背景 */}
       <View
         style={[styles.progressBackground, { width: progressWidth as any }]}
+        pointerEvents="none"
       />
       {/* 按钮内容容器 - 应用缩放动画 */}
       <Animated.View
         style={[styles.buttonContent, { transform: [{ scale: scaleAnim }] }]}
+        pointerEvents="none"
       >
         <Ionicons name="stop" size={20} color="#fff" />
         <ThemedText style={styles.buttonText}>
@@ -464,13 +472,24 @@ export default function RunIndexScreen() {
         >
           {detailList}
         </View>
-        <Map
-          location={location}
-          heading={heading}
-          path={routePoints}
-          style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
-        />
-        <View className={"flex flex-row gap-4 mt-4"}>
+        <View
+          style={{
+            flex: 1,
+            overflow: "hidden",
+            borderRadius: 18,
+            marginHorizontal: 10,
+          }}
+        >
+          <Map
+            location={location}
+            heading={heading}
+            path={routePoints}
+            style={{ flex: 1 }}
+          />
+        </View>
+        <View
+          style={{ flexDirection: "row", gap: 16, marginTop: 16, zIndex: 10 }}
+        >
           {seconds === 0 ? (
             <>
               {/* 未开始状态：开始按钮 + 取消按钮 */}
@@ -550,11 +569,14 @@ const styles = StyleSheet.create({
   },
   finishButton: {
     flex: 1,
-    marginTop: 20,
     backgroundColor: "#dc282d",
     padding: 15,
     borderRadius: 10,
     height: 50,
+    minHeight: 50,
+    minWidth: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelButton: {
     flex: 1,
