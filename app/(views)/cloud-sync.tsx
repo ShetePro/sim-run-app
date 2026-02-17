@@ -155,10 +155,10 @@ export default function CloudSyncScreen() {
                 console.error("保存导入数据失败:", error);
                 Alert.alert(
                   t("cloudSync.importFailed") || "导入失败",
-                  "保存数据到数据库失败",
+                  t("cloudSync.saveToDbFailed"),
                 );
               }
-            } else if (result.message !== "用户取消了选择") {
+            } else if (result.message !== t("common.userCancelled")) {
               Alert.alert(
                 t("cloudSync.importFailed") || "导入失败",
                 result.message,

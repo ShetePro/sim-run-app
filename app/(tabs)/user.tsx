@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -60,7 +61,7 @@ export default function UserProfileScreen() {
 
   // 处理注销
   const handleLogout = () => {
-    Alert.alert(t("setting.logout"), "确定要退出当前账号吗？", [
+    Alert.alert(t("setting.logout"), t("setting.logoutConfirm"), [
       { text: t("common.cancel") || "取消", style: "cancel" },
       {
         text: t("setting.logout"),
