@@ -99,38 +99,37 @@ export type SettingPath =
  * 根据设备系统语言自动选择应用语言
  */
 const getSystemLanguage = (): Language => {
-  console.log("[getSystemLanguage] ========== 检测系统语言 ==========");
+  console.log("[settingsStore] ========== 获取系统语言 ==========");
   const locales = Localization.getLocales();
-  console.log(
-    "[getSystemLanguage] Localization.getLocales():",
-    JSON.stringify(locales, null, 2),
-  );
+  console.log("[settingsStore] Raw locales:", JSON.stringify(locales));
 
   if (locales.length > 0) {
     const languageCode = locales[0].languageCode;
-    console.log("[getSystemLanguage] languageCode:", languageCode);
-    console.log(
-      "[getSystemLanguage] 是否以 zh 开头:",
-      languageCode?.startsWith("zh"),
-    );
+    console.log("[settingsStore] languageCode:", languageCode);
 
     if (languageCode && languageCode.startsWith("zh")) {
-      console.log("[getSystemLanguage] 返回: cn");
+      console.log("[settingsStore] Detected Chinese, returning 'cn'");
       return "cn";
     }
   }
-  console.log("[getSystemLanguage] 返回: en");
+  console.log("[settingsStore] Not Chinese, returning 'en'");
   return "en";
 };
 
 // ==================== 默认值 ====================
+
+console.log("[settingsStore] ========== 模块加载 ==========");
+console.log("[settingsStore] 正在创建 DEFAULT_SETTINGS...");
+
+const systemLanguage = getSystemLanguage();
+console.log("[settingsStore] getSystemLanguage() 返回:", systemLanguage);
 
 /**
  * 默认设置
  * 所有新设置项都应在这里定义默认值
  */
 export const DEFAULT_SETTINGS: AppSettings = {
-  language: getSystemLanguage(),
+  language: systemLanguage,
   themeMode: "system",
   distanceUnit: "km",
   privacy: {
@@ -264,37 +263,35 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isLoaded: false,
 
   initialize: async () => {
-    console.log("[settingsStore] ========== 开始初始化设置 ==========");
-    console.log(
-      "[settingsStore] DEFAULT_SETTINGS.language:",
-      DEFAULT_SETTINGS.language,
-    );
-    console.log(
-      "[settingsStore] getSystemLanguage() 返回值:",
-      getSystemLanguage(),
-    );
-
+    console.log("[settingsStore] ========== initialize() 开始 ==========");
     try {
+      console.log(
+        "[settingsStore] DEFAULT_SETTINGS.language:",
+        DEFAULT_SETTINGS.language,
+      );
+
       const stored = (await getStorageItemAsync(SETTINGS_STORAGE_KEY)) as
         | string
         | null;
-
-      console.log(
-        "[settingsStore] 存储中的设置:",
-        stored ? "有数据" : "无数据",
-      );
+      console.log("[settingsStore] Storage content:", stored);
 
       if (stored) {
         const parsed = JSON.parse(stored);
-        console.log("[settingsStore] 解析后的语言设置:", parsed.language);
+        console.log("[settingsStore] Parsed settings:", parsed);
         // 合并存储的设置和默认值（处理新增设置项）
         const merged = deepMerge(DEFAULT_SETTINGS, parsed);
-        console.log("[settingsStore] 合并后的语言设置:", merged.language);
+        console.log(
+          "[settingsStore] Merged settings.language:",
+          merged.language,
+        );
         set({ settings: merged, isLoaded: true });
 
         // 同步语言到 i18n
         if (merged.language) {
-          console.log("[settingsStore] 同步语言到 i18n:", merged.language);
+          console.log(
+            "[settingsStore] Changing i18n language to:",
+            merged.language,
+          );
           i18n.changeLanguage(merged.language);
         }
 
@@ -306,8 +303,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         }
       } else {
         console.log(
-          "[settingsStore] 首次使用，保存默认设置:",
-          DEFAULT_SETTINGS.language,
+          "[settingsStore] No stored settings, saving DEFAULT_SETTINGS:",
+          DEFAULT_SETTINGS,
         );
         // 首次使用，保存默认设置
         await setStorageItemAsync(
@@ -316,11 +313,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         );
         set({ isLoaded: true });
       }
+      console.log("[settingsStore] ========== initialize() 完成 ==========");
     } catch (error) {
-      console.error("[settingsStore] Failed to load settings:", error);
+      console.error("Failed to load settings:", error);
       set({ isLoaded: true });
     }
-    console.log("[settingsStore] ========== 设置初始化完成 ==========");
   },
 
   updateSetting: async (path, value) => {
