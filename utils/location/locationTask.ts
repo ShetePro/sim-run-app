@@ -11,6 +11,14 @@ const filter = new IndustrialKalmanFilter();
 let lastPoint: { latitude: number; longitude: number } | null = null;
 let totalDistance = 0;
 const setAccuracy = useRunStore.getState().setAccuracy;
+
+// 重置任务状态（开始新跑步时调用）
+export function resetLocationTask() {
+  lastPoint = null;
+  totalDistance = 0;
+  filter.reset();
+  console.log("✅ 位置任务状态已重置");
+}
 console.log("定义位置任务:, LOCATION_TASK_NAME");
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
   console.log(error, data, "后台获取当前位置");

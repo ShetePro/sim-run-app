@@ -90,4 +90,15 @@ export class IndustrialKalmanFilter {
       longitude: this.x[1],
     };
   }
+
+  public reset() {
+    // 重置状态向量
+    this.x.fill(0);
+    // 重置协方差矩阵为单位阵
+    this.p.fill(0);
+    for (let i = 0; i < 16; i += 5) this.p[i] = 1.0;
+    // 重置其他状态
+    this.lastTimestamp = 0;
+    this.isInitialized = false;
+  }
 }
