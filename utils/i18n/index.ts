@@ -1039,17 +1039,42 @@ const getLanguageFromSettings = async (): Promise<string | null> => {
 
 // 初始化 i18n
 const initI18n = async () => {
+  console.log("[i18n] ========== 开始初始化语言 ==========");
+
+  // 打印系统语言信息
+  const locales = Localization.getLocales();
+  console.log("[i18n] System locales:", JSON.stringify(locales, null, 2));
+  console.log("[i18n] 系统语言代码:", locales[0]?.languageCode);
+  console.log("[i18n] 系统地区代码:", locales[0]?.regionCode);
+
   // 首先尝试从新的 settings 存储读取
   let savedLang = await getLanguageFromSettings();
+  console.log("[i18n] 从存储读取的语言:", savedLang);
 
   // 如果没找到，尝试旧 key（兼容旧版本）
   if (!savedLang) {
     savedLang = (await getStorageItemAsync("app-language")) as string | null;
+    console.log("[i18n] 从旧存储读取的语言:", savedLang);
   }
+
+  const defaultLang = getDefaultLanguage();
+  console.log("[i18n] getDefaultLanguage() 返回值:", defaultLang);
+
+  const finalLang = savedLang || defaultLang;
+  console.log("[i18n] 最终使用的语言:", finalLang);
+  console.log(
+    "[i18n] 选择逻辑: savedLang ?",
+    !!savedLang,
+    ":",
+    savedLang,
+    "|| defaultLang:",
+    defaultLang,
+  );
+  console.log("[i18n] ========== 语言初始化完成 ==========");
 
   i18n.use(initReactI18next).init({
     resources,
-    lng: savedLang || getDefaultLanguage(),
+    lng: finalLang,
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
