@@ -1,6 +1,10 @@
 import { create } from "zustand";
-import { getStorageItemAsync, setStorageItemAsync } from "@/hooks/useStorageState";
+import {
+  getStorageItemAsync,
+  setStorageItemAsync,
+} from "@/hooks/useStorageState";
 import { colorScheme as nativeWindColorScheme } from "nativewind";
+import * as Localization from "expo-localization";
 import i18n from "@/utils/i18n";
 
 // ==================== 类型定义 ====================
@@ -18,43 +22,43 @@ export type PathColor = "blue" | "red" | "green" | "orange" | "purple";
 export interface AppSettings {
   // 语言设置
   language: Language;
-  
+
   // 主题设置
   themeMode: ThemeMode;
-  
+
   // 单位设置
   distanceUnit: DistanceUnit;
-  
+
   // 隐私设置
   privacy: {
     shareLocation: boolean;
     analyticsEnabled: boolean;
   };
-  
+
   // 同步设置
   sync: {
     autoSync: boolean;
     wifiOnly: boolean;
   };
-  
+
   // 跑步设置
   run: {
     autoPause: boolean;
     voiceFeedback: boolean;
     targetDistance: number; // km, 0 表示无目标
   };
-  
+
   // 跑步计划设置
   plan: {
     enabled: boolean;
-    dailyDistance: number;      // 每日目标距离 (km)
-    weeklyDistance: number;     // 每周目标距离 (km)
-    weeklyRuns: number;         // 每周目标跑步次数
-    monthlyDistance: number;    // 每月目标距离 (km)
-    reminderEnabled: boolean;   // 是否开启提醒
-    reminderTime: string;       // 提醒时间 (HH:mm)
+    dailyDistance: number; // 每日目标距离 (km)
+    weeklyDistance: number; // 每周目标距离 (km)
+    weeklyRuns: number; // 每周目标跑步次数
+    monthlyDistance: number; // 每月目标距离 (km)
+    reminderEnabled: boolean; // 是否开启提醒
+    reminderTime: string; // 提醒时间 (HH:mm)
   };
-  
+
   // 地图设置
   map: {
     mapType: MapType;
@@ -62,15 +66,15 @@ export interface AppSettings {
     followUserLocation: boolean;
     showCompass: boolean;
     showScale: boolean;
-    tiltEnabled: boolean;  // 3D倾斜视角
+    tiltEnabled: boolean; // 3D倾斜视角
     // 交互设置
-    zoomEnabled: boolean;   // 允许缩放
+    zoomEnabled: boolean; // 允许缩放
     rotateEnabled: boolean; // 允许旋转
     scrollEnabled: boolean; // 允许滚动/平移
-    pitchEnabled: boolean;  // 允许倾斜手势
+    pitchEnabled: boolean; // 允许倾斜手势
     // 显示设置
-    showTraffic: boolean;   // 显示交通状况
-    showPOI: boolean;       // 显示兴趣点
+    showTraffic: boolean; // 显示交通状况
+    showPOI: boolean; // 显示兴趣点
     pathColor: PathColor;
     pathWidth: number;
   };
@@ -80,12 +84,30 @@ export interface AppSettings {
  * 设置项路径类型（用于类型安全的更新）
  * 支持嵌套路径，如 "notifications.enabled"
  */
-export type SettingPath = keyof AppSettings | 
-  `privacy.${keyof AppSettings['privacy']}` |
-  `sync.${keyof AppSettings['sync']}` |
-  `run.${keyof AppSettings['run']}` |
-  `plan.${keyof AppSettings['plan']}` |
-  `map.${keyof AppSettings['map']}`;
+export type SettingPath =
+  | keyof AppSettings
+  | `privacy.${keyof AppSettings["privacy"]}`
+  | `sync.${keyof AppSettings["sync"]}`
+  | `run.${keyof AppSettings["run"]}`
+  | `plan.${keyof AppSettings["plan"]}`
+  | `map.${keyof AppSettings["map"]}`;
+
+// ==================== 辅助函数 ====================
+
+/**
+ * 获取系统语言
+ * 根据设备系统语言自动选择应用语言
+ */
+const getSystemLanguage = (): Language => {
+  const locales = Localization.getLocales();
+  if (locales.length > 0) {
+    const languageCode = locales[0].languageCode;
+    if (languageCode && languageCode.startsWith("zh")) {
+      return "cn";
+    }
+  }
+  return "en";
+};
 
 // ==================== 默认值 ====================
 
@@ -94,7 +116,7 @@ export type SettingPath = keyof AppSettings |
  * 所有新设置项都应在这里定义默认值
  */
 export const DEFAULT_SETTINGS: AppSettings = {
-  language: "cn",
+  language: getSystemLanguage(),
   themeMode: "system",
   distanceUnit: "km",
   privacy: {
@@ -112,12 +134,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   plan: {
     enabled: false,
-    dailyDistance: 5,        // 默认每日 5km
-    weeklyDistance: 20,      // 默认每周 20km
-    weeklyRuns: 3,           // 默认每周 3 次
-    monthlyDistance: 80,     // 默认每月 80km
+    dailyDistance: 5, // 默认每日 5km
+    weeklyDistance: 20, // 默认每周 20km
+    weeklyRuns: 3, // 默认每周 3 次
+    monthlyDistance: 80, // 默认每月 80km
     reminderEnabled: false,
-    reminderTime: "07:00",   // 默认早上 7 点提醒
+    reminderTime: "07:00", // 默认早上 7 点提醒
   },
   map: {
     mapType: "standard",
@@ -125,15 +147,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
     followUserLocation: true,
     showCompass: true,
     showScale: true,
-    tiltEnabled: true,  // 默认开启3D倾斜
+    tiltEnabled: true, // 默认开启3D倾斜
     // 交互设置默认开启
     zoomEnabled: true,
     rotateEnabled: true,
     scrollEnabled: true,
     pitchEnabled: true,
     // 显示设置
-    showTraffic: false,  // 默认不显示交通
-    showPOI: true,       // 默认显示兴趣点
+    showTraffic: false, // 默认不显示交通
+    showPOI: true, // 默认显示兴趣点
     pathColor: "blue",
     pathWidth: 4,
   },
@@ -149,7 +171,7 @@ const SETTINGS_STORAGE_KEY = "app-settings";
  */
 function deepMerge<T>(target: T, source: Partial<T>): T {
   const result = { ...target };
-  
+
   for (const key in source) {
     if (source[key] !== undefined) {
       if (
@@ -165,7 +187,7 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
       }
     }
   }
-  
+
   return result;
 }
 
@@ -183,12 +205,12 @@ function setNestedValue<T>(obj: T, path: string, value: any): T {
   const parts = path.split(".");
   const result = { ...obj };
   let current: any = result;
-  
+
   for (let i = 0; i < parts.length - 1; i++) {
     current[parts[i]] = { ...current[parts[i]] };
     current = current[parts[i]];
   }
-  
+
   current[parts[parts.length - 1]] = value;
   return result;
 }
@@ -198,27 +220,29 @@ function setNestedValue<T>(obj: T, path: string, value: any): T {
 interface SettingsState {
   // 当前设置
   settings: AppSettings;
-  
+
   // 是否已加载
   isLoaded: boolean;
-  
+
   // 初始化（从存储加载）
   initialize: () => Promise<void>;
-  
+
   // 更新单个设置（支持嵌套路径）
   updateSetting: <K extends SettingPath>(
     path: K,
-    value: K extends keyof AppSettings ? AppSettings[K] : any
+    value: K extends keyof AppSettings ? AppSettings[K] : any,
   ) => Promise<void>;
-  
+
   // 批量更新设置
   updateSettings: (partial: Partial<AppSettings>) => Promise<void>;
-  
+
   // 重置设置到默认值
   resetSettings: () => Promise<void>;
-  
+
   // 重置特定分组的设置
-  resetGroup: (group: "privacy" | "sync" | "run" | "plan" | "map") => Promise<void>;
+  resetGroup: (
+    group: "privacy" | "sync" | "run" | "plan" | "map",
+  ) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -227,26 +251,33 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   initialize: async () => {
     try {
-      const stored = await getStorageItemAsync(SETTINGS_STORAGE_KEY) as string | null;
-      
+      const stored = (await getStorageItemAsync(SETTINGS_STORAGE_KEY)) as
+        | string
+        | null;
+
       if (stored) {
         const parsed = JSON.parse(stored);
         // 合并存储的设置和默认值（处理新增设置项）
         const merged = deepMerge(DEFAULT_SETTINGS, parsed);
         set({ settings: merged, isLoaded: true });
-        
+
         // 同步语言到 i18n
         if (merged.language) {
           i18n.changeLanguage(merged.language);
         }
-        
+
         // 同步主题到 nativewind
         if (merged.themeMode) {
-          nativeWindColorScheme.set(merged.themeMode === "system" ? "system" : merged.themeMode);
+          nativeWindColorScheme.set(
+            merged.themeMode === "system" ? "system" : merged.themeMode,
+          );
         }
       } else {
         // 首次使用，保存默认设置
-        await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+        await setStorageItemAsync(
+          SETTINGS_STORAGE_KEY,
+          JSON.stringify(DEFAULT_SETTINGS),
+        );
         set({ isLoaded: true });
       }
     } catch (error) {
@@ -257,21 +288,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   updateSetting: async (path, value) => {
     const { settings } = get();
-    
+
     // 更新设置
     const newSettings = setNestedValue(settings, path, value);
-    
+
     // 保存到存储
-    await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
-    
+    await setStorageItemAsync(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(newSettings),
+    );
+
     // 更新状态
     set({ settings: newSettings });
-    
+
     // 特殊处理：语言变更时同步到 i18n
     if (path === "language") {
       i18n.changeLanguage(value as Language);
     }
-    
+
     // 特殊处理：主题变更时同步应用到 nativewind
     if (path === "themeMode") {
       const themeMode = value as ThemeMode;
@@ -286,15 +320,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   updateSettings: async (partial) => {
     const { settings } = get();
     const newSettings = deepMerge(settings, partial);
-    
-    await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+
+    await setStorageItemAsync(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(newSettings),
+    );
     set({ settings: newSettings });
-    
+
     // 同步语言变更
     if (partial.language) {
       i18n.changeLanguage(partial.language);
     }
-    
+
     // 同步主题变更
     if (partial.themeMode) {
       if (partial.themeMode === "system") {
@@ -306,11 +343,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   resetSettings: async () => {
-    await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+    await setStorageItemAsync(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(DEFAULT_SETTINGS),
+    );
     set({ settings: DEFAULT_SETTINGS });
     i18n.changeLanguage(DEFAULT_SETTINGS.language);
     // 重置主题
-    nativeWindColorScheme.set(DEFAULT_SETTINGS.themeMode === "system" ? "system" : DEFAULT_SETTINGS.themeMode);
+    nativeWindColorScheme.set(
+      DEFAULT_SETTINGS.themeMode === "system"
+        ? "system"
+        : DEFAULT_SETTINGS.themeMode,
+    );
   },
 
   resetGroup: async (group) => {
@@ -319,8 +363,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...settings,
       [group]: DEFAULT_SETTINGS[group],
     };
-    
-    await setStorageItemAsync(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+
+    await setStorageItemAsync(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify(newSettings),
+    );
     set({ settings: newSettings });
   },
 }));
@@ -330,8 +377,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 /**
  * 获取特定设置项的 Hook（用于组件中）
  */
-export function useSetting<K extends SettingPath>(path: K): 
-  K extends keyof AppSettings ? AppSettings[K] : any {
+export function useSetting<K extends SettingPath>(
+  path: K,
+): K extends keyof AppSettings ? AppSettings[K] : any {
   const { settings } = useSettingsStore();
   return getNestedValue(settings, path);
 }
@@ -349,10 +397,11 @@ export const THEME_NAMES: Record<ThemeMode, string> = {
   system: "跟随系统",
 };
 
-export const UNIT_NAMES: Record<DistanceUnit, { name: string; short: string }> = {
-  km: { name: "公里", short: "km" },
-  mi: { name: "英里", short: "mi" },
-};
+export const UNIT_NAMES: Record<DistanceUnit, { name: string; short: string }> =
+  {
+    km: { name: "公里", short: "km" },
+    mi: { name: "英里", short: "mi" },
+  };
 
 export const MAP_TYPE_NAMES: Record<MapType, { name: string; icon: string }> = {
   standard: { name: "标准", icon: "map-outline" },
@@ -360,7 +409,10 @@ export const MAP_TYPE_NAMES: Record<MapType, { name: string; icon: string }> = {
   hybrid: { name: "混合", icon: "layers-outline" },
 };
 
-export const PATH_COLOR_NAMES: Record<PathColor, { name: string; color: string }> = {
+export const PATH_COLOR_NAMES: Record<
+  PathColor,
+  { name: string; color: string }
+> = {
   blue: { name: "蓝色", color: "#3B82F6" },
   red: { name: "红色", color: "#EF4444" },
   green: { name: "绿色", color: "#10B981" },
@@ -383,7 +435,9 @@ export const PATH_WIDTH_OPTIONS = [
 export async function migrateFromLegacy(): Promise<void> {
   try {
     // 迁移旧的语言设置
-    const oldLang = await getStorageItemAsync("app-language") as Language | null;
+    const oldLang = (await getStorageItemAsync(
+      "app-language",
+    )) as Language | null;
     if (oldLang) {
       const { updateSetting } = useSettingsStore.getState();
       await updateSetting("language", oldLang);
