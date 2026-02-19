@@ -11,31 +11,30 @@ interface TodayActivityCardProps {
 }
 
 export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
+  const { settings } = useSettingsStore();
   const router = useRouter();
-  const { settings, isLoaded } = useSettingsStore();
   const plan = settings.plan;
   const { t } = useTranslation();
-  
   if (todayData === null) return null;
-  
-  // 等待设置加载完成
-  if (!isLoaded) {
-    return (
-      <View className="px-5 mb-6">
-        <View className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-6 h-48 animate-pulse" />
-      </View>
-    );
-  }
-  
+
+  // // 等待设置加载完成
+  // if (!isLoaded) {
+  //   return (
+  //     <View className="px-5 mb-6">
+  //       <View className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-6 h-48 animate-pulse" />
+  //     </View>
+  //   );
+  // }
+
   // 判断是否设置了计划目标
   const hasPlanEnabled = plan?.enabled === true;
   const dailyGoal = hasPlanEnabled ? plan.dailyDistance : 0;
   const hasGoal = dailyGoal > 0;
-  
+
   // 计算进度
   const progress = hasGoal ? Math.min(todayData.distance / dailyGoal, 1) : 0;
   const progressPercent = Math.round(progress * 100);
-  
+
   return (
     <View className="px-5 mb-6">
       <View className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-6 shadow-lg shadow-indigo-200 dark:shadow-none overflow-hidden relative">
@@ -48,7 +47,7 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
               {t("home.todayActivity")}
             </Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push("/(views)/plan-settings")}
             className="flex-row items-center bg-white/10 px-2 py-1 rounded-full"
           >
@@ -80,10 +79,9 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
             )}
           </View>
           <Text className="text-indigo-200 text-sm mt-1">
-            {hasGoal 
+            {hasGoal
               ? `${t("home.completeness")} ${progressPercent}%`
-              : t("plan.tapToSetGoal")
-            }
+              : t("plan.tapToSetGoal")}
           </Text>
         </View>
 
@@ -95,7 +93,7 @@ export function TodayActivityCard({ todayData }: TodayActivityCardProps) {
             }`}
           />
         </View>
-        
+
         {/* 未设置目标时的提示 */}
         {!hasGoal && (
           <TouchableOpacity
