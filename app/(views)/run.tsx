@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 
 // 长按结束按钮组件
@@ -213,6 +213,7 @@ export default function RunIndexScreen() {
   } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
+  const [userWeight, setUserWeight] = useState<number>(70); // 默认体重70kg
   const { startPedometer, stopPedometer } = usePedometer();
   const {
     announceStart,
@@ -242,22 +243,24 @@ export default function RunIndexScreen() {
     }
   }, [seconds, distance, runStore.pace]);
 
-  // 获取用户体重（默认70kg）
-  const getUserWeight = () => {
-    const userInfo = getStorageItem("userInfo");
-    if (userInfo) {
-      const parsed = JSON.parse(userInfo);
-      const weight = parseFloat(parsed.weight);
-      if (!isNaN(weight) && weight > 0) {
-        return weight;
+  // 加载用户体重
+  useEffect(() => {
+    const loadUserWeight = async () => {
+      const userInfo = await getStorageItemAsync("userInfo");
+      if (userInfo) {
+        const parsed = JSON.parse(userInfo);
+        const weight = parseFloat(parsed.weight);
+        if (!isNaN(weight) && weight > 0) {
+          setUserWeight(weight);
+        }
       }
-    }
-    return 70; // 默认体重70kg
-  };
+    };
+    loadUserWeight();
+  }, []);
 
   // 计算卡路里消耗（基于距离和时间增量）
   const calculateCalories = (currentDistance: number, currentTime: number) => {
-    const weight = getUserWeight();
+    const weight = userWeight;
     const lastCalc = lastCalorieCalcRef.current;
 
     // 计算增量

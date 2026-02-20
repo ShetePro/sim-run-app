@@ -16,7 +16,7 @@ import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
 import { SwitchItem } from "@/components/ui/SwitchItem";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
 export default function UserProfileScreen() {
@@ -26,15 +26,16 @@ export default function UserProfileScreen() {
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
 
   // 使用 state 存储用户信息，页面聚焦时刷新
-  const [userInfo, setUserInfo] = useState(
-    getStorageItem("userInfo", true) || {},
-  );
+  const [userInfo, setUserInfo] = useState<any>({});
 
   // 页面聚焦时刷新用户数据
   useFocusEffect(
     useCallback(() => {
-      const freshUserInfo = getStorageItem("userInfo", true) || {};
-      setUserInfo(freshUserInfo);
+      const loadUserInfo = async () => {
+        const freshUserInfo = (await getStorageItemAsync("userInfo")) || {};
+        setUserInfo(JSON.parse(freshUserInfo) || {});
+      };
+      loadUserInfo();
     }, []),
   );
 

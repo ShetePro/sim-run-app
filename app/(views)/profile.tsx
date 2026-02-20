@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,10 @@ import {
   NumberInputControlProps,
   NumberInputSheetHandle,
 } from "@/types/formTypes";
-import { getStorageItem, setStorageItemAsync } from "@/hooks/useStorageState";
+import {
+  getStorageItemAsync,
+  setStorageItemAsync,
+} from "@/hooks/useStorageState";
 import Toast from "react-native-toast-message";
 
 export default function ProfileEditScreen() {
@@ -59,11 +62,19 @@ export default function ProfileEditScreen() {
       value: "0",
     },
   };
-  const userInfo = getStorageItem("userInfo");
   // 表单状态
-  const [form, setForm] = useState<UserInfo>(
-    userInfo ? JSON.parse(userInfo) : {},
-  );
+  const [form, setForm] = useState<Partial<UserInfo>>({});
+
+  // 加载用户信息
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const userInfo = await getStorageItemAsync("userInfo");
+      if (userInfo) {
+        setForm(JSON.parse(userInfo));
+      }
+    };
+    loadUserInfo();
+  }, []);
 
   // 处理保存
   const handleSave = async () => {

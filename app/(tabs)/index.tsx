@@ -21,7 +21,7 @@ import { getPaceLabel, secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { RecentActivityItem } from "@/components/RecentActivityItem";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,7 +29,10 @@ export default function HomeScreen() {
   const { getTodayRunData, getRuns } = useRunDB();
   const [today, setToday] = useState<TodayRunData | null>(null);
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
-  const [userInfo, setUserInfo] = useState<{ nickname?: string; avatar?: string }>({});
+  const [userInfo, setUserInfo] = useState<{
+    nickname?: string;
+    avatar?: string;
+  }>({});
 
   // 获取今日跑步数据和最近活动
   useEffect(() => {
@@ -65,8 +68,8 @@ export default function HomeScreen() {
   }, []);
 
   // 获取用户信息（包括头像）
-  const loadUserInfo = () => {
-    const storedUserInfo = getStorageItem("userInfo");
+  const loadUserInfo = async () => {
+    const storedUserInfo = await getStorageItemAsync("userInfo");
     if (storedUserInfo) {
       try {
         const parsed = JSON.parse(storedUserInfo);
@@ -86,7 +89,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadUserInfo();
-    }, [])
+    }, []),
   );
   // 根据时间生成问候语
   const getGreeting = () => {
@@ -108,14 +111,21 @@ export default function HomeScreen() {
             <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
               {(() => {
                 const now = dayjs();
-                const months = t("time.months", { returnObjects: true }) as string[];
-                const weekDays = t("time.week", { returnObjects: true }) as string[];
+                const months = t("time.months", {
+                  returnObjects: true,
+                }) as string[];
+                const weekDays = t("time.week", {
+                  returnObjects: true,
+                }) as string[];
                 const month = months?.[now.month()] ?? "";
                 const day = now.date();
-                const weekday = weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
+                const weekday =
+                  weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
                 // 中文格式：10月6日 周日，英文格式：Oct 6, Sun
                 const isCN = (t("common.today") as string).length <= 2;
-                return isCN ? `${month}${day}日 ${weekday}` : `${month} ${day}, ${weekday}`;
+                return isCN
+                  ? `${month}${day}日 ${weekday}`
+                  : `${month} ${day}, ${weekday}`;
               })()}
             </Text>
             <View className="flex-row items-center">
@@ -205,7 +215,7 @@ export default function HomeScreen() {
               <Text className="text-slate-800 dark:text-white font-bold text-lg">
                 {t("home.recentActivities")}
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.push("/(tabs)/history")}
                 className="flex-row items-center"
               >
@@ -222,10 +232,12 @@ export default function HomeScreen() {
                   key={run.id}
                   record={run}
                   index={index}
-                  onPress={() => router.push({
-                    pathname: "/(views)/run-summary",
-                    params: { runId: String(run.id), mode: "view" }
-                  })}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(views)/run-summary",
+                      params: { runId: String(run.id), mode: "view" },
+                    })
+                  }
                 />
               ))}
             </View>
