@@ -74,9 +74,12 @@ export function useRun() {
 
         // 使用 ref 获取最新的 routePoints，避免闭包问题
         const updatedPoints = [...routePointsRef.current, newPoint];
-        updateRun({
-          points: updatedPoints,
-        });
+        if (runData.id) {
+          updateRun({
+            id: runData.id,
+            points: updatedPoints,
+          });
+        }
         setRoutePoints(updatedPoints);
 
         const actualDistance =
