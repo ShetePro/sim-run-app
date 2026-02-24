@@ -92,3 +92,28 @@ export function trackPointsToCoordinates(
     .map(trackPointToCoordinate)
     .filter((coord): coord is MapCoordinate => coord !== null);
 }
+
+/**
+ * 转换 TrackPoint 到带海拔的 3D 坐标
+ * 用于 3D 距离计算
+ * @param trackPoint 数据库轨迹点
+ * @returns 带海拔的坐标对象 或 null
+ */
+export function trackPointToCoordinate3D(trackPoint: {
+  lat?: number;
+  lng?: number;
+  altitude?: number;
+  [key: string]: any;
+}): { latitude: number; longitude: number; altitude?: number } | null {
+  if (!trackPoint) {
+    return null;
+  }
+
+  const coord = {
+    latitude: trackPoint.lat,
+    longitude: trackPoint.lng,
+    altitude: trackPoint.altitude,
+  };
+
+  return isValidCoordinate(coord) ? coord : null;
+}
