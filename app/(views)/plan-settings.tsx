@@ -481,7 +481,7 @@ export default function PlanSettingsScreen() {
               )}
             </View>
 
-            {/* 提醒设置 */}
+            {/* 提醒设置 - 暂时禁用
             <View className="px-4 mt-4">
               <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-2 ml-1">
                 {t("plan.reminder")}
@@ -530,6 +530,7 @@ export default function PlanSettingsScreen() {
                 )}
               </View>
             </View>
+            */}
           </>
         )}
 
