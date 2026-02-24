@@ -232,7 +232,7 @@ const resources = {
       },
       setting: {
         language: "Language",
-        darkMode: "DarkMode",
+        appearance: "Appearance",
         editProfile: "Edit Profile",
         editPlan: "Running Plan",
         cloudSync: "Cloud Sync",
@@ -246,6 +246,13 @@ const resources = {
         preferences: "Preferences",
         tools: "Running Tools",
         other: "Others",
+      },
+      theme: {
+        title: "Appearance",
+        system: "System",
+        dark: "Dark",
+        light: "Light",
+        description: "Choose your preferred appearance",
       },
       cloudSync: {
         title: "Cloud Sync",
@@ -732,7 +739,7 @@ const resources = {
       },
       setting: {
         language: "语言/Language",
-        darkMode: "深色模式",
+        appearance: "外观",
         editPlan: "跑步计划",
         editProfile: "编辑资料",
         map: "地图设置",
@@ -746,6 +753,13 @@ const resources = {
         preferences: "偏好设置",
         tools: "跑步工具",
         other: "其他",
+      },
+      theme: {
+        title: "外观",
+        system: "跟随系统",
+        dark: "深色模式",
+        light: "浅色模式",
+        description: "选择您偏好的外观样式",
       },
       cloudSync: {
         title: "云端同步",
