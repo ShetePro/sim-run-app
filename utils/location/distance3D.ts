@@ -51,21 +51,34 @@ export function getDistance3D(point1: Point3D, point2: Point3D): number {
 /**
  * 批量计算轨迹的总 3D 距离
  * @param points 轨迹点数组
+ * @param options 可选配置
  * @returns 总距离（米）
  */
-export function calculateTotalDistance3D(points: Point3D[]): number {
+export function calculateTotalDistance3D(
+  points: Point3D[],
+  options?: {
+    filterOutliers?: boolean; // 是否过滤异常值（GPS跳变）
+    minDistance?: number; // 最小距离阈值（米）
+    maxDistance?: number; // 最大距离阈值（米）
+  },
+): number {
   if (points.length < 2) {
     return 0;
   }
+
+  const {
+    filterOutliers = false, // 默认不过滤，保留所有有效距离
+    minDistance = 0.5,
+    maxDistance = 10000, // 默认10km，适合各种场景
+  } = options || {};
 
   let totalDistance = 0;
 
   for (let i = 1; i < points.length; i++) {
     const delta = getDistance3D(points[i - 1], points[i]);
 
-    // 运动过滤：排除异常数据
-    // 跑步者 1秒钟位移通常在 0.5m-15m 之间
-    if (delta > 0.5 && delta < 15) {
+    // 运动过滤：排除异常数据（可选）
+    if (!filterOutliers || (delta > minDistance && delta < maxDistance)) {
       totalDistance += delta;
     }
   }

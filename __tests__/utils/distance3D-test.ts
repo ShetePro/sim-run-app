@@ -113,6 +113,54 @@ describe("calculateTotalDistance3D", () => {
 
   it("少于2个点应返回0", () => {
     expect(calculateTotalDistance3D([])).toBe(0);
+    expect(calculateTotalDistance3D([{ latitude: 40, longitude: 116 }])).toBe(0);
+  });
+
+  it("应过滤异常距离（原地漂移 < 0.5m）", () => {
+    const points: Point3D[] = [
+      { latitude: 40.0, longitude: 116.0, altitude: 50 },
+      { latitude: 40.0000001, longitude: 116.0, altitude: 50 }, // 漂移 < 0.5m
+      { latitude: 40.0, longitude: 116.001, altitude: 50 }, // 正常移动
+    ];
+
+    const totalDistance = calculateTotalDistance3D(points, {
+      filterOutliers: true,
+    });
+
+    // 应只计算最后一段距离，约 89m
+    expect(totalDistance).toBeGreaterThan(80);
+    expect(totalDistance).toBeLessThan(100);
+  });
+
+  it("应过滤异常距离（GPS跳变）", () => {
+    const points: Point3D[] = [
+      { latitude: 40.0, longitude: 116.0, altitude: 50 },
+      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m
+      { latitude: 40.0, longitude: 116.001, altitude: 50 }, // 正常移动
+    ];
+
+    const totalDistance = calculateTotalDistance3D(points, {
+      filterOutliers: true,
+      maxDistance: 100, // 设置较小的最大距离阈值
+    });
+
+    // 应只计算最后一段距离
+    expect(totalDistance).toBeGreaterThan(80);
+    expect(totalDistance).toBeLessThan(100);
+  });
+});
+
+  it("应计算爬山场景总距离", () => {
+    const points = convertToPoint3D(mountainClimbData as any);
+    const totalDistance = calculateTotalDistance3D(points);
+
+    // 11个点，10段距离，每段理论值 141.42m
+    // 总计约 1414.21m
+    expect(totalDistance).toBeCloseTo(1414.21, -1);
+  });
+
+  it("少于2个点应返回0", () => {
+    expect(calculateTotalDistance3D([])).toBe(0);
     expect(calculateTotalDistance3D([{ latitude: 40, longitude: 116 }])).toBe(
       0,
     );
@@ -132,14 +180,17 @@ describe("calculateTotalDistance3D", () => {
     expect(totalDistance).toBeLessThan(100);
   });
 
-  it("应过滤异常距离（GPS跳变 > 15m）", () => {
+  it("应过滤异常距离（GPS跳变）", () => {
     const points: Point3D[] = [
       { latitude: 40.0, longitude: 116.0, altitude: 50 },
-      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m > 15m
+      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m
       { latitude: 40.0, longitude: 116.001, altitude: 50 }, // 正常移动
     ];
 
-    const totalDistance = calculateTotalDistance3D(points);
+    const totalDistance = calculateTotalDistance3D(points, {
+      filterOutliers: true,
+      maxDistance: 100, // 设置较小的最大距离阈值
+    });
 
     // 应只计算最后一段距离
     expect(totalDistance).toBeGreaterThan(80);
