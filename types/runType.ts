@@ -1,6 +1,7 @@
 export type TrackPoint = {
   lat: number;
   lng: number;
+  altitude?: number; // 海拔高度（米）
   heading: number;
   timestamp: number;
 };
@@ -25,4 +26,4 @@ export type TodayRunData = {
   pace: number;
   calories: number;
   steps: number;
-}
+};
