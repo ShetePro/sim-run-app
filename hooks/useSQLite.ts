@@ -22,13 +22,15 @@ export function useRunDB() {
     return lastInsertRowId;
   };
 
-  const updateRun = async (run: Partial<RunRecord> & { title?: string; note?: string }) => {
+  const updateRun = async (
+    run: Partial<RunRecord> & { title?: string; note?: string },
+  ) => {
     if (!run.id) throw new Error("Run ID is required for update.");
-    
+
     // 构建动态更新语句
     const updates: string[] = [];
     const values: any[] = [];
-    
+
     if (run.endTime !== undefined) {
       updates.push("endTime = ?");
       values.push(run.endTime);
@@ -61,7 +63,7 @@ export function useRunDB() {
       updates.push("note = ?");
       values.push(run.note);
     }
-    
+
     if (updates.length > 0) {
       values.push(run.id);
       await db.runAsync(
@@ -69,7 +71,7 @@ export function useRunDB() {
         values,
       );
     }
-    
+
     if (run.points && run.points.length > 0) {
       await updateRunTrackPoints(run.id, run.points);
     }
@@ -104,9 +106,9 @@ export function useRunDB() {
       try {
         for (const p of points) {
           await db.runAsync(
-            `INSERT INTO track_points (run_id, lat, lng, heading, timestamp)
-             VALUES (?, ?, ?, ?, ?)`,
-            [runId, p.lat, p.lng, p.heading, p.timestamp],
+            `INSERT INTO track_points (run_id, lat, lng, altitude, heading, timestamp)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [runId, p.lat, p.lng, p.altitude ?? null, p.heading, p.timestamp],
           );
         }
         await db.execAsync("COMMIT");
