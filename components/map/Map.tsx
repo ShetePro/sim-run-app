@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { ThemedText } from "@/components/ThemedText";
 import { useSettingsStore, PATH_COLOR_NAMES } from "@/store/settingsStore";
 import { filterValidCoordinates } from "@/utils/map/coordinates";
+import { MapLoading } from "./MapLoading";
 
 interface MapProps {
   style?: StyleProp<ViewStyle>;
@@ -179,7 +180,7 @@ function Map({ style, heading, location, path }: MapProps) {
   }, []);
 
   if (!location) {
-    return <ThemedText>获取位置中...</ThemedText>;
+    return <MapLoading style={style} />;
   }
 
   return (

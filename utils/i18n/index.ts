@@ -346,6 +346,10 @@ const resources = {
         other: "Other",
         reset: "Reset to Default",
         tips: "These settings will affect the map display during your run",
+        loading: {
+          title: "Getting Location...",
+          subtitle: "Please make sure location permission is enabled",
+        },
       },
       about: {
         title: "About Us",
@@ -852,6 +856,10 @@ const resources = {
         other: "其他",
         reset: "恢复默认设置",
         tips: "这些设置将影响跑步时的地图显示效果",
+        loading: {
+          title: "正在定位...",
+          subtitle: "请确保已开启定位权限",
+        },
       },
       about: {
         title: "关于我们",
