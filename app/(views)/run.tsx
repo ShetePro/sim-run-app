@@ -485,12 +485,22 @@ export default function RunIndexScreen() {
         >
           {detailList}
         </View>
-        <Map
-          location={location}
-          heading={heading}
-          path={routePoints}
-          style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
-        />
+        {/* 地图容器 - iOS 最佳圆角 20px 裁切 */}
+        <View
+          style={{
+            flex: 1,
+            marginHorizontal: 10,
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          <Map
+            location={location}
+            heading={heading}
+            path={routePoints}
+            style={{ flex: 1 }}
+          />
+        </View>
         <View className={"flex flex-row gap-4 mt-4"}>
           {!showCountdown && !hasStarted ? (
             <>
