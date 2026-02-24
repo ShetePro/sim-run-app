@@ -137,8 +137,8 @@ describe("calculateTotalDistance3D", () => {
   it("应过滤异常距离（GPS跳变）", () => {
     const points: Point3D[] = [
       { latitude: 40.0, longitude: 116.0, altitude: 50 },
-      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m
-      { latitude: 40.0, longitude: 116.002, altitude: 50 }, // 正常移动约170m
+      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m，被过滤
+      { latitude: 40.0082, longitude: 116.0, altitude: 50 }, // 正常移动约 180m（从40.01回退）
     ];
 
     const totalDistance = calculateTotalDistance3D(points, {
@@ -146,7 +146,7 @@ describe("calculateTotalDistance3D", () => {
       maxDistance: 200, // 设置最大距离阈值
     });
 
-    // 应只计算最后一段距离
+    // 应只计算最后一段距离（约 180m）
     expect(totalDistance).toBeGreaterThan(150);
     expect(totalDistance).toBeLessThan(200);
   });
