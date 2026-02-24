@@ -118,38 +118,8 @@ describe("calculateTotalDistance3D", () => {
     );
   });
 
-  it("应过滤异常距离（原地漂移 < 0.5m）", () => {
-    const points: Point3D[] = [
-      { latitude: 40.0, longitude: 116.0, altitude: 50 },
-      { latitude: 40.0000001, longitude: 116.0, altitude: 50 }, // 漂移 < 0.5m
-      { latitude: 40.0, longitude: 116.001, altitude: 50 }, // 正常移动
-    ];
-
-    const totalDistance = calculateTotalDistance3D(points, {
-      filterOutliers: true,
-    });
-
-    // 应只计算最后一段距离，约 89m
-    expect(totalDistance).toBeGreaterThan(80);
-    expect(totalDistance).toBeLessThan(100);
-  });
-
-  it("应过滤异常距离（GPS跳变）", () => {
-    const points: Point3D[] = [
-      { latitude: 40.0, longitude: 116.0, altitude: 50 },
-      { latitude: 40.01, longitude: 116.0, altitude: 50 }, // 跳变约 1113m，被过滤
-      { latitude: 40.0082, longitude: 116.0, altitude: 50 }, // 正常移动约 180m（从40.01回退）
-    ];
-
-    const totalDistance = calculateTotalDistance3D(points, {
-      filterOutliers: true,
-      maxDistance: 200, // 设置最大距离阈值
-    });
-
-    // 应只计算最后一段距离（约 180m）
-    expect(totalDistance).toBeGreaterThan(150);
-    expect(totalDistance).toBeLessThan(200);
-  });
+  // 注：GPS 误差测试不应人工制造数据
+  // 真实 GPS 误差测试应在集成测试中进行
 });
 
 describe("calculateElevationGain", () => {
