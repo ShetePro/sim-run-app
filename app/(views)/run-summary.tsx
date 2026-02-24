@@ -32,6 +32,7 @@ import {
   ExportFormats,
   ExportFormat,
 } from "@/utils/exportRun";
+import { trackPointsToCoordinates } from "@/utils/map/coordinates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -77,12 +78,9 @@ export default function RunSummaryScreen() {
         if (run.note) setNote(run.note);
       }
 
-      // 获取轨迹点
+      // 获取轨迹点并过滤无效坐标
       const points = await getTrackPoints(runId);
-      const mappedPoints = points.map((p) => ({
-        latitude: p.lat,
-        longitude: p.lng,
-      }));
+      const mappedPoints = trackPointsToCoordinates(points);
       setRoutePoints(mappedPoints);
 
       console.log(points);
@@ -230,7 +228,7 @@ export default function RunSummaryScreen() {
 
   // 生成渐变色路线段
   const generateGradientRoute = (points: typeof routePoints) => {
-    if (points.length <= 1) return null;
+    if (!points || points.length <= 1) return null;
 
     const segments: ReactElement[] = [];
     const totalPoints = points.length;
@@ -240,6 +238,10 @@ export default function RunSummaryScreen() {
     for (let i = 0; i < totalPoints - 1; i += step) {
       const progress = Math.min(i / (totalPoints - 1), 1);
       const nextIndex = Math.min(i + step, totalPoints - 1);
+
+      // 获取切片并验证坐标有效性
+      const slice = points.slice(i, nextIndex + 1);
+      if (slice.length < 2) continue;
 
       // 渐变色：绿色(开始) -> 黄色(中间) -> 红色(结束)
       let color: string;
@@ -262,7 +264,7 @@ export default function RunSummaryScreen() {
       segments.push(
         <Polyline
           key={`segment-${i}`}
-          coordinates={points.slice(i, nextIndex + 1)}
+          coordinates={slice}
           strokeColor={color}
           strokeWidth={5}
           lineCap="round"
