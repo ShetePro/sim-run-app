@@ -32,7 +32,10 @@ import {
   ExportFormats,
   ExportFormat,
 } from "@/utils/exportRun";
-import { trackPointsToCoordinates } from "@/utils/map/coordinates";
+import {
+  trackPointsToCoordinates,
+  filterValidCoordinates,
+} from "@/utils/map/coordinates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -56,6 +59,7 @@ export default function RunSummaryScreen() {
     longitudeDelta: 0.005,
   });
   const runStore = useRunStore();
+  const mapRef = useRef<MapView>(null);
 
   const runId = Number(params.runId || 0);
   const isViewMode = params.mode === "view"; // 查看模式（历史记录）
@@ -84,14 +88,32 @@ export default function RunSummaryScreen() {
       setRoutePoints(mappedPoints);
 
       console.log(points);
-      // 设置地图中心为起点
+      // 设置地图适配所有坐标点
       if (mappedPoints.length > 0) {
-        setMapRegion({
-          latitude: mappedPoints[0].latitude,
-          longitude: mappedPoints[0].longitude,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
-        });
+        // 延迟一点执行 fitToCoordinates，确保 MapView 已经渲染
+        setTimeout(() => {
+          if (mapRef.current && mappedPoints.length > 0) {
+            // 过滤有效坐标
+            const validPoints = filterValidCoordinates(mappedPoints);
+            if (validPoints.length > 0) {
+              if (validPoints.length === 1) {
+                // 只有一个点，设置固定缩放
+                setMapRegion({
+                  latitude: validPoints[0].latitude,
+                  longitude: validPoints[0].longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                });
+              } else {
+                // 多个点，自动适配
+                mapRef.current.fitToCoordinates(validPoints, {
+                  edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+                  animated: true,
+                });
+              }
+            }
+          }
+        }, 100);
       }
     } catch (error) {
       console.error("加载跑步数据失败:", error);
@@ -381,6 +403,7 @@ export default function RunSummaryScreen() {
         {/* 地图区域 */}
         <View className="h-72 w-full relative">
           <MapView
+            ref={mapRef}
             style={{ width: SCREEN_WIDTH, height: 288 }}
             region={mapRegion}
             scrollEnabled={true}
