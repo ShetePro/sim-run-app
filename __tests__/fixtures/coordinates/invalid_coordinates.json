@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "name": "无效坐标测试数据集合",
+    "description": "用于测试坐标验证函数的边界情况和异常处理",
+    "test_cases_count": 10
+  },
+  "valid_coordinate": {
+    "lat": 40.014,
+    "lng": 116.391,
+    "description": "有效坐标 - 北京奥林匹克森林公园"
+  },
+  "invalid_cases": [
+    {
+      "name": "超纬度上限",
+      "case": "latitude_too_high",
+      "point": { "lat": 91, "lng": 116.391 },
+      "expected_valid": false,
+      "description": "纬度超过90度应被拒绝"
+    },
+    {
+      "name": "超纬度下限",
+      "case": "latitude_too_low",
+      "point": { "lat": -91, "lng": 116.391 },
+      "expected_valid": false,
+      "description": "纬度低于-90度应被拒绝"
+    },
+    {
+      "name": "超经度上限",
+      "case": "longitude_too_high",
+      "point": { "lat": 40.014, "lng": 181 },
+      "expected_valid": false,
+      "description": "经度超过180度应被拒绝"
+    },
+    {
+      "name": "超经度下限",
+      "case": "longitude_too_low",
+      "point": { "lat": 40.014, "lng": -181 },
+      "expected_valid": false,
+      "description": "经度低于-180度应被拒绝"
+    },
+    {
+      "name": "NaN值-纬度",
+      "case": "nan_latitude",
+      "point": { "lat": "NaN", "lng": 116.391 },
+      "expected_valid": false,
+      "description": "纬度为NaN应被拒绝"
+    },
+    {
+      "name": "NaN值-经度",
+      "case": "nan_longitude",
+      "point": { "lat": 40.014, "lng": "NaN" },
+      "expected_valid": false,
+      "description": "经度为NaN应被拒绝"
+    },
+    {
+      "name": "null值",
+      "case": "null_values",
+      "point": { "lat": null, "lng": null },
+      "expected_valid": false,
+      "description": "坐标为null应被拒绝"
+    },
+    {
+      "name": "undefined值",
+      "case": "undefined_values",
+      "point": {},
+      "expected_valid": false,
+      "description": "坐标为undefined应被拒绝"
+    },
+    {
+      "name": "字符串值",
+      "case": "string_values",
+      "point": { "lat": "40.014", "lng": "116.391" },
+      "expected_valid": false,
+      "description": "坐标为字符串应被拒绝（应为number类型）"
+    },
+    {
+      "name": "空对象",
+      "case": "empty_object",
+      "point": null,
+      "expected_valid": false,
+      "description": "空对象应被拒绝"
+    }
+  ]
+}
