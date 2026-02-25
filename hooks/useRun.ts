@@ -16,6 +16,8 @@ import { backupDatabase } from "@/utils/backup";
 import {
   LOCATION_TASK_NAME,
   resetLocationTask,
+  savePausedDistance,
+  restoreDistance,
 } from "@/utils/location/locationTask";
 const runData: RunRecord = {
   startTime: Date.now(),
@@ -217,16 +219,24 @@ export function useRun() {
   };
 
   // 暂停追踪
-  const pauseTracking = () => {
+  const pauseTracking = async () => {
     if (!isTracking.current || isPaused.current) return;
     isPaused.current = true;
     pausedDistanceRef.current = distanceRef.current;
+    // 保存当前距离到持久化存储
+    await savePausedDistance();
+    console.log("⏸️ 跑步已暂停，距离已保存:", pausedDistanceRef.current);
   };
 
   // 继续追踪
-  const resumeTracking = () => {
+  const resumeTracking = async () => {
     if (!isTracking.current || !isPaused.current) return;
+    // 从持久化存储恢复距离
+    const restoredDistance = await restoreDistance();
+    // 更新暂停距离参考值
+    pausedDistanceRef.current = restoredDistance;
     isPaused.current = false;
+    console.log("▶️ 跑步已恢复，距离已还原:", restoredDistance);
   };
   // 4. 组件卸载时停止追踪
   useEffect(() => {
