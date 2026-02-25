@@ -22,6 +22,7 @@ import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
+import { calculateCaloriesSimplified } from "@/utils/calories";
 
 // 长按结束按钮组件
 function LongPressFinishButton({
@@ -238,7 +239,7 @@ export default function RunIndexScreen() {
         distance,
         duration: seconds,
         pace: runStore.pace,
-        calories: calculateCalories(distance, seconds),
+        calories: calculateCaloriesSimplified(distance, seconds, userWeight),
       });
     }
   }, [seconds, distance, runStore.pace]);
@@ -258,40 +259,6 @@ export default function RunIndexScreen() {
     loadUserWeight();
   }, []);
 
-  /**
-   * ACSM 卡路里计算公式（美国运动医学会）
-   * 基于速度和时间计算卡路里消耗
-   *
-   * 公式: VO2 = (0.2 × S) + (0.9 × S × G) + 3.5
-   * 其中: S = 速度(m/min), G = 坡度(小数)
-   *
-   * 实时显示使用简化版（不含坡度）: VO2 = (0.2 × S) + 3.5
-   * 最终结算时会使用完整公式（含海拔爬升）
-   */
-  const calculateCalories = (currentDistance: number, currentTime: number) => {
-    const weight = userWeight;
-
-    // 时间转换为分钟
-    const timeMinutes = currentTime / 60;
-
-    if (timeMinutes <= 0 || currentDistance <= 0) {
-      return 0;
-    }
-
-    // 计算速度 (米/分钟)
-    const speed = currentDistance / timeMinutes;
-
-    // ACSM 公式（简化版，不含坡度）
-    // VO2 = (0.2 × S) + 3.5
-    const vo2 = 0.2 * speed + 3.5;
-
-    // 转换为卡路里: (VO2 × 体重 / 1000) × 5 × 时间(小时)
-    const timeHours = timeMinutes / 60;
-    const calories = Math.round(((vo2 * weight) / 1000) * 5 * timeHours);
-
-    return calories;
-  };
-
   const isFinishingRef = useRef(false);
 
   const detailList = useMemo(() => {
@@ -307,7 +274,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: calculateCalories(distance, seconds),
+        value: calculateCaloriesSimplified(distance, seconds, userWeight),
         unit: t("unit.kcal"),
       },
     ];
@@ -339,7 +306,7 @@ export default function RunIndexScreen() {
     stopTimer();
     stopPedometer();
 
-    const calories = calculateCalories(distance, seconds);
+    const calories = calculateCaloriesSimplified(distance, seconds, userWeight);
     const runData = {
       time: seconds,
       pace: runStore.pace,
