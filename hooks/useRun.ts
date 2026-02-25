@@ -25,6 +25,7 @@ const runData: RunRecord = {
   time: 0,
   pace: 0,
   energy: 0,
+  steps: 0,
   points: [],
   isFinish: 0,
 };
@@ -33,6 +34,7 @@ const runData: RunRecord = {
 export function useRun() {
   const currenLocation = useRunStore.getState().currentLocation;
   const setLocation = useRunStore((state) => state.setLocation);
+  const stepCount = useRunStore((state) => state.stepCount);
   const [distance, setDistance] = useState<number>(0);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -170,6 +172,7 @@ export function useRun() {
       time: 0,
       pace: 0,
       energy: 0,
+      steps: 0,
       points: currenLocation
         ? [
             {
@@ -206,6 +209,7 @@ export function useRun() {
       pace,
       energy,
       distance: Math.max(0, finalDistance),
+      steps: stepCount,
       isFinish: 1,
       endTime: Date.now(),
     });

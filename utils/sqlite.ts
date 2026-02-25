@@ -13,6 +13,7 @@ export async function initializeSQLite(db: SQLiteDatabase) {
       time INTEGER,
       pace REAL,
       energy INTEGER,
+      steps INTEGER DEFAULT 0,
       isFinish INTEGER,
       title TEXT,
       note TEXT
@@ -52,6 +53,7 @@ async function migrateTable(db: SQLiteDatabase) {
       { name: "isFinish", type: "INTEGER" },
       { name: "title", type: "TEXT" },
       { name: "note", type: "TEXT" },
+      { name: "steps", type: "INTEGER DEFAULT 0" },
     ];
 
     for (const migration of runsMigrations) {

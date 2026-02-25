@@ -8,7 +8,7 @@ export function useRunDB() {
   // 添加跑步记录 + 轨迹
   const addRun = async (run: RunRecord) => {
     const { lastInsertRowId } = await db.runAsync(
-      `INSERT INTO runs (startTime, endTime, distance, time, pace, energy) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO runs (startTime, endTime, distance, time, pace, energy, steps) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         run.startTime || null,
         run.endTime || null,
@@ -16,6 +16,7 @@ export function useRunDB() {
         run.time,
         run.pace,
         run.energy,
+        run.steps || 0,
       ],
     );
     await updateRunTrackPoints(lastInsertRowId, run.points || []);
@@ -62,6 +63,10 @@ export function useRunDB() {
     if (run.note !== undefined) {
       updates.push("note = ?");
       values.push(run.note);
+    }
+    if (run.steps !== undefined) {
+      updates.push("steps = ?");
+      values.push(run.steps);
     }
 
     if (updates.length > 0) {

@@ -12,6 +12,7 @@ export type RunRecord = {
   time: number;
   pace: number;
   energy: number;
+  steps: number;
   isFinish: 0 | 1;
   points?: TrackPoint[];
   startTime?: number;

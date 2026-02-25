@@ -46,13 +46,20 @@ export default function HomeScreen() {
         pace: 0,
         steps: 0,
       };
+      let totalSteps = 0;
       res.forEach((run, index) => {
         todayData.distance += run.distance / 1000;
         todayData.calories += run.energy;
         todayData.duration += run.time;
+        totalSteps += run.steps || 0;
       });
       const { distance, calories, duration } = todayData;
-      todayData.pace = distance < 10 ? 0 : duration / distance / 60;
+      // 计算平均配速（分钟/公里）：总时长(秒) / 总距离(公里) / 60
+      todayData.pace = distance > 0 ? Math.round(duration / distance / 60) : 0;
+      // 计算平均步频（步/分钟）：总步数 / 总时长(分钟)
+      const durationInMinutes = duration / 60;
+      todayData.steps =
+        durationInMinutes > 0 ? Math.round(totalSteps / durationInMinutes) : 0;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
     });
