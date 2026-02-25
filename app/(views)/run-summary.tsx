@@ -215,17 +215,16 @@ export default function RunSummaryScreen() {
   // 执行导出
   const doExport = async (format: ExportFormat) => {
     try {
-      // 获取轨迹点
-      let points: TrackPoint[] = [];
-      if (routePoints.length > 0) {
-        points = routePoints.map((p) => ({
-          lat: p.latitude,
-          lng: p.longitude,
-          heading: 0,
-          timestamp: 0,
-        }));
-      } else {
-        points = await getTrackPoints(runId);
+      // 获取轨迹点 - 总是从数据库获取完整的 TrackPoint 数据
+      // 避免使用被简化的 routePoints（缺少 heading、timestamp、altitude）
+      const points = await getTrackPoints(runId);
+
+      if (points.length === 0) {
+        Alert.alert(
+          t("common.warning") || "无轨迹数据",
+          t("run.noTrackPoints") || "没有找到该跑步记录的轨迹数据",
+        );
+        return;
       }
 
       switch (format) {

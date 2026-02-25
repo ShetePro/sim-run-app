@@ -8,7 +8,7 @@ import dayjs from "dayjs";
  */
 export async function exportRunAsJSON(
   runData: RunRecord,
-  trackPoints: TrackPoint[]
+  trackPoints: TrackPoint[],
 ): Promise<void> {
   try {
     const exportData = {
@@ -32,20 +32,29 @@ export async function exportRunAsJSON(
         index: index + 1,
         latitude: point.lat,
         longitude: point.lng,
+        altitude: point.altitude,
         heading: point.heading,
         timestamp: point.timestamp,
-        timeFormatted: dayjs(point.timestamp).format("YYYY-MM-DD HH:mm:ss"),
+        timeFormatted: point.timestamp
+          ? dayjs(point.timestamp).format("YYYY-MM-DD HH:mm:ss")
+          : null,
       })),
       stats: {
         totalPoints: trackPoints.length,
-        startPoint: trackPoints.length > 0 ? {
-          lat: trackPoints[0].lat,
-          lng: trackPoints[0].lng,
-        } : null,
-        endPoint: trackPoints.length > 0 ? {
-          lat: trackPoints[trackPoints.length - 1].lat,
-          lng: trackPoints[trackPoints.length - 1].lng,
-        } : null,
+        startPoint:
+          trackPoints.length > 0
+            ? {
+                lat: trackPoints[0].lat,
+                lng: trackPoints[0].lng,
+              }
+            : null,
+        endPoint:
+          trackPoints.length > 0
+            ? {
+                lat: trackPoints[trackPoints.length - 1].lat,
+                lng: trackPoints[trackPoints.length - 1].lng,
+              }
+            : null,
       },
     };
 
@@ -80,7 +89,7 @@ export async function exportRunAsJSON(
  */
 export async function exportRunAsGPX(
   runData: RunRecord,
-  trackPoints: TrackPoint[]
+  trackPoints: TrackPoint[],
 ): Promise<void> {
   try {
     const title = runData.title || "户外跑步";
@@ -90,10 +99,20 @@ export async function exportRunAsGPX(
     // 生成 GPX 轨迹点
     const trackPointsXML = trackPoints
       .map((point) => {
-        const time = dayjs(point.timestamp).toISOString();
+        const time = point.timestamp
+          ? dayjs(point.timestamp).toISOString()
+          : dayjs().toISOString();
+        const elevation =
+          point.altitude !== undefined && !isNaN(point.altitude)
+            ? `        <ele>${point.altitude}</ele>`
+            : "";
+        const course = point.heading
+          ? `        <course>${point.heading}</course>`
+          : "";
         return `      <trkpt lat="${point.lat}" lon="${point.lng}">
+${elevation}
         <time>${time}</time>
-        ${point.heading ? `<course>${point.heading}</course>` : ""}
+${course}
       </trkpt>`;
       })
       .join("\n");
@@ -144,20 +163,31 @@ ${trackPointsXML}
  */
 export async function exportRunAsCSV(
   runData: RunRecord,
-  trackPoints: TrackPoint[]
+  trackPoints: TrackPoint[],
 ): Promise<void> {
   try {
     // CSV 头部
-    const headers = ["index", "latitude", "longitude", "heading", "timestamp", "timeFormatted"];
+    const headers = [
+      "index",
+      "latitude",
+      "longitude",
+      "altitude",
+      "heading",
+      "timestamp",
+      "timeFormatted",
+    ];
 
     // CSV 数据行
     const rows = trackPoints.map((point, index) => [
       index + 1,
       point.lat,
       point.lng,
-      point.heading || "",
-      point.timestamp,
-      dayjs(point.timestamp).format("YYYY-MM-DD HH:mm:ss"),
+      point.altitude !== undefined ? point.altitude : "",
+      point.heading !== undefined ? point.heading : "",
+      point.timestamp || "",
+      point.timestamp
+        ? dayjs(point.timestamp).format("YYYY-MM-DD HH:mm:ss")
+        : "",
     ]);
 
     // 组合 CSV 内容
