@@ -258,58 +258,41 @@ export default function RunIndexScreen() {
     loadUserWeight();
   }, []);
 
-  // 计算卡路里消耗（基于距离和时间增量）
+  /**
+   * ACSM 卡路里计算公式（美国运动医学会）
+   * 基于速度和时间计算卡路里消耗
+   *
+   * 公式: VO2 = (0.2 × S) + (0.9 × S × G) + 3.5
+   * 其中: S = 速度(m/min), G = 坡度(小数)
+   *
+   * 实时显示使用简化版（不含坡度）: VO2 = (0.2 × S) + 3.5
+   * 最终结算时会使用完整公式（含海拔爬升）
+   */
   const calculateCalories = (currentDistance: number, currentTime: number) => {
     const weight = userWeight;
-    const lastCalc = lastCalorieCalcRef.current;
 
-    // 计算增量
-    const distanceDelta = currentDistance - lastCalc.distance; // 米
-    const timeDelta = currentTime - lastCalc.time; // 秒
+    // 时间转换为分钟
+    const timeMinutes = currentTime / 60;
 
-    // 距离增量太小，认为没运动（原地不动）
-    if (distanceDelta < 10 || timeDelta <= 0) {
-      return lastCalc.calories;
+    if (timeMinutes <= 0 || currentDistance <= 0) {
+      return 0;
     }
 
-    // 计算实时配速（秒/公里）
-    const pacePerKm = timeDelta / (distanceDelta / 1000);
+    // 计算速度 (米/分钟)
+    const speed = currentDistance / timeMinutes;
 
-    // 根据配速确定 MET 值
-    let met = 8; // 默认值（慢跑）
-    if (pacePerKm > 720)
-      met = 4; // >12:00/km 慢走
-    else if (pacePerKm > 540)
-      met = 6; // 9:00-12:00/km 快走
-    else if (pacePerKm > 420)
-      met = 8; // 7:00-9:00/km 慢跑
-    else if (pacePerKm > 360)
-      met = 10; // 6:00-7:00/km 中速跑
-    else met = 12; // <6:00/km 快跑
+    // ACSM 公式（简化版，不含坡度）
+    // VO2 = (0.2 × S) + 3.5
+    const vo2 = 0.2 * speed + 3.5;
 
-    // 计算增量卡路里
-    const hours = timeDelta / 3600;
-    const calorieIncrement = Math.floor(met * weight * hours);
+    // 转换为卡路里: (VO2 × 体重 / 1000) × 5 × 时间(小时)
+    const timeHours = timeMinutes / 60;
+    const calories = Math.round(((vo2 * weight) / 1000) * 5 * timeHours);
 
-    // 更新累计值
-    const newTotalCalories = lastCalc.calories + calorieIncrement;
-    lastCalorieCalcRef.current = {
-      distance: currentDistance,
-      time: currentTime,
-      calories: newTotalCalories,
-    };
-
-    return newTotalCalories;
+    return calories;
   };
 
   const isFinishingRef = useRef(false);
-
-  // 记录上次卡路里计算状态（用于增量计算）- 必须在 calculateCalories 之前定义
-  const lastCalorieCalcRef = useRef({
-    distance: 0,
-    time: 0,
-    calories: 0,
-  });
 
   const detailList = useMemo(() => {
     const data = [
@@ -399,8 +382,6 @@ export default function RunIndexScreen() {
     setShowCountdown(false);
     setHasStarted(true);
     resetAnnounceState();
-    // 重置卡路里计算状态
-    lastCalorieCalcRef.current = { distance: 0, time: 0, calories: 0 };
     startTracking();
     startPedometer();
     startTimer();

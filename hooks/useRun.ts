@@ -26,6 +26,7 @@ const runData: RunRecord = {
   pace: 0,
   energy: 0,
   steps: 0,
+  elevationGain: 0,
   points: [],
   isFinish: 0,
 };
@@ -173,6 +174,7 @@ export function useRun() {
       pace: 0,
       energy: 0,
       steps: 0,
+      elevationGain: 0,
       points: currenLocation
         ? [
             {
@@ -202,6 +204,10 @@ export function useRun() {
     const { time, pace, energy } = data;
     const finalDistance = distanceRef.current - pausedDistanceRef.current;
 
+    // 计算累计海拔爬升
+    const elevationGain = calculateElevationGain(routePoints);
+    console.log("📊 累计海拔爬升:", elevationGain, "米");
+
     // 等待数据库更新完成
     await updateRun({
       id: runData.id,
@@ -210,6 +216,7 @@ export function useRun() {
       energy,
       distance: Math.max(0, finalDistance),
       steps: stepCount,
+      elevationGain,
       isFinish: 1,
       endTime: Date.now(),
     });
@@ -242,6 +249,25 @@ export function useRun() {
     isPaused.current = false;
     console.log("▶️ 跑步已恢复，距离已还原:", restoredDistance);
   };
+
+  // 计算累计海拔爬升（只计算上升，不计算下降）
+  const calculateElevationGain = (points: any[]): number => {
+    if (points.length < 2) return 0;
+    let gain = 0;
+    for (let i = 1; i < points.length; i++) {
+      const prevAltitude = points[i - 1].altitude;
+      const currAltitude = points[i].altitude;
+      // 只累加上升的海拔差
+      if (prevAltitude !== undefined && currAltitude !== undefined) {
+        const diff = currAltitude - prevAltitude;
+        if (diff > 0) {
+          gain += diff;
+        }
+      }
+    }
+    return gain;
+  };
+
   // 4. 组件卸载时停止追踪
   useEffect(() => {
     return () => {

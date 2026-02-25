@@ -13,6 +13,7 @@ export type RunRecord = {
   pace: number;
   energy: number;
   steps: number;
+  elevationGain: number; // 累计爬升（米）
   isFinish: 0 | 1;
   points?: TrackPoint[];
   startTime?: number;
