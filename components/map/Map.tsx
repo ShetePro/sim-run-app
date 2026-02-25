@@ -6,12 +6,14 @@ import {
   Platform,
   View,
   Text,
+  TouchableOpacity,
 } from "react-native";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { ThemedText } from "@/components/ThemedText";
 import { useSettingsStore, PATH_COLOR_NAMES } from "@/store/settingsStore";
 import { filterValidCoordinates } from "@/utils/map/coordinates";
 import { MapLoading } from "./MapLoading";
+import { Ionicons } from "@expo/vector-icons";
 
 interface MapProps {
   style?: StyleProp<ViewStyle>;
@@ -123,9 +125,19 @@ function Map({ style, heading, location, path }: MapProps) {
   const [region, setRegion] = useState<Region | null>(null);
   const [mapLayout, setMapLayout] = useState({ width: 0, height: 0 });
 
+  // 本地跟随状态 - 用户手动操作后自动关闭跟随
+  const [isFollowingUser, setIsFollowingUser] = useState<boolean>(false);
+  // 标记是否是代码触发的区域变化（而非用户操作）
+  const isProgrammaticChange = useRef(false);
+
   // 读取地图设置
-  const { settings } = useSettingsStore();
+  const { settings, updateSetting } = useSettingsStore();
   const { map: mapSettings } = settings;
+
+  // 初始化时同步全局设置到本地状态
+  useEffect(() => {
+    setIsFollowingUser(mapSettings.followUserLocation);
+  }, [mapSettings.followUserLocation]);
 
   // 地图类型转换
   const mapType: MapType = useMemo(() => {
@@ -151,22 +163,45 @@ function Map({ style, heading, location, path }: MapProps) {
     setShowMark(!!isShowMark);
 
     // 只有在跟随位置开启时才自动移动地图
-    if (mapSettings.followUserLocation) {
+    if (isFollowingUser && location) {
+      isProgrammaticChange.current = true;
       mapRef.current?.animateCamera({
         center: {
-          longitude: location?.longitude || 0,
-          latitude: location?.latitude || 0,
+          longitude: location.longitude || 0,
+          latitude: location.latitude || 0,
         },
         pitch: mapSettings.tiltEnabled ? 45 : 0,
         zoom: 20,
       });
     }
-  }, [
-    location,
-    heading,
-    mapSettings.followUserLocation,
-    mapSettings.tiltEnabled,
-  ]);
+  }, [location, heading, isFollowingUser, mapSettings.tiltEnabled]);
+
+  // 处理用户手动拖拽地图 - 取消跟随
+  const handlePanDrag = useCallback(() => {
+    if (isFollowingUser) {
+      setIsFollowingUser(false);
+      // 同时更新全局设置
+      updateSetting("map.followUserLocation", false);
+    }
+  }, [isFollowingUser, updateSetting]);
+
+  // 恢复跟随位置
+  const handleResumeFollow = useCallback(() => {
+    setIsFollowingUser(true);
+    updateSetting("map.followUserLocation", true);
+    // 立即移动到当前位置
+    if (location) {
+      isProgrammaticChange.current = true;
+      mapRef.current?.animateCamera({
+        center: {
+          longitude: location.longitude || 0,
+          latitude: location.latitude || 0,
+        },
+        pitch: mapSettings.tiltEnabled ? 45 : 0,
+        zoom: 20,
+      });
+    }
+  }, [location, mapSettings.tiltEnabled, updateSetting]);
 
   // 处理区域变化，用于更新比例尺
   const handleRegionChange = useCallback((newRegion: Region) => {
@@ -212,6 +247,8 @@ function Map({ style, heading, location, path }: MapProps) {
         pitchEnabled={mapSettings.pitchEnabled} // 倾斜手势
         // 区域变化回调
         onRegionChangeComplete={handleRegionChange}
+        // 用户拖拽手势 - 取消跟随
+        onPanDrag={handlePanDrag}
       >
         {/* 当前位置标记（仅当不显示用户位置或需要自定义标记时） */}
         {showMark && !mapSettings.showUserLocation && (
@@ -254,6 +291,23 @@ function Map({ style, heading, location, path }: MapProps) {
         screenWidth={mapLayout.width}
         visible={mapSettings.showScale}
       />
+
+      {/* 恢复跟随位置按钮 - 当用户手动操作后显示 */}
+      {!isFollowingUser && location && (
+        <TouchableOpacity
+          onPress={handleResumeFollow}
+          className="absolute bottom-20 right-4 bg-white dark:bg-slate-800 w-12 h-12 rounded-full items-center justify-center shadow-lg"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+        >
+          <Ionicons name="locate" size={24} color="#6366F1" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
