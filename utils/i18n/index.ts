@@ -167,6 +167,10 @@ const resources = {
         exportError: "Failed to export run data, please try again",
         loadFailed: "Failed to load run data",
         saveFailed: "Failed to save run record",
+        continueTitle: "Continue Running?",
+        continueMessage: "Unfinished run detected:",
+        startNew: "Start New Run",
+        continue: "Continue",
       },
       onboarding: {
         skip: "Skip",
@@ -686,6 +690,10 @@ const resources = {
         exportError: "导出跑步数据失败，请重试",
         loadFailed: "加载跑步数据失败",
         saveFailed: "保存跑步记录失败",
+        continueTitle: "继续跑步？",
+        continueMessage: "检测到未完成的跑步：",
+        startNew: "开始新跑步",
+        continue: "继续跑步",
       },
       onboarding: {
         skip: "跳过",
