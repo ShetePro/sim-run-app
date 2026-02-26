@@ -8,15 +8,19 @@ export function useTick() {
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef(Date.now());
   const pausedDurationRef = useRef(0);
-  
+
   const tick = useCallback(() => {
     const now = Date.now();
-    const expectedElapsed = now - startTimeRef.current - pausedDurationRef.current;
+    const expectedElapsed =
+      now - startTimeRef.current - pausedDurationRef.current;
     const newSeconds = Math.round(expectedElapsed / 1000);
     setSeconds(newSeconds);
     useRunStore.getState().setDuration(newSeconds);
 
-    const nextExpectedTime = (newSeconds + 1) * 1000 + startTimeRef.current + pausedDurationRef.current;
+    const nextExpectedTime =
+      (newSeconds + 1) * 1000 +
+      startTimeRef.current +
+      pausedDurationRef.current;
     const delay = nextExpectedTime - now;
     const nextDelay = Math.max(0, delay);
 
@@ -43,13 +47,21 @@ export function useTick() {
     pausedDurationRef.current = 0;
   };
 
+  const setInitialSeconds = (initialSeconds: number) => {
+    setSeconds(initialSeconds);
+    pausedDurationRef.current = 0;
+    startTimeRef.current = Date.now() - initialSeconds * 1000;
+    useRunStore.getState().setDuration(initialSeconds);
+  };
+
   const pauseTimer = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
     setIsPaused(true);
-    pausedDurationRef.current = Date.now() - startTimeRef.current - seconds * 1000;
+    pausedDurationRef.current =
+      Date.now() - startTimeRef.current - seconds * 1000;
   };
 
   const resumeTimer = () => {
@@ -67,5 +79,13 @@ export function useTick() {
       }
     };
   }, []);
-  return { startTimer, stopTimer, pauseTimer, resumeTimer, seconds, isPaused };
+  return {
+    startTimer,
+    stopTimer,
+    pauseTimer,
+    resumeTimer,
+    setInitialSeconds,
+    seconds,
+    isPaused,
+  };
 }

@@ -351,6 +351,12 @@ export function useRun() {
     // 标记为刚恢复，等待第一次位置更新记录基准值
     restoredBackendDistanceRef.current = -1;
 
+    // 恢复时间和配速到 store
+    useRunStore.setState({
+      duration: cache.duration,
+      pace: cache.distance > 0 ? cache.duration / (cache.distance / 1000) : 0,
+    });
+
     // 从数据库加载历史轨迹点
     try {
       const trackPointsFromDb = await getTrackPoints(cache.runId);

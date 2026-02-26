@@ -219,6 +219,7 @@ export default function RunIndexScreen() {
     stopTimer,
     pauseTimer,
     resumeTimer,
+    setInitialSeconds,
     isPaused: isTimerPaused,
   } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
@@ -295,8 +296,8 @@ export default function RunIndexScreen() {
                     await restoreRunningSession(cache);
                     // 标记已开始（跳过倒计时）
                     setHasStarted(true);
-                    // 开始计时
-                    startTimer();
+                    // 设置初始时间（恢复缓存的时间）
+                    setInitialSeconds(cache.duration);
                     // 如果不是暂停状态，开始计步
                     if (!cache.isPaused) {
                       startPedometer();
