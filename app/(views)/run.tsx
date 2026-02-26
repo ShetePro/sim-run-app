@@ -5,6 +5,7 @@ import {
   Image,
   Animated,
   Easing,
+  Alert,
 } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -23,6 +24,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 import { calculateCaloriesSimplified } from "@/utils/calories";
+import {
+  isRunningCacheValid,
+  getRunningCache,
+  clearRunningCache,
+  formatRunningCacheForDisplay,
+  RunningCache,
+} from "@/utils/runningCache";
 
 // 长按结束按钮组件
 function LongPressFinishButton({
@@ -257,6 +265,41 @@ export default function RunIndexScreen() {
       }
     };
     loadUserWeight();
+  }, []);
+
+  // 检测是否有未完成的跑步缓存
+  useEffect(() => {
+    const checkRunningCache = async () => {
+      const hasValidCache = await isRunningCacheValid();
+      if (hasValidCache) {
+        const cache = await getRunningCache();
+        if (cache) {
+          const { distance, duration } = formatRunningCacheForDisplay(cache);
+          Alert.alert(
+            t("run.continueTitle") || "继续跑步？",
+            `${t("run.continueMessage") || "检测到未完成的跑步："}\n${t("activity.distance") || "距离"}：${distance}\n${t("common.time") || "时间"}：${duration}`,
+            [
+              {
+                text: t("run.startNew") || "开始新跑步",
+                style: "cancel",
+                onPress: async () => {
+                  await clearRunningCache();
+                },
+              },
+              {
+                text: t("run.continue") || "继续跑步",
+                onPress: () => {
+                  // 恢复跑步逻辑（可以在这里扩展）
+                  console.log("[Run] 用户选择继续跑步", cache);
+                },
+              },
+            ],
+          );
+        }
+      }
+    };
+
+    checkRunningCache();
   }, []);
 
   const isFinishingRef = useRef(false);

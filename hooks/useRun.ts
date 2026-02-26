@@ -19,6 +19,7 @@ import {
   pauseLocationTask,
   resumeLocationTask,
 } from "@/utils/location/locationTask";
+import { saveRunningCache, clearRunningCache } from "@/utils/runningCache";
 const runData: RunRecord = {
   startTime: Date.now(),
   distance: 0,
@@ -89,6 +90,22 @@ export function useRun() {
         // 直接使用后台返回的总距离，不再减去暂停距离
         const currentDistance = data.distance || distanceRef.current;
         setDistance(Math.max(0, currentDistance));
+
+        // 同步跑步数据到缓存
+        if (runData.id) {
+          try {
+            await saveRunningCache({
+              runId: runData.id,
+              startTime: runData.startTime || Date.now(),
+              distance: currentDistance,
+              duration: useRunStore.getState().duration,
+              isPaused: isPaused.current,
+            });
+          } catch (error) {
+            console.error("[useRun] 保存跑步缓存失败:", error);
+          }
+        }
+
         try {
           await LiveActivity.update({
             distance: Number((currentDistance / 1000).toFixed(2)),
@@ -223,6 +240,14 @@ export function useRun() {
     isTracking.current = false;
     isPaused.current = false;
     console.log("跑步会话结束，总点数：", routePoints.length);
+
+    // 清空跑步缓存
+    try {
+      await clearRunningCache();
+    } catch (error) {
+      console.error("[useRun] 清空跑步缓存失败:", error);
+    }
+
     // 备份数据库到 documentDirectory 以便 iCloud 备份
     await backupDatabase();
   };
