@@ -474,6 +474,12 @@ const resources = {
         countdownOne: "1",
         countdownGo: "Go!",
       },
+      map: {
+        loading: {
+          title: "Loading Map...",
+          subtitle: "Getting your current location",
+        },
+      },
       permission: {
         title: "Permission Required",
         locationTitle: "Background Location Required",
@@ -986,6 +992,12 @@ const resources = {
         countdownTwo: "2",
         countdownOne: "1",
         countdownGo: "出发！",
+      },
+      map: {
+        loading: {
+          title: "正在加载地图...",
+          subtitle: "正在获取您的当前位置",
+        },
       },
       permission: {
         title: "需要权限",
