@@ -50,6 +50,8 @@ export function useRun() {
   const [routePoints, setRoutePoints] = useState<any[]>([]);
   const routePointsRef = useRef<any[]>([]);
   const distanceRef = useRef(0);
+  // 记录恢复时的后台距离（用于方案B计算增量）
+  const restoredBackendDistanceRef = useRef<number | null>(null);
 
   // 保持 ref 与 state 同步
   useEffect(() => {
@@ -87,8 +89,27 @@ export function useRun() {
         }
         setRoutePoints(updatedPoints);
 
-        // 直接使用后台返回的总距离，不再减去暂停距离
-        const currentDistance = data.distance || distanceRef.current;
+        // 计算当前距离
+        let currentDistance: number;
+        if (restoredBackendDistanceRef.current === -1) {
+          // 刚恢复后的第一次位置更新，记录基准值
+          restoredBackendDistanceRef.current = data.distance;
+          currentDistance = distanceRef.current; // 使用缓存的距离
+          console.log("[useRun] 恢复后首次位置更新，基准值:", data.distance);
+        } else if (
+          restoredBackendDistanceRef.current !== null &&
+          restoredBackendDistanceRef.current >= 0
+        ) {
+          // 方案B：基于恢复时的缓存距离 + 增量
+          const deltaFromRestore =
+            data.distance - restoredBackendDistanceRef.current;
+          currentDistance = distanceRef.current + deltaFromRestore;
+          // 更新恢复时的基准值
+          restoredBackendDistanceRef.current = data.distance;
+        } else {
+          // 正常情况：直接使用后台距离
+          currentDistance = data.distance || distanceRef.current;
+        }
         setDistance(Math.max(0, currentDistance));
 
         // 同步跑步数据到缓存
@@ -179,6 +200,7 @@ export function useRun() {
     setRoutePoints([]); // 开始新会话时清空路径
     setDistance(0); // 重置距离
     distanceRef.current = 0; // 重置距离 ref
+    restoredBackendDistanceRef.current = null; // 重置恢复标记
 
     await LiveActivity.start();
     console.log(Date.now(), "开始跑步时间");
@@ -239,6 +261,8 @@ export function useRun() {
 
     isTracking.current = false;
     isPaused.current = false;
+    // 重置恢复标记
+    restoredBackendDistanceRef.current = null;
     console.log("跑步会话结束，总点数：", routePoints.length);
 
     // 清空跑步缓存
@@ -322,6 +346,10 @@ export function useRun() {
 
     // 更新UI状态
     setDistance(cache.distance);
+    // 同步更新 ref（方案B关键）
+    distanceRef.current = cache.distance;
+    // 标记为刚恢复，等待第一次位置更新记录基准值
+    restoredBackendDistanceRef.current = -1;
 
     // 从数据库加载历史轨迹点
     try {
