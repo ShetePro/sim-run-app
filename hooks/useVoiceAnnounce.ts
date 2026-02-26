@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect } from "react";
+import { Platform } from "react-native";
 import * as Speech from "expo-speech";
 import {
   useVoiceSettingsStore,
@@ -76,7 +77,6 @@ export function useVoiceAnnounce() {
       const { voiceId, langCode } = getCurrentVoiceConfig();
 
       const options: Speech.SpeechOptions = {
-        language: langCode,
         useApplicationAudioSession: false,
         onDone: () => {
           console.log("[VoiceAnnounce] Speech completed");
@@ -86,9 +86,9 @@ export function useVoiceAnnounce() {
           console.error("[VoiceAnnounce] Speech error:", error);
           isSpeakingRef.current = false;
 
-          // 如果语音ID错误，尝试不使用特定voice重试
+          // 如果语音ID错误，尝试使用language重试
           if (voiceId) {
-            console.log("[VoiceAnnounce] Retrying without specific voice...");
+            console.log("[VoiceAnnounce] Retrying with language only...");
             Speech.speak(text, {
               language: langCode,
               useApplicationAudioSession: false,
@@ -107,18 +107,23 @@ export function useVoiceAnnounce() {
         },
       };
 
-      // 只在有voiceId时添加voice参数
-      if (voiceId) {
+      // iOS: 优先使用 voice 参数（让语音角色决定语言）
+      // Android: 使用 language 参数
+      if (Platform.OS === "ios" && voiceId) {
         (options as any).voice = voiceId;
+        console.log("[VoiceAnnounce] Using voice:", voiceId);
+      } else {
+        options.language = langCode;
+        console.log("[VoiceAnnounce] Using language:", langCode);
       }
 
       console.log(
         '[VoiceAnnounce] Speaking: "' +
           text +
-          '" with voice: ' +
-          (voiceId || "default") +
-          ", lang: " +
-          langCode,
+          '" with ' +
+          (Platform.OS === "ios" && voiceId
+            ? "voice: " + voiceId
+            : "lang: " + langCode),
       );
 
       try {
@@ -197,7 +202,6 @@ export function useVoiceAnnounce() {
       const { voiceId, langCode } = getCurrentVoiceConfig();
 
       const options: Speech.SpeechOptions = {
-        language: langCode,
         useApplicationAudioSession: false,
         onDone: () => {
           console.log("[VoiceAnnounce] Countdown speech completed:", count);
@@ -212,8 +216,12 @@ export function useVoiceAnnounce() {
         },
       };
 
-      if (voiceId) {
+      // iOS: 优先使用 voice 参数（让语音角色决定语言）
+      // Android: 使用 language 参数
+      if (Platform.OS === "ios" && voiceId) {
         (options as any).voice = voiceId;
+      } else {
+        options.language = langCode;
       }
 
       console.log('[VoiceAnnounce] Countdown speaking: "' + text + '"');
