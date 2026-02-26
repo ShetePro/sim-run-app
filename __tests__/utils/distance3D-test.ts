@@ -11,8 +11,8 @@ import flatRoadData from "../fixtures/coordinates/flat_road.json";
 // 辅助函数：将 JSON 数据转换为 Point3D 格式
 function convertToPoint3D(data: typeof olympicParkData): Point3D[] {
   return data.points.map((p: any) => ({
-    latitude: p.lat,
-    longitude: p.lng,
+    latitude: p.latitude,
+    longitude: p.longitude,
     altitude: p.altitude,
   }));
 }

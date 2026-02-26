@@ -26,8 +26,8 @@ export async function initializeSQLite(db: SQLiteDatabase) {
     CREATE TABLE IF NOT EXISTS track_points (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       run_id INTEGER,
-      lat REAL,
-      lng REAL,
+      latitude REAL,
+      longitude REAL,
       altitude REAL,
       heading REAL,
       timestamp INTEGER,

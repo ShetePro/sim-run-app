@@ -178,8 +178,8 @@ export function useRun() {
       points: currenLocation
         ? [
             {
-              lat: currenLocation.latitude,
-              lng: currenLocation.longitude,
+              latitude: currenLocation.latitude,
+              longitude: currenLocation.longitude,
               heading: heading,
               timestamp: Date.now(),
             },

@@ -30,8 +30,8 @@ export async function exportRunAsJSON(
       },
       trackPoints: trackPoints.map((point, index) => ({
         index: index + 1,
-        latitude: point.lat,
-        longitude: point.lng,
+        latitude: point.latitude,
+        longitude: point.longitude,
         altitude: point.altitude,
         heading: point.heading,
         timestamp: point.timestamp,
@@ -44,15 +44,15 @@ export async function exportRunAsJSON(
         startPoint:
           trackPoints.length > 0
             ? {
-                lat: trackPoints[0].lat,
-                lng: trackPoints[0].lng,
+                latitude: trackPoints[0].latitude,
+                longitude: trackPoints[0].longitude,
               }
             : null,
         endPoint:
           trackPoints.length > 0
             ? {
-                lat: trackPoints[trackPoints.length - 1].lat,
-                lng: trackPoints[trackPoints.length - 1].lng,
+                latitude: trackPoints[trackPoints.length - 1].latitude,
+                longitude: trackPoints[trackPoints.length - 1].longitude,
               }
             : null,
       },
@@ -109,7 +109,7 @@ export async function exportRunAsGPX(
         const course = point.heading
           ? `        <course>${point.heading}</course>`
           : "";
-        return `      <trkpt lat="${point.lat}" lon="${point.lng}">
+        return `      <trkpt lat="${point.latitude}" lon="${point.longitude}">
 ${elevation}
         <time>${time}</time>
 ${course}
@@ -180,8 +180,8 @@ export async function exportRunAsCSV(
     // CSV 数据行
     const rows = trackPoints.map((point, index) => [
       index + 1,
-      point.lat,
-      point.lng,
+      point.latitude,
+      point.longitude,
       point.altitude !== undefined ? point.altitude : "",
       point.heading !== undefined ? point.heading : "",
       point.timestamp || "",

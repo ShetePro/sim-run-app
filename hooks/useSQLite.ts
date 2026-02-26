@@ -116,9 +116,16 @@ export function useRunDB() {
       try {
         for (const p of points) {
           await db.runAsync(
-            `INSERT INTO track_points (run_id, lat, lng, altitude, heading, timestamp)
+            `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [runId, p.lat, p.lng, p.altitude ?? null, p.heading, p.timestamp],
+            [
+              runId,
+              p.latitude,
+              p.longitude,
+              p.altitude ?? null,
+              p.heading,
+              p.timestamp,
+            ],
           );
         }
         await db.execAsync("COMMIT");

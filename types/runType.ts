@@ -1,6 +1,6 @@
 export type TrackPoint = {
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   altitude?: number; // 海拔高度（米）
   heading: number;
   timestamp: number;

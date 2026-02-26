@@ -69,8 +69,8 @@ export function trackPointToCoordinate(trackPoint: {
   }
 
   const coord = {
-    latitude: trackPoint.lat,
-    longitude: trackPoint.lng,
+    latitude: trackPoint.latitude,
+    longitude: trackPoint.longitude,
   };
 
   return isValidCoordinate(coord) ? coord : null;
@@ -110,8 +110,8 @@ export function trackPointToCoordinate3D(trackPoint: {
   }
 
   const coord = {
-    latitude: trackPoint.lat,
-    longitude: trackPoint.lng,
+    latitude: trackPoint.latitude,
+    longitude: trackPoint.longitude,
     altitude: trackPoint.altitude,
   };
 

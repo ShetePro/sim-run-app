@@ -10,7 +10,7 @@ interface RunRecord {
   time: number;
   pace: number;
   startTime: number;
-  points?: { lat: number; lng: number }[];
+  points?: { latitude: number; longitude: number }[];
 }
 
 interface RecentActivityItemProps {
@@ -40,12 +40,22 @@ export function RecentActivityItem({
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
     if (diffDays === 0) {
-      return t("common.today") + " " + date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      return (
+        t("common.today") +
+        " " +
+        date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
+      );
     } else if (diffDays === 1) {
-      return t("common.yesterday") + " " + date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      return (
+        t("common.yesterday") +
+        " " +
+        date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
+      );
     } else {
       return dateFormat(timestamp);
     }
