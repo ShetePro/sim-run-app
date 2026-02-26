@@ -16,8 +16,8 @@ import { backupDatabase } from "@/utils/backup";
 import {
   LOCATION_TASK_NAME,
   resetLocationTask,
-  savePausedDistance,
-  restoreDistance,
+  pauseLocationTask,
+  resumeLocationTask,
 } from "@/utils/location/locationTask";
 const runData: RunRecord = {
   startTime: Date.now(),
@@ -48,7 +48,6 @@ export function useRun() {
   const [locationSubscription, setLocationSubscription] = useState<any>(null);
   const [routePoints, setRoutePoints] = useState<any[]>([]);
   const routePointsRef = useRef<any[]>([]);
-  const pausedDistanceRef = useRef(0);
   const distanceRef = useRef(0);
 
   // 保持 ref 与 state 同步
@@ -87,12 +86,12 @@ export function useRun() {
         }
         setRoutePoints(updatedPoints);
 
-        const actualDistance =
-          (data.distance || distanceRef.current) - pausedDistanceRef.current;
-        setDistance(Math.max(0, actualDistance));
+        // 直接使用后台返回的总距离，不再减去暂停距离
+        const currentDistance = data.distance || distanceRef.current;
+        setDistance(Math.max(0, currentDistance));
         try {
           await LiveActivity.update({
-            distance: Number((actualDistance / 1000).toFixed(2)),
+            distance: Number((currentDistance / 1000).toFixed(2)),
             duration: secondFormatHours(useRunStore.getState().duration),
             pace: secondFormatHours(useRunStore.getState().pace),
           });
@@ -163,7 +162,6 @@ export function useRun() {
     setRoutePoints([]); // 开始新会话时清空路径
     setDistance(0); // 重置距离
     distanceRef.current = 0; // 重置距离 ref
-    pausedDistanceRef.current = 0; // 重置暂停距离
 
     await LiveActivity.start();
     console.log(Date.now(), "开始跑步时间");
@@ -202,7 +200,8 @@ export function useRun() {
     }
     await LiveActivity.stop();
     const { time, pace, energy } = data;
-    const finalDistance = distanceRef.current - pausedDistanceRef.current;
+    // 直接使用当前距离，不再减去暂停距离
+    const finalDistance = distanceRef.current;
 
     // 计算累计海拔爬升
     const elevationGain = calculateElevationGain(routePoints);
@@ -223,7 +222,6 @@ export function useRun() {
 
     isTracking.current = false;
     isPaused.current = false;
-    pausedDistanceRef.current = 0;
     console.log("跑步会话结束，总点数：", routePoints.length);
     // 备份数据库到 documentDirectory 以便 iCloud 备份
     await backupDatabase();
@@ -233,21 +231,18 @@ export function useRun() {
   const pauseTracking = async () => {
     if (!isTracking.current || isPaused.current) return;
     isPaused.current = true;
-    pausedDistanceRef.current = distanceRef.current;
-    // 保存当前距离到持久化存储
-    await savePausedDistance();
-    console.log("⏸️ 跑步已暂停，距离已保存:", pausedDistanceRef.current);
+    // 通知后台任务暂停计算距离
+    pauseLocationTask();
+    console.log("⏸️ 跑步已暂停，当前距离:", distanceRef.current);
   };
 
   // 继续追踪
   const resumeTracking = async () => {
     if (!isTracking.current || !isPaused.current) return;
-    // 从持久化存储恢复距离
-    const restoredDistance = await restoreDistance();
-    // 更新暂停距离参考值
-    pausedDistanceRef.current = restoredDistance;
+    // 通知后台任务恢复计算
+    resumeLocationTask();
     isPaused.current = false;
-    console.log("▶️ 跑步已恢复，距离已还原:", restoredDistance);
+    console.log("▶️ 跑步已恢复，继续从当前距离计算");
   };
 
   // 计算累计海拔爬升（只计算上升，不计算下降）

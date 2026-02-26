@@ -1,6 +1,5 @@
 import * as TaskManager from "expo-task-manager";
 import { DeviceEventEmitter } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IndustrialKalmanFilter } from "./kalmanFilter";
 import { getDistance3D, Point3D } from "./distance3D";
 import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
@@ -8,48 +7,42 @@ import { useRunStore } from "@/store/runStore";
 
 export const LOCATION_TASK_NAME = "SIM_RUN_RUNNING_TRACKER_TASK";
 const filter = new IndustrialKalmanFilter();
+
 // 存储内存中的变量（仅限任务运行期间）
 let lastPoint: Point3D | null = null;
 let totalDistance = 0;
-const setAccuracy = useRunStore.getState().setAccuracy;
+let isPaused = false; // 暂停状态标志
 
-// 存储键名
-const PAUSED_DISTANCE_KEY = "@run_paused_distance";
+const setAccuracy = useRunStore.getState().setAccuracy;
 
 // 重置任务状态（开始新跑步时调用）
 export function resetLocationTask() {
   lastPoint = null;
   totalDistance = 0;
+  isPaused = false;
   filter.reset();
-  // 清除持久化的暂停距离
-  AsyncStorage.removeItem(PAUSED_DISTANCE_KEY);
   console.log("✅ 位置任务状态已重置");
 }
 
-// 保存当前距离（暂停时调用）
-export async function savePausedDistance() {
-  try {
-    await AsyncStorage.setItem(PAUSED_DISTANCE_KEY, String(totalDistance));
-    console.log("💾 已保存暂停距离:", totalDistance);
-  } catch (error) {
-    console.error("❌ 保存暂停距离失败:", error);
-  }
+// 暂停位置追踪（暂停跑步时调用）
+export function pauseLocationTask() {
+  isPaused = true;
+  console.log("⏸️ 位置任务已暂停，当前距离:", totalDistance);
 }
 
-// 恢复距离（继续跑步时调用）
-export async function restoreDistance(): Promise<number> {
-  try {
-    const savedDistance = await AsyncStorage.getItem(PAUSED_DISTANCE_KEY);
-    if (savedDistance) {
-      totalDistance = Number(savedDistance);
-      console.log("📂 已恢复距离:", totalDistance);
-      return totalDistance;
-    }
-  } catch (error) {
-    console.error("❌ 恢复距离失败:", error);
-  }
-  return 0;
+// 恢复位置追踪（继续跑步时调用）
+export function resumeLocationTask() {
+  isPaused = false;
+  // 恢复时重置 lastPoint，避免计算暂停期间的大距离跳跃
+  lastPoint = null;
+  console.log("▶️ 位置任务已恢复，继续计算距离");
 }
+
+// 获取当前距离（用于 UI 显示）
+export function getCurrentDistance(): number {
+  return totalDistance;
+}
+
 console.log("定义位置任务:, LOCATION_TASK_NAME");
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
   console.log(error, data, "后台获取当前位置");
@@ -57,12 +50,15 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
     console.error(error);
     return;
   }
+
   if (data) {
     const { locations } = data;
     console.log(locations);
+
     for (const rawPoint of locations) {
       console.log(rawPoint.coords.accuracy, "信号强度");
       setAccuracy(rawPoint.coords.accuracy);
+
       if (rawPoint.coords.accuracy > 30) return;
 
       // 2. 喂给工业级滤波器
@@ -80,26 +76,31 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
         altitude: rawPoint.coords.altitude,
       };
 
-      if (lastPoint) {
-        const delta = getDistance3D(lastPoint, currentPoint);
+      // 只有在非暂停状态下才计算距离
+      if (!isPaused) {
+        if (lastPoint) {
+          const delta = getDistance3D(lastPoint, currentPoint);
 
-        // 运动过滤：跑步者 1秒钟位移通常在 1m-10m 之间
-        // 如果 delta < 0.5m，说明是原地漂移，不计入里程
-        if (delta > 0.5 && delta < 15) {
-          totalDistance += delta;
+          // 运动过滤：跑步者 1秒钟位移通常在 1m-10m 之间
+          // 如果 delta < 0.5m，说明是原地漂移，不计入里程
+          if (delta > 0.5 && delta < 15) {
+            totalDistance += delta;
+          }
         }
+        lastPoint = currentPoint;
       }
 
-      lastPoint = currentPoint;
       console.log(rawPoint, "rawPoint");
-      // 4. 将结果广播给 UI
+
+      // 4. 将结果广播给 UI（无论是否暂停都广播位置）
       DeviceEventEmitter.emit(RUNNING_UPDATE_EVENT, {
         latitude: filtered.latitude,
         longitude: filtered.longitude,
         altitude: rawPoint.coords.altitude,
-        distance: totalDistance,
-        speed: rawPoint.coords.speed, // 原始速度
+        distance: totalDistance, // 直接返回总距离
+        speed: rawPoint.coords.speed,
         heading: rawPoint.coords.heading,
+        isPaused: isPaused, // 添加暂停状态
       });
     }
   }
