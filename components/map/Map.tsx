@@ -25,6 +25,15 @@ interface MapProps {
 }
 
 /**
+ * 将 zoom 级别转换为 latitudeDelta
+ * zoom 20 对应的 latitudeDelta 约为 0.000343
+ */
+function zoomToLatitudeDelta(zoom: number): number {
+  // latitudeDelta = 360 / 2^zoom
+  return 360 / Math.pow(2, zoom);
+}
+
+/**
  * 计算比例尺的宽度（米）
  * 根据当前地图的缩放级别计算合适的比例尺
  */
@@ -165,13 +174,22 @@ function Map({ style, heading, location, path }: MapProps) {
     // 只有在跟随位置开启时才自动移动地图
     if (isFollowingUser && location) {
       isProgrammaticChange.current = true;
+      const zoom = 20;
       mapRef.current?.animateCamera({
         center: {
           longitude: location.longitude || 0,
           latitude: location.latitude || 0,
         },
         pitch: mapSettings.tiltEnabled ? 45 : 0,
-        zoom: 20,
+        zoom,
+      });
+      // 手动更新 region 状态（animateCamera 不会触发 onRegionChangeComplete）
+      const newLatitudeDelta = zoomToLatitudeDelta(zoom);
+      setRegion({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: newLatitudeDelta,
+        longitudeDelta: newLatitudeDelta,
       });
     }
   }, [location, heading, isFollowingUser, mapSettings.tiltEnabled]);
@@ -192,19 +210,33 @@ function Map({ style, heading, location, path }: MapProps) {
     // 立即移动到当前位置
     if (location) {
       isProgrammaticChange.current = true;
+      const zoom = 20;
       mapRef.current?.animateCamera({
         center: {
           longitude: location.longitude || 0,
           latitude: location.latitude || 0,
         },
         pitch: mapSettings.tiltEnabled ? 45 : 0,
-        zoom: 20,
+        zoom,
+      });
+      // 手动更新 region 状态（animateCamera 不会触发 onRegionChangeComplete）
+      const newLatitudeDelta = zoomToLatitudeDelta(zoom);
+      setRegion({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: newLatitudeDelta,
+        longitudeDelta: newLatitudeDelta,
       });
     }
   }, [location, mapSettings.tiltEnabled, updateSetting]);
 
   // 处理区域变化，用于更新比例尺
   const handleRegionChange = useCallback((newRegion: Region) => {
+    // 如果是代码触发的变化，跳过更新避免重复
+    if (isProgrammaticChange.current) {
+      isProgrammaticChange.current = false;
+      return;
+    }
     setRegion(newRegion);
   }, []);
 
