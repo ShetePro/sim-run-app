@@ -237,13 +237,7 @@ const resources = {
         editPlan: "Running Plan",
         cloudSync: "Cloud Sync",
         cloudSyncValue: "iCloud",
-        map: {
-          title: "Map Settings",
-          loading: {
-            title: "Getting Location...",
-            subtitle: "Please make sure location permission is enabled",
-          },
-        },
+        map: "Map Settings",
         notify: "Notification",
         helps: "Help and Feedback",
         about: "About Us",
@@ -758,13 +752,7 @@ const resources = {
         appearance: "外观",
         editPlan: "跑步计划",
         editProfile: "编辑资料",
-        map: {
-          title: "地图设置",
-          loading: {
-            title: "正在定位...",
-            subtitle: "请确保已开启定位权限",
-          },
-        },
+        map: "地图设置",
         cloudSync: "云端同步",
         cloudSyncValue: "iCloud",
         notify: "消息通知",
