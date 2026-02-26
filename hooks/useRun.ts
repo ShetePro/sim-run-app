@@ -3,7 +3,7 @@ import * as Location from "expo-location";
 import { LocationObjectCoords } from "expo-location";
 import { secondFormatHours } from "@/utils/util";
 import { useRunDB } from "@/hooks/useSQLite";
-import { RunRecord } from "@/types/runType";
+import { RunRecord, TrackPoint } from "@/types/runType";
 import {
   mapPointToLonLat,
   requestLocationPermission,
@@ -42,7 +42,7 @@ export function useRun() {
   const [errorMsg, setErrorMsg] = useState<string>("");
   const isTracking = useRef(false);
   const isPaused = useRef(false);
-  const { addRun, updateRun } = useRunDB();
+  const { addRun, updateRun, getTrackPoints } = useRunDB();
   const headingSubscription = useRef<Location.LocationSubscription | null>(
     null,
   );
@@ -322,6 +322,27 @@ export function useRun() {
 
     // 更新UI状态
     setDistance(cache.distance);
+
+    // 从数据库加载历史轨迹点
+    try {
+      const trackPointsFromDb = await getTrackPoints(cache.runId);
+      if (trackPointsFromDb && trackPointsFromDb.length > 0) {
+        // 转换数据库格式为 UI 格式
+        const formattedPoints = trackPointsFromDb.map((point: TrackPoint) => ({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          altitude: point.altitude,
+          heading: point.heading,
+          timestamp: point.timestamp,
+        }));
+        setRoutePoints(formattedPoints);
+        // 同步到 ref
+        routePointsRef.current = formattedPoints;
+        console.log("[useRun] 轨迹点已恢复:", formattedPoints.length, "个点");
+      }
+    } catch (error) {
+      console.error("[useRun] 加载轨迹点失败:", error);
+    }
 
     // 恢复后台任务
     await resumeLocationTask();
