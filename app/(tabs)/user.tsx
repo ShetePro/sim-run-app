@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -17,12 +18,19 @@ import { SwitchItem } from "@/components/ui/SwitchItem";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { getStorageItem } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
+import { useDemoData } from "@/hooks/useDemoData";
+import Toast from "react-native-toast-message";
+
+// 开发模式标志
+const isDevMode = __DEV__;
 
 export default function UserProfileScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const { t } = useTranslation();
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
+  const { loadDemoData, clearDemoData } = useDemoData();
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
 
   // 使用 state 存储用户信息，页面聚焦时刷新
   const [userInfo, setUserInfo] = useState(
@@ -66,6 +74,64 @@ export default function UserProfileScreen() {
         text: t("setting.logout"),
         style: "destructive",
         onPress: () => console.log("Logged out"),
+      },
+    ]);
+  };
+
+  // 加载演示数据
+  const handleLoadDemoData = async () => {
+    if (isLoadingDemo) return;
+    setIsLoadingDemo(true);
+
+    try {
+      const result = await loadDemoData();
+      if (result.success) {
+        Toast.show({
+          type: "success",
+          text1: "✅ 加载成功",
+          text2: result.message,
+        });
+      } else {
+        Toast.show({
+          type: "info",
+          text1: "ℹ️ 提示",
+          text2: result.message,
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "❌ 加载失败",
+        text2: "请稍后重试",
+      });
+    } finally {
+      setIsLoadingDemo(false);
+    }
+  };
+
+  // 清空演示数据
+  const handleClearDemoData = async () => {
+    Alert.alert("清空演示数据", "确定要清空所有演示数据吗？此操作不可恢复。", [
+      { text: "取消", style: "cancel" },
+      {
+        text: "清空",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const result = await clearDemoData();
+            Toast.show({
+              type: result.success ? "success" : "info",
+              text1: result.success ? "✅ 已清空" : "ℹ️ 提示",
+              text2: result.message,
+            });
+          } catch (error) {
+            Toast.show({
+              type: "error",
+              text1: "❌ 清空失败",
+              text2: "请稍后重试",
+            });
+          }
+        },
       },
     ]);
   };
@@ -201,6 +267,34 @@ export default function UserProfileScreen() {
               onPress={() => router.push("/(views)/about")}
             />
           </View>
+
+          {/* --- 开发模式：演示数据 --- */}
+          {isDevMode && (
+            <View className="mt-6 mb-6">
+              <Text className="text-orange-500 text-xs font-bold uppercase mb-2 ml-2">
+                开发模式
+              </Text>
+              <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
+                <MenuItem
+                  icon="download-outline"
+                  color="#F97316"
+                  label="加载演示数据"
+                  value={isLoadingDemo ? "加载中..." : "8条记录"}
+                  onPress={handleLoadDemoData}
+                />
+                <Divider />
+                <MenuItem
+                  icon="trash-outline"
+                  color="#EF4444"
+                  label="清空演示数据"
+                  onPress={handleClearDemoData}
+                />
+              </View>
+              <Text className="text-slate-400 text-xs mt-2 ml-2">
+                仅在开发模式显示，用于 App Store 截图
+              </Text>
+            </View>
+          )}
 
           <Text className="text-center text-slate-400 text-xs mt-10 mb-10">
             SimRun App © 2025
