@@ -29,7 +29,7 @@ import {
   getRunningCache,
   clearRunningCache,
   formatRunningCacheForDisplay,
-  RunningCache,
+  type RunningCache,
 } from "@/utils/runningCache";
 
 // 长按结束按钮组件
@@ -205,6 +205,7 @@ export default function RunIndexScreen() {
     pauseTracking,
     resumeTracking,
     getCurrentRunId,
+    restoreRunningSession,
     distance,
     heading,
     routePoints,
@@ -288,9 +289,20 @@ export default function RunIndexScreen() {
               },
               {
                 text: t("run.continue") || "继续跑步",
-                onPress: () => {
-                  // 恢复跑步逻辑（可以在这里扩展）
-                  console.log("[Run] 用户选择继续跑步", cache);
+                onPress: async () => {
+                  if (cache) {
+                    // 恢复跑步会话
+                    await restoreRunningSession(cache);
+                    // 标记已开始（跳过倒计时）
+                    setHasStarted(true);
+                    // 开始计时
+                    startTimer();
+                    // 如果不是暂停状态，开始计步
+                    if (!cache.isPaused) {
+                      startPedometer();
+                    }
+                    console.log("[Run] 用户选择继续跑步，数据已恢复", cache);
+                  }
                 },
               },
             ],

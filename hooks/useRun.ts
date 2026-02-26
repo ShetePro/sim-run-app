@@ -300,6 +300,35 @@ export function useRun() {
   // 获取当前跑步ID
   const getCurrentRunId = () => runData.id;
 
+  // 恢复跑步会话
+  const restoreRunningSession = async (cache: {
+    runId: number;
+    startTime: number;
+    distance: number;
+    duration: number;
+    isPaused: boolean;
+  }) => {
+    console.log("[useRun] 恢复跑步会话:", cache);
+
+    // 设置跑步数据
+    runData.id = cache.runId;
+    runData.startTime = cache.startTime;
+    runData.distance = cache.distance;
+    runData.time = cache.duration;
+
+    // 恢复状态
+    isTracking.current = true;
+    isPaused.current = cache.isPaused;
+
+    // 更新UI状态
+    setDistance(cache.distance);
+
+    // 恢复后台任务
+    await resumeLocationTask();
+
+    console.log("[useRun] 跑步会话已恢复");
+  };
+
   return {
     location: currenLocation,
     errorMsg,
@@ -308,6 +337,7 @@ export function useRun() {
     pauseTracking,
     resumeTracking,
     getCurrentRunId,
+    restoreRunningSession,
     routePoints,
     distance,
     heading,
