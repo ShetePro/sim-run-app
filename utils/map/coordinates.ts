@@ -60,8 +60,8 @@ export function filterValidCoordinates(coordinates: any[]): MapCoordinate[] {
  * @returns MapCoordinate 或 null
  */
 export function trackPointToCoordinate(trackPoint: {
-  lat?: number;
-  lng?: number;
+  latitude?: number;
+  longitude?: number;
   [key: string]: any;
 }): MapCoordinate | null {
   if (!trackPoint) {
@@ -82,7 +82,7 @@ export function trackPointToCoordinate(trackPoint: {
  * @returns 有效的 MapCoordinate 数组
  */
 export function trackPointsToCoordinates(
-  trackPoints: Array<{ lat?: number; lng?: number }>,
+  trackPoints: Array<{ latitude?: number; longitude?: number }>,
 ): MapCoordinate[] {
   if (!Array.isArray(trackPoints)) {
     return [];
@@ -100,8 +100,8 @@ export function trackPointsToCoordinates(
  * @returns 带海拔的坐标对象 或 null
  */
 export function trackPointToCoordinate3D(trackPoint: {
-  lat?: number;
-  lng?: number;
+  latitude?: number;
+  longitude?: number;
   altitude?: number;
   [key: string]: any;
 }): { latitude: number; longitude: number; altitude?: number } | null {

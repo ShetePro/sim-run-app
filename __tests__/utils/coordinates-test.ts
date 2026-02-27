@@ -185,7 +185,7 @@ describe("trackPointToCoordinate3D", () => {
     const result = trackPointToCoordinate3D(trackPoint);
 
     expect(result).toBeDefined();
-    expect(result?.latitudeitude).toBe(40.014);
+    expect(result?.latitudeitudeitude).toBe(40.014);
     expect(result?.longitude).toBe(116.391);
     expect(result?.altitude).toBe(50);
   });
