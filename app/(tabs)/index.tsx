@@ -55,7 +55,7 @@ export default function HomeScreen() {
       });
       const { distance, calories, duration } = todayData;
       // 计算平均配速（分钟/公里）：总时长(秒) / 总距离(公里) / 60
-      todayData.pace = distance > 0 ? Math.round(duration / distance / 60) : 0;
+      todayData.pace = distance > 0 ? duration / distance / 60 : 0;
       // 计算平均步频（步/分钟）：总步数 / 总时长(分钟)
       const durationInMinutes = duration / 60;
       todayData.steps =
