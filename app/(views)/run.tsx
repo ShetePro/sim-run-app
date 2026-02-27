@@ -391,7 +391,7 @@ export default function RunIndexScreen() {
     isFinishingRef.current = true;
 
     stopTimer();
-    stopPedometer();
+    // 注意：stopPedometer() 移到 stopTracking 之后，避免步数被重置为0
 
     const calories = calculateCaloriesSimplified(distance, seconds, userWeight);
     const runData = {
@@ -413,6 +413,9 @@ export default function RunIndexScreen() {
 
     // 先保存到数据库，等待完成后再跳转
     await stopTracking(runData);
+
+    // 保存完成后再停止计步器并重置步数
+    stopPedometer();
 
     // 只传递 runId，详情页面从数据库查询
     router.push({
