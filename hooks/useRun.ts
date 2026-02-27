@@ -21,6 +21,8 @@ import {
   resetLocationTask,
   pauseLocationTask,
   resumeLocationTask,
+  startRunning,
+  stopRunning,
 } from "@/utils/location/locationTask";
 import { saveRunningCache, clearRunningCache } from "@/utils/runningCache";
 const runData: RunRecord = {
@@ -90,12 +92,17 @@ export function useRun() {
         setLocation(newPoint);
 
         // 使用 ref 获取最新的 routePoints，避免闭包问题
-        const updatedPoints = [...routePointsRef.current, newPoint];
+        // 添加当前累计步数到轨迹点（用于后续分析）
+        const pointWithSteps = {
+          ...newPoint,
+          steps: stepCount,
+        };
+        const updatedPoints = [...routePointsRef.current, pointWithSteps];
         if (runData.id) {
           // 只插入新增的点（增量更新，避免全量重写）
           updateRun({
             id: runData.id,
-            points: [newPoint], // 只传递新点
+            points: [pointWithSteps], // 只传递新点（包含步数）
           });
         }
         setRoutePoints(updatedPoints);
@@ -222,6 +229,9 @@ export function useRun() {
     isTracking.current = true;
     isPaused.current = false;
 
+    // 激活后台任务处理（必须在其他操作之前）
+    startRunning();
+
     // 重置所有状态
     resetLocationTask(); // 重置后台任务的距离计算
     setRoutePoints([]); // 开始新会话时清空路径
@@ -292,6 +302,9 @@ export function useRun() {
     restoredBackendDistanceRef.current = null;
     console.log("跑步会话结束，总点数：", routePoints.length);
 
+    // 停止后台任务处理
+    stopRunning();
+
     // 清空跑步缓存
     try {
       await clearRunningCache();
@@ -360,6 +373,9 @@ export function useRun() {
     isPaused: boolean;
   }) => {
     console.log("[useRun] 恢复跑步会话:", cache);
+
+    // 激活后台任务处理（必须先调用）
+    startRunning();
 
     // 设置跑步数据
     runData.id = cache.runId;

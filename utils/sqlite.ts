@@ -21,7 +21,7 @@ export async function initializeSQLite(db: SQLiteDatabase) {
     );
   `);
 
-  // 创建轨迹点表（包含海拔高度支持）
+  // 创建轨迹点表（包含海拔高度和步数支持）
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS track_points (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,6 +31,7 @@ export async function initializeSQLite(db: SQLiteDatabase) {
       altitude REAL,
       heading REAL,
       timestamp INTEGER,
+      steps INTEGER,
       FOREIGN KEY (run_id) REFERENCES runs (id)
     );
   `);
@@ -77,6 +78,11 @@ async function migrateTable(db: SQLiteDatabase) {
     if (!trackPointsColumnNames.includes("altitude")) {
       await db.execAsync(`ALTER TABLE track_points ADD COLUMN altitude REAL;`);
       console.log(`✅ 添加 track_points.altitude 字段`);
+    }
+
+    if (!trackPointsColumnNames.includes("steps")) {
+      await db.execAsync(`ALTER TABLE track_points ADD COLUMN steps INTEGER;`);
+      console.log(`✅ 添加 track_points.steps 字段`);
     }
   } catch (error) {
     console.error("迁移失败:", error);

@@ -119,8 +119,8 @@ export function useRunDB() {
   // 添加单个轨迹点（用于实时更新，避免全量重写）
   const addTrackPoint = async (runId: number, point: TrackPoint) => {
     await db.runAsync(
-      `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp, steps)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         runId,
         point.latitude,
@@ -128,6 +128,7 @@ export function useRunDB() {
         point.altitude ?? null,
         point.heading,
         point.timestamp,
+        point.steps ?? null,
       ],
     );
   };
@@ -139,8 +140,8 @@ export function useRunDB() {
       try {
         for (const p of points) {
           await db.runAsync(
-            `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp)
-             VALUES (?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp, steps)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
               runId,
               p.latitude,
@@ -148,6 +149,7 @@ export function useRunDB() {
               p.altitude ?? null,
               p.heading,
               p.timestamp,
+              p.steps ?? null,
             ],
           );
         }

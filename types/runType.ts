@@ -4,6 +4,7 @@ export type TrackPoint = {
   altitude?: number; // 海拔高度（米）
   heading: number;
   timestamp: number;
+  steps?: number; // 累计步数（用于后续分析）
 };
 
 export type RunRecord = {
