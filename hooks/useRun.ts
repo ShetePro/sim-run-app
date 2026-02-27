@@ -72,19 +72,23 @@ export function useRun() {
         console.log("触发emit 事件", data);
         if (!isTracking.current || isPaused.current) return;
         const locationUpdate = data;
-        const newPoint = mapPointToLonLat({
-          latitude: locationUpdate.latitude,
-          longitude: locationUpdate.longitude,
-          timestamp: locationUpdate.timestamp,
-        });
+        const newPoint = {
+          ...mapPointToLonLat({
+            latitude: locationUpdate.latitude,
+            longitude: locationUpdate.longitude,
+            timestamp: locationUpdate.timestamp,
+          }),
+          heading: locationUpdate.heading || 0,
+        };
         setLocation(newPoint);
 
         // 使用 ref 获取最新的 routePoints，避免闭包问题
         const updatedPoints = [...routePointsRef.current, newPoint];
         if (runData.id) {
+          // 只插入新增的点（增量更新，避免全量重写）
           updateRun({
             id: runData.id,
-            points: updatedPoints,
+            points: [newPoint], // 只传递新点
           });
         }
         setRoutePoints(updatedPoints);
@@ -170,8 +174,8 @@ export function useRun() {
           accuracy: Location.Accuracy.BestForNavigation,
           activityType: Location.ActivityType.AutomotiveNavigation,
           pausesUpdatesAutomatically: false,
-          timeInterval: 5000, // 1秒更新一次
-          distanceInterval: 10, // 1米移动更新
+          timeInterval: 5000,
+          distanceInterval: 10,
           foregroundService: {
             notificationTitle: "跑步记录中",
             notificationBody: "正在使用高精度滤波器优化轨迹",

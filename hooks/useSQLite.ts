@@ -82,8 +82,15 @@ export function useRunDB() {
       );
     }
 
+    // 处理轨迹点更新
     if (run.points && run.points.length > 0) {
-      await updateRunTrackPoints(run.id, run.points);
+      if (run.points.length === 1) {
+        // 只新增1个点：使用增量插入（性能优化）
+        await addTrackPoint(run.id, run.points[0]);
+      } else {
+        // 多个点：全量更新（用于初始加载或恢复）
+        await updateRunTrackPoints(run.id, run.points);
+      }
     }
   };
 
@@ -107,6 +114,22 @@ export function useRunDB() {
     await db.runAsync("DELETE FROM track_points WHERE run_id = ?", [runId]);
     await db.runAsync("DELETE FROM runs WHERE id = ?", [runId]);
     await db.execAsync("COMMIT");
+  };
+
+  // 添加单个轨迹点（用于实时更新，避免全量重写）
+  const addTrackPoint = async (runId: number, point: TrackPoint) => {
+    await db.runAsync(
+      `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        runId,
+        point.latitude,
+        point.longitude,
+        point.altitude ?? null,
+        point.heading,
+        point.timestamp,
+      ],
+    );
   };
 
   const updateRunTrackPoints = async (runId: number, points: TrackPoint[]) => {
