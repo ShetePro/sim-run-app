@@ -68,9 +68,27 @@ export default function ProfileEditScreen() {
   // 加载用户信息
   useEffect(() => {
     const loadUserInfo = async () => {
-      const userInfo = await getStorageItemAsync("userInfo");
-      if (userInfo) {
-        setForm(JSON.parse(userInfo));
+      try {
+        const userInfo = await getStorageItemAsync("userInfo");
+
+        // 空值检查
+        if (!userInfo) {
+          setForm({});
+          return;
+        }
+
+        // 如果已经是对象，直接使用
+        if (typeof userInfo === "object") {
+          setForm(userInfo);
+          return;
+        }
+
+        // 尝试解析 JSON
+        const parsed = JSON.parse(userInfo);
+        setForm(parsed || {});
+      } catch (error) {
+        console.error("[Profile] 解析用户信息失败:", error);
+        setForm({});
       }
     };
     loadUserInfo();

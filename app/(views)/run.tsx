@@ -257,13 +257,29 @@ export default function RunIndexScreen() {
   // 加载用户体重
   useEffect(() => {
     const loadUserWeight = async () => {
-      const userInfo = await getStorageItemAsync("userInfo");
-      if (userInfo) {
+      try {
+        const userInfo = await getStorageItemAsync("userInfo");
+
+        // 空值检查
+        if (!userInfo) return;
+
+        // 如果已经是对象，直接使用
+        if (typeof userInfo === "object") {
+          const weight = parseFloat(userInfo.weight);
+          if (!isNaN(weight) && weight > 0) {
+            setUserWeight(weight);
+          }
+          return;
+        }
+
+        // 尝试解析 JSON
         const parsed = JSON.parse(userInfo);
         const weight = parseFloat(parsed.weight);
         if (!isNaN(weight) && weight > 0) {
           setUserWeight(weight);
         }
+      } catch (error) {
+        console.error("[Run] 解析用户体重失败:", error);
       }
     };
     loadUserWeight();

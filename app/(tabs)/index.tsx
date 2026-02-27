@@ -76,14 +76,27 @@ export default function HomeScreen() {
 
   // 获取用户信息（包括头像）
   const loadUserInfo = async () => {
-    const storedUserInfo = await getStorageItemAsync("userInfo");
-    if (storedUserInfo) {
-      try {
-        const parsed = JSON.parse(storedUserInfo);
-        setUserInfo(parsed);
-      } catch (e) {
-        console.error("解析用户信息失败:", e);
+    try {
+      const storedUserInfo = await getStorageItemAsync("userInfo");
+
+      // 空值检查
+      if (!storedUserInfo) {
+        setUserInfo({});
+        return;
       }
+
+      // 如果已经是对象，直接使用
+      if (typeof storedUserInfo === "object") {
+        setUserInfo(storedUserInfo);
+        return;
+      }
+
+      // 尝试解析 JSON
+      const parsed = JSON.parse(storedUserInfo);
+      setUserInfo(parsed || {});
+    } catch (e) {
+      console.error("[Home] 解析用户信息失败:", e);
+      setUserInfo({});
     }
   };
 

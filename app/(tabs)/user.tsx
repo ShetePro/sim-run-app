@@ -32,8 +32,28 @@ export default function UserProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       const loadUserInfo = async () => {
-        const freshUserInfo = (await getStorageItemAsync("userInfo")) || {};
-        setUserInfo(JSON.parse(freshUserInfo) || {});
+        try {
+          const freshUserInfo = await getStorageItemAsync("userInfo");
+
+          // 空值检查
+          if (!freshUserInfo) {
+            setUserInfo({});
+            return;
+          }
+
+          // 如果已经是对象，直接使用
+          if (typeof freshUserInfo === "object") {
+            setUserInfo(freshUserInfo);
+            return;
+          }
+
+          // 尝试解析 JSON
+          const parsed = JSON.parse(freshUserInfo);
+          setUserInfo(parsed || {});
+        } catch (error) {
+          console.error("[User] 解析用户信息失败:", error);
+          setUserInfo({}); // 出错时使用默认值
+        }
       };
       loadUserInfo();
     }, []),
