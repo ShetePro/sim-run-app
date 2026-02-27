@@ -9,7 +9,10 @@ import {
   requestLocationPermission,
 } from "@/utils/location/location";
 import { DeviceEventEmitter } from "react-native";
-import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
+import {
+  RUNNING_UPDATE_EVENT,
+  LOCATION_ERROR_EVENT,
+} from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 import { LiveActivity } from "@/utils/LiveActivityController";
 import { backupDatabase } from "@/utils/backup";
@@ -40,6 +43,10 @@ export function useRun() {
   const [distance, setDistance] = useState<number>(0);
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [locationError, setLocationError] = useState<{
+    type: string;
+    message: string;
+  } | null>(null);
   const isTracking = useRef(false);
   const isPaused = useRef(false);
   const { addRun, updateRun, getTrackPoints } = useRunDB();
@@ -144,6 +151,22 @@ export function useRun() {
     );
 
     return () => subscription.remove();
+  }, []);
+
+  // 监听定位错误事件
+  useEffect(() => {
+    const errorSubscription = DeviceEventEmitter.addListener(
+      LOCATION_ERROR_EVENT,
+      (errorData) => {
+        console.log("[useRun] 收到定位错误:", errorData);
+        setLocationError({
+          type: errorData.type,
+          message: errorData.message,
+        });
+      },
+    );
+
+    return () => errorSubscription.remove();
   }, []);
 
   // request location permissions
@@ -391,6 +414,8 @@ export function useRun() {
   return {
     location: currenLocation,
     errorMsg,
+    locationError,
+    clearLocationError: () => setLocationError(null),
     startTracking,
     stopTracking,
     pauseTracking,

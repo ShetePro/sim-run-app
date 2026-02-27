@@ -2,7 +2,10 @@ import * as TaskManager from "expo-task-manager";
 import { DeviceEventEmitter } from "react-native";
 import { IndustrialKalmanFilter } from "./kalmanFilter";
 import { getDistance3D, Point3D } from "./distance3D";
-import { RUNNING_UPDATE_EVENT } from "@/utils/location/event";
+import {
+  RUNNING_UPDATE_EVENT,
+  LOCATION_ERROR_EVENT,
+} from "@/utils/location/event";
 import { useRunStore } from "@/store/runStore";
 
 export const LOCATION_TASK_NAME = "SIM_RUN_RUNNING_TRACKER_TASK";
@@ -43,13 +46,73 @@ export function getCurrentDistance(): number {
   return totalDistance;
 }
 
+// 解析 iOS/Android 定位错误
+function parseLocationError(error: any): { type: string; message: string } {
+  if (!error) return { type: "unknown", message: "未知错误" };
+
+  const errorCode = error.code || error.errorCode;
+  const errorDomain = error.domain || error.errorDomain;
+
+  // iOS Core Location 错误
+  if (errorDomain === "kCLErrorDomain" || errorDomain === "CLErrorDomain") {
+    switch (errorCode) {
+      case 0:
+        return {
+          type: "permission_denied",
+          message: "定位权限被拒绝，请在设置中开启",
+        };
+      case 1:
+        return {
+          type: "service_disabled",
+          message: "定位服务已关闭，请检查系统设置",
+        };
+      case 2:
+        return {
+          type: "signal_weak",
+          message: "无法获取位置，请移动到开阔地带",
+        };
+      case 3:
+        return { type: "background_restricted", message: "后台定位受限" };
+      default:
+        return { type: "unknown", message: `定位异常 (Code: ${errorCode})` };
+    }
+  }
+
+  // Android 定位错误
+  if (error.message) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("permission") || msg.includes("denied")) {
+      return { type: "permission_denied", message: "定位权限被拒绝" };
+    }
+    if (msg.includes("disabled") || msg.includes("provider")) {
+      return { type: "service_disabled", message: "定位服务已关闭" };
+    }
+    if (msg.includes("timeout") || msg.includes("unavailable")) {
+      return { type: "signal_weak", message: "定位信号弱" };
+    }
+  }
+
+  return { type: "unknown", message: error.message || "定位服务异常" };
+}
+
 console.log("定义位置任务:, LOCATION_TASK_NAME");
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
-  console.log(error, data, "后台获取当前位置");
+  // 如果有错误，静默处理并广播给 UI
   if (error) {
-    console.error(error);
+    const errorInfo = parseLocationError(error);
+    // 只在控制台记录，不抛出
+    console.log("[LocationTask] 位置错误:", errorInfo.type, errorInfo.message);
+
+    // 广播错误事件给 UI
+    DeviceEventEmitter.emit(LOCATION_ERROR_EVENT, {
+      type: errorInfo.type,
+      message: errorInfo.message,
+      timestamp: Date.now(),
+    });
     return;
   }
+
+  console.log(data, "后台获取当前位置");
 
   if (data) {
     const { locations } = data;

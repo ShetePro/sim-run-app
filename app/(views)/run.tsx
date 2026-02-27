@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 import { calculateCaloriesSimplified } from "@/utils/calories";
+import Toast from "react-native-toast-message";
 import {
   isRunningCacheValid,
   getRunningCache,
@@ -210,6 +211,8 @@ export default function RunIndexScreen() {
     heading,
     routePoints,
     isPaused,
+    locationError,
+    clearLocationError,
   } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
@@ -241,6 +244,19 @@ export default function RunIndexScreen() {
       runStore.setPace(seconds / (distance / 1000));
     }
   }, [seconds, distance]);
+
+  // 监听定位错误并显示 Toast 提示
+  useEffect(() => {
+    if (locationError) {
+      Toast.show({
+        type: "error",
+        text1: "定位服务异常",
+        text2: locationError.message,
+        visibilityTime: 4000,
+        onHide: () => clearLocationError(),
+      });
+    }
+  }, [locationError, clearLocationError]);
 
   // 周期性语音播报检查
   useEffect(() => {
