@@ -24,7 +24,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
 import { calculateCaloriesSimplified } from "@/utils/calories";
-import Toast from "react-native-toast-message";
 import {
   isRunningCacheValid,
   getRunningCache,
@@ -245,16 +244,11 @@ export default function RunIndexScreen() {
     }
   }, [seconds, distance]);
 
-  // 监听定位错误并显示 Toast 提示
+  // 监听定位错误（静默处理，只在控制台记录）
   useEffect(() => {
     if (locationError) {
-      Toast.show({
-        type: "error",
-        text1: "定位服务异常",
-        text2: locationError.message,
-        visibilityTime: 4000,
-        onHide: () => clearLocationError(),
-      });
+      console.log("[Run] 定位错误:", locationError.type, locationError.message);
+      clearLocationError();
     }
   }, [locationError, clearLocationError]);
 
