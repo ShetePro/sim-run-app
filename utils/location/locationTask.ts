@@ -15,6 +15,7 @@ const filter = new IndustrialKalmanFilter();
 let lastPoint: Point3D | null = null;
 let totalDistance = 0;
 let isPaused = false; // 暂停状态标志
+let isRunning = false; // 跑步状态标志（用于控制任务处理）
 
 const setAccuracy = useRunStore.getState().setAccuracy;
 
@@ -39,6 +40,23 @@ export function resumeLocationTask() {
   // 恢复时重置 lastPoint，避免计算暂停期间的大距离跳跃
   lastPoint = null;
   console.log("▶️ 位置任务已恢复，继续计算距离");
+}
+
+// 开始跑步（设置跑步状态标志）
+export function startRunning() {
+  isRunning = true;
+  console.log("🏃 开始跑步，位置任务已激活");
+}
+
+// 停止跑步（清除跑步状态标志）
+export function stopRunning() {
+  isRunning = false;
+  console.log("🛑 停止跑步，位置任务已挂起");
+}
+
+// 获取当前跑步状态
+export function getRunningState(): boolean {
+  return isRunning;
 }
 
 // 获取当前距离（用于 UI 显示）
@@ -97,6 +115,11 @@ function parseLocationError(error: any): { type: string; message: string } {
 
 console.log("定义位置任务:, LOCATION_TASK_NAME");
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
+  // 快速退出：如果没有在跑步，直接返回（避免处理非跑步状态下的位置更新）
+  if (!isRunning) {
+    return;
+  }
+
   // 如果有错误，静默处理并广播给 UI
   if (error) {
     const errorInfo = parseLocationError(error);
