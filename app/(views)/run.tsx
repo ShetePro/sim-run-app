@@ -324,6 +324,11 @@ export default function RunIndexScreen() {
                     setHasStarted(true);
                     // 设置初始时间（恢复缓存的时间）
                     setInitialSeconds(cache.duration);
+                    // 恢复配速（基于缓存数据重新计算）
+                    if (cache.distance > 0) {
+                      const pace = cache.duration / (cache.distance / 1000);
+                      runStore.setPace(pace);
+                    }
                     // 如果不是暂停状态，开始计步
                     if (!cache.isPaused) {
                       startPedometer();
