@@ -17,7 +17,7 @@ import { TodayActivityCard } from "@/components/card/TodayActivityCard";
 import { useTranslation } from "react-i18next";
 import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
-import { getPaceLabel, secondFormatHours } from "@/utils/util";
+import { secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { RecentActivityItem } from "@/components/RecentActivityItem";
@@ -53,13 +53,11 @@ export default function HomeScreen() {
         todayData.duration += run.time;
         totalSteps += run.steps || 0;
       });
-      const { distance, calories, duration } = todayData;
-      // 计算平均配速（分钟/公里）：总时长(秒) / 总距离(公里) / 60
-      todayData.pace = distance > 0 ? duration / distance / 60 : 0;
-      // 计算平均步频（步/分钟）：总步数 / 总时长(分钟)
-      const durationInMinutes = duration / 60;
-      todayData.steps =
-        durationInMinutes > 0 ? Math.round(totalSteps / durationInMinutes) : 0;
+      const { distance, calories } = todayData;
+      // 计算燃效（卡路里/公里）：总卡路里 / 总距离
+      todayData.pace = distance > 0 ? calories / distance : 0;
+      // 总步数
+      todayData.steps = totalSteps;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
     });
@@ -197,15 +195,16 @@ export default function HomeScreen() {
               colorHex="#f97316"
             />
             <HomeDataCard
-              label={t("home.pace")}
-              value={getPaceLabel(today.pace)}
-              icon="speedometer-outline"
+              label={t("home.efficiency")}
+              value={today.pace > 0 ? today.pace.toFixed(1) : 0}
+              unit="kcal/km"
+              icon="flash-outline"
               colorHex="#10b981"
             />
             <HomeDataCard
-              label={t("home.stepFrequency")}
-              value={today.steps}
-              unit="spm"
+              label={t("home.totalSteps")}
+              value={today.steps.toLocaleString()}
+              unit={t("home.steps")}
               icon="footsteps-outline"
               colorHex="#a855f7"
             />
