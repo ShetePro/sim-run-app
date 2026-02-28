@@ -76,6 +76,43 @@
 - **总步数**: 直接累加显示，更易理解
 - **翻译**: 添加中英文支持（燃效/总步数）
 
+### 9. 重新设计 History 页面列表
+
+- **风格**: Apple Fitness 风格
+- **改进**:
+  - 大字体距离显示（36pt）作为核心数据
+  - 三列数据网格布局（时长 | 配速 | 卡路里）
+  - 24px 大圆角卡片设计
+  - 微妙的阴影效果（elevation/shadow）
+  - 运动图标（Ionicons walk-outline）
+  - 右滑删除手势（react-native-gesture-handler Swipeable）
+  - 改进的日期分组头部样式（带统计摘要）
+- **交互**: 滑动删除替代长按删除，更符合 iOS 习惯
+- **翻译**: 新增 `history.activities` 翻译键
+
+### 10. 优化 Run Detail 页面
+
+- **路径动画**: ✅ **已修复** - 使用 requestAnimationFrame 替代 Animated API
+  - 使用 `requestAnimationFrame` 实现平滑动画循环
+  - 添加缓动函数 `easeOut` 实现自然减速效果
+  - 优化状态更新：只有当点数量变化时才更新（防抖）
+  - 修复了 Animated API 导致的 React 渲染时序问题
+- **地图类型切换**:
+  - 右上角浮动胶囊按钮组（标准 | 卫星 | 混合）
+  - 本地状态管理，不影响全局设置
+  - 默认跟随全局地图设置
+- **距离显示重新设计**:
+  - ✅ **Apple Maps 风格可拖动底部卡片**（@gorhom/bottom-sheet）
+  - 使用 BottomSheet 组件实现真正的手势拖动
+  - 两个停靠点：25%（收起状态）和 50%（展开状态）
+  - 地图全屏显示，BottomSheet 覆盖在上方
+  - 拖动指示条：系统默认样式，自动适配暗色模式
+  - 背景色：白色/深灰色（根据系统主题自动切换）
+  - 支持手势拖动上下滑动
+  - 编辑模式按钮在展开状态下可见
+- **重播按钮**: ✅ **已恢复** - 点击可重新播放路径动画
+- **翻译**: 新增 `map.type.*` 翻译键（standard/satellite/hybrid）
+
 ## 🚧 下一步计划 (Next Steps)
 
 ### 高优先级
