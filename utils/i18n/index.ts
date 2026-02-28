@@ -133,6 +133,7 @@ const resources = {
         delete: "Delete",
         deleteTitle: "Delete Record?",
         deleteMessage: "This record will be permanently deleted. Are you sure?",
+        activities: "activities",
       },
       emptyState: {
         title: "No Running Records Yet",
@@ -480,6 +481,11 @@ const resources = {
           title: "Loading Map...",
           subtitle: "Getting your current location",
         },
+        type: {
+          standard: "Standard",
+          satellite: "Satellite",
+          hybrid: "Hybrid",
+        },
       },
       permission: {
         title: "Permission Required",
@@ -659,6 +665,7 @@ const resources = {
         delete: "删除",
         deleteTitle: "删除记录?",
         deleteMessage: "该记录将被永久删除，确定要继续吗？",
+        activities: "次活动",
       },
       emptyState: {
         title: "还没有跑步记录",
@@ -999,6 +1006,11 @@ const resources = {
         loading: {
           title: "正在加载地图...",
           subtitle: "正在获取您的当前位置",
+        },
+        type: {
+          standard: "标准",
+          satellite: "卫星",
+          hybrid: "混合",
         },
       },
       permission: {

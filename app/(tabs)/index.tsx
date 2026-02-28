@@ -17,7 +17,7 @@ import { TodayActivityCard } from "@/components/card/TodayActivityCard";
 import { useTranslation } from "react-i18next";
 import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
-import { secondFormatHours } from "@/utils/util";
+import { secondFormatHours, getPaceLabel } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { RecentActivityItem } from "@/components/RecentActivityItem";
@@ -53,9 +53,9 @@ export default function HomeScreen() {
         todayData.duration += run.time;
         totalSteps += run.steps || 0;
       });
-      const { distance, calories } = todayData;
-      // 计算燃效（卡路里/公里）：总卡路里 / 总距离
-      todayData.pace = distance > 0 ? calories / distance : 0;
+      const { distance, duration } = todayData;
+      // 计算平均配速（秒/公里）：总时长(秒) / 总距离(公里)
+      todayData.pace = distance > 0 ? duration / distance : 0;
       // 总步数
       todayData.steps = totalSteps;
       todayData.distance = Number(distance.toFixed(2));
@@ -195,10 +195,9 @@ export default function HomeScreen() {
               colorHex="#f97316"
             />
             <HomeDataCard
-              label={t("home.efficiency")}
-              value={today.pace > 0 ? today.pace.toFixed(1) : 0}
-              unit="kcal/km"
-              icon="flash-outline"
+              label={t("home.pace")}
+              value={getPaceLabel(today.pace)}
+              icon="speedometer-outline"
               colorHex="#10b981"
             />
             <HomeDataCard
