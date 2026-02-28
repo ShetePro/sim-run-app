@@ -69,6 +69,16 @@ export default function RunSummaryScreen() {
   const [isAnimating, setIsAnimating] = useState(false);
   const animationRef = useRef<number | null>(null);
 
+  // 使用 ref 避免依赖数组问题
+  const isAnimatingRef = useRef(false);
+  const visibleCountRef = useRef(0);
+  const routePointsRef = useRef(routePoints);
+
+  // 同步 ref 和 state
+  useEffect(() => {
+    routePointsRef.current = routePoints;
+  }, [routePoints]);
+
   // BottomSheet 引用和配置
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["25%", "50%", "95%"], []);
@@ -146,12 +156,13 @@ export default function RunSummaryScreen() {
 
   // 路径动画效果 - 使用 requestAnimationFrame
   useEffect(() => {
-    // 需要至少2个点才启动动画
+    // 需要至少2个点才启动动画，使用 ref 避免重复触发
     if (
       routePoints.length >= 2 &&
-      !isAnimating &&
-      visibleRoutePoints.length === 0
+      !isAnimatingRef.current &&
+      visibleCountRef.current === 0
     ) {
+      isAnimatingRef.current = true;
       setIsAnimating(true);
 
       const totalPoints = routePoints.length;
@@ -171,21 +182,21 @@ export default function RunSummaryScreen() {
           2,
           Math.floor(easedProgress * totalPoints),
         );
-        const newPoints = routePoints.slice(0, visibleCount);
 
         // 只有当点数量变化时才更新状态
-        setVisibleRoutePoints((prev) => {
-          if (prev.length !== newPoints.length) {
-            return newPoints;
-          }
-          return prev;
-        });
+        if (visibleCount !== visibleCountRef.current) {
+          visibleCountRef.current = visibleCount;
+          const newPoints = routePoints.slice(0, visibleCount);
+          setVisibleRoutePoints(newPoints);
+        }
 
         if (progress < 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
           // 动画完成，显示所有点
+          visibleCountRef.current = routePoints.length;
           setVisibleRoutePoints(routePoints);
+          isAnimatingRef.current = false;
           setIsAnimating(false);
         }
       };
@@ -198,53 +209,52 @@ export default function RunSummaryScreen() {
         }
       };
     }
-  }, [routePoints, isAnimating, visibleRoutePoints.length]);
+  }, [routePoints]); // 只依赖 routePoints，避免重复触发
 
   // 重播路径动画
   const replayAnimation = () => {
-    if (routePoints.length >= 2 && !isAnimating) {
-      // 重置状态
+    if (routePoints.length >= 2 && !isAnimatingRef.current) {
+      // 重置 ref 和 state
+      isAnimatingRef.current = true;
+      visibleCountRef.current = 0;
+      setIsAnimating(true);
       setVisibleRoutePoints([]);
-      setIsAnimating(false);
 
-      // 使用 setTimeout 确保状态更新后再启动动画
-      setTimeout(() => {
-        setIsAnimating(true);
+      const totalPoints = routePoints.length;
+      const duration = 2000;
+      const startTime = Date.now();
 
-        const totalPoints = routePoints.length;
-        const duration = 2000;
-        const startTime = Date.now();
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-        const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeOut(progress);
 
-        const animate = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easedProgress = easeOut(progress);
+        const visibleCount = Math.max(
+          2,
+          Math.floor(easedProgress * totalPoints),
+        );
 
-          const visibleCount = Math.max(
-            2,
-            Math.floor(easedProgress * totalPoints),
-          );
+        // 只有当点数量变化时才更新状态
+        if (visibleCount !== visibleCountRef.current) {
+          visibleCountRef.current = visibleCount;
           const newPoints = routePoints.slice(0, visibleCount);
+          setVisibleRoutePoints(newPoints);
+        }
 
-          setVisibleRoutePoints((prev) => {
-            if (prev.length !== newPoints.length) {
-              return newPoints;
-            }
-            return prev;
-          });
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          // 动画完成
+          visibleCountRef.current = routePoints.length;
+          setVisibleRoutePoints(routePoints);
+          isAnimatingRef.current = false;
+          setIsAnimating(false);
+        }
+      };
 
-          if (progress < 1) {
-            animationRef.current = requestAnimationFrame(animate);
-          } else {
-            setVisibleRoutePoints(routePoints);
-            setIsAnimating(false);
-          }
-        };
-
-        animationRef.current = requestAnimationFrame(animate);
-      }, 50);
+      animationRef.current = requestAnimationFrame(animate);
     }
   };
 
@@ -592,8 +602,11 @@ export default function RunSummaryScreen() {
             </Text>
           </View>
 
-          {/* 路线图例 */}
-          <View className="absolute bottom-16 right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm">
+          {/* 路线图例 - 位置根据 BottomSheet 最低高度(25%)计算 */}
+          <View
+            className="absolute right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm"
+            style={{ bottom: 230 }} // 刚好在 BottomSheet 25% (约 200-220px) 上方一点
+          >
             <View className="flex-row items-center">
               <View
                 style={{
@@ -670,11 +683,13 @@ export default function RunSummaryScreen() {
             )}
           </View>
 
-          {/* 重播动画按钮 */}
+          {/* 重播动画按钮 - 位置根据 BottomSheet 最低高度(25%)计算 */}
           <TouchableOpacity
             onPress={replayAnimation}
-            className="absolute bottom-16 left-3 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-sm"
+            className="absolute bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-sm"
             style={{
+              bottom: 230, // 刚好在 BottomSheet 25% (约 200-220px) 上方一点
+              left: 12,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.1,
@@ -689,7 +704,7 @@ export default function RunSummaryScreen() {
         {/* 可拖动的底部数据卡片 - BottomSheet */}
         <BottomSheet
           ref={bottomSheetRef}
-          index={0}
+          index={1}
           snapPoints={snapPoints}
           enablePanDownToClose={false}
           enableOverDrag={false}
