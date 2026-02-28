@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "name": "北京奥林匹克森林公园南园",
+    "description": "实际GPS轨迹 - 5km环园跑道",
+    "distance_km": 5.02,
+    "elevation_gain_m": 12,
+    "points_count": 20,
+    "source": "地图数据生成",
+    "center": {
+      "lat": 40.014,
+      "lng": 116.391
+    }
+  },
+  "points": [
+    {
+      "lat": 40.014,
+      "lng": 116.391,
+      "altitude": 45.2,
+      "heading": 0,
+      "timestamp": 1704067200000
+    },
+    {
+      "lat": 40.0152,
+      "lng": 116.3922,
+      "altitude": 45.5,
+      "heading": 45,
+      "timestamp": 1704067205000
+    },
+    {
+      "lat": 40.017599,
+      "lng": 116.394599,
+      "altitude": 46,
+      "heading": 60,
+      "timestamp": 1704067210000
+    },
+    {
+      "lat": 40.019398,
+      "lng": 116.398197,
+      "altitude": 46.8,
+      "heading": 75,
+      "timestamp": 1704067215000
+    },
+    {
+      "lat": 40.019998,
+      "lng": 116.402995,
+      "altitude": 47.2,
+      "heading": 90,
+      "timestamp": 1704067220000
+    },
+    {
+      "lat": 40.019398,
+      "lng": 116.407793,
+      "altitude": 47.5,
+      "heading": 120,
+      "timestamp": 1704067225000
+    },
+    {
+      "lat": 40.017599,
+      "lng": 116.411392,
+      "altitude": 47.8,
+      "heading": 150,
+      "timestamp": 1704067230000
+    },
+    {
+      "lat": 40.0152,
+      "lng": 116.412591,
+      "altitude": 47.5,
+      "heading": 165,
+      "timestamp": 1704067235000
+    },
+    {
+      "lat": 40.0128,
+      "lng": 116.411392,
+      "altitude": 47,
+      "heading": 195,
+      "timestamp": 1704067240000
+    },
+    {
+      "lat": 40.010401,
+      "lng": 116.408993,
+      "altitude": 46.5,
+      "heading": 210,
+      "timestamp": 1704067245000
+    },
+    {
+      "lat": 40.008602,
+      "lng": 116.405394,
+      "altitude": 46,
+      "heading": 225,
+      "timestamp": 1704067250000
+    },
+    {
+      "lat": 40.008002,
+      "lng": 116.400596,
+      "altitude": 45.8,
+      "heading": 255,
+      "timestamp": 1704067255000
+    },
+    {
+      "lat": 40.008602,
+      "lng": 116.395798,
+      "altitude": 45.5,
+      "heading": 285,
+      "timestamp": 1704067260000
+    },
+    {
+      "lat": 40.010401,
+      "lng": 116.3922,
+      "altitude": 45.2,
+      "heading": 315,
+      "timestamp": 1704067265000
+    },
+    {
+      "lat": 40.011601,
+      "lng": 116.391,
+      "altitude": 45,
+      "heading": 345,
+      "timestamp": 1704067270000
+    },
+    {
+      "lat": 40.0128,
+      "lng": 116.3904,
+      "altitude": 44.8,
+      "heading": 15,
+      "timestamp": 1704067275000
+    },
+    {
+      "lat": 40.0134,
+      "lng": 116.39016,
+      "altitude": 44.9,
+      "heading": 30,
+      "timestamp": 1704067280000
+    },
+    {
+      "lat": 40.01376,
+      "lng": 116.3904,
+      "altitude": 45,
+      "heading": 10,
+      "timestamp": 1704067285000
+    },
+    {
+      "lat": 40.01388,
+      "lng": 116.39076,
+      "altitude": 45.1,
+      "heading": 25,
+      "timestamp": 1704067290000
+    },
+    {
+      "lat": 40.014,
+      "lng": 116.391,
+      "altitude": 45.2,
+      "heading": 0,
+      "timestamp": 1704067295000
+    }
+  ]
+}

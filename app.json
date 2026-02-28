@@ -8,14 +8,17 @@
     "scheme": "sim-run-scheme",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "locales": {
+      "en": "./locales/en.json",
+      "zh": "./locales/zh.json"
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
         "UIBackgroundModes": ["location", "fetch", "processing"],
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your route even when the screen is off.",
-        "NSMotionUsageDescription": "我们需要您的运动数据来计算跑步步数",
         "BGTaskSchedulerPermittedIdentifiers": [
           "background-fetch-task",
           "SIM_RUN_RUNNING_TRACKER_TASK",
@@ -76,9 +79,6 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
-          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location.",
-          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
@@ -102,12 +102,7 @@
           "launchMode": "most-recent"
         }
       ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "允许 $(PRODUCT_NAME) 访问您的相册以选择头像图片。"
-        }
-      ],
+      "expo-image-picker",
       "@bacons/apple-targets"
     ],
     "experiments": {

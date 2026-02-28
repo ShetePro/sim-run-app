@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -13,9 +14,9 @@ import { useTranslation } from "react-i18next";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
-import { SwitchItem } from "@/components/ui/SwitchItem";
+
 import { DefaultAvatar } from "@/components/DefaultAvatar";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useSettingsStore, LANGUAGE_NAMES } from "@/store/settingsStore";
 
 export default function UserProfileScreen() {
@@ -25,15 +26,36 @@ export default function UserProfileScreen() {
   const { settings, updateSetting, isLoaded, initialize } = useSettingsStore();
 
   // 使用 state 存储用户信息，页面聚焦时刷新
-  const [userInfo, setUserInfo] = useState(
-    getStorageItem("userInfo", true) || {},
-  );
+  const [userInfo, setUserInfo] = useState<any>({});
 
   // 页面聚焦时刷新用户数据
   useFocusEffect(
     useCallback(() => {
-      const freshUserInfo = getStorageItem("userInfo", true) || {};
-      setUserInfo(freshUserInfo);
+      const loadUserInfo = async () => {
+        try {
+          const freshUserInfo = await getStorageItemAsync("userInfo");
+
+          // 空值检查
+          if (!freshUserInfo) {
+            setUserInfo({});
+            return;
+          }
+
+          // 如果已经是对象，直接使用
+          if (typeof freshUserInfo === "object") {
+            setUserInfo(freshUserInfo);
+            return;
+          }
+
+          // 尝试解析 JSON
+          const parsed = JSON.parse(freshUserInfo);
+          setUserInfo(parsed || {});
+        } catch (error) {
+          console.error("[User] 解析用户信息失败:", error);
+          setUserInfo({}); // 出错时使用默认值
+        }
+      };
+      loadUserInfo();
     }, []),
   );
 
@@ -46,21 +68,21 @@ export default function UserProfileScreen() {
     }, [isLoaded, initialize]),
   );
 
-  // 计算当前是否为深色模式（考虑 system 设置）
-  const isDarkMode =
-    settings.themeMode === "system"
-      ? colorScheme === "dark"
-      : settings.themeMode === "dark";
-
-  // 处理主题切换 - 只更新设置，不直接操作主题
-  const handleThemeToggle = () => {
-    const newTheme = isDarkMode ? "light" : "dark";
-    updateSetting("themeMode", newTheme);
+  // 获取当前主题显示值
+  const getThemeValue = () => {
+    const themeMode = settings.themeMode;
+    if (themeMode === "system") {
+      return t("theme.system");
+    } else if (themeMode === "dark") {
+      return t("theme.dark");
+    } else {
+      return t("theme.light");
+    }
   };
 
   // 处理注销
   const handleLogout = () => {
-    Alert.alert(t("setting.logout"), "确定要退出当前账号吗？", [
+    Alert.alert(t("setting.logout"), t("setting.logoutConfirm"), [
       { text: t("common.cancel") || "取消", style: "cancel" },
       {
         text: t("setting.logout"),
@@ -124,12 +146,12 @@ export default function UserProfileScreen() {
               onPress={() => router.push("/(views)/language")}
             />
             <Divider />
-            <SwitchItem
-              icon="moon"
-              title={t("setting.darkMode")}
-              value={isDarkMode}
-              onValueChange={handleThemeToggle}
-              colorScheme="purple"
+            <MenuItem
+              icon="color-palette-outline"
+              color="#8B5CF6"
+              label={t("setting.appearance")}
+              value={getThemeValue()}
+              onPress={() => router.push("/(views)/theme")}
             />
           </View>
         </View>

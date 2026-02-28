@@ -5,6 +5,7 @@ import {
   Image,
   Animated,
   Easing,
+  Alert,
 } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -20,8 +21,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePedometer } from "@/hooks/usePedometer";
 import { useRunStore } from "@/store/runStore";
 import { Ionicons } from "@expo/vector-icons";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 import { useVoiceAnnounce } from "@/hooks/useVoiceAnnounce";
+import { calculateCaloriesSimplified } from "@/utils/calories";
+import {
+  isRunningCacheValid,
+  getRunningCache,
+  clearRunningCache,
+  formatRunningCacheForDisplay,
+  type RunningCache,
+} from "@/utils/runningCache";
 
 // 长按结束按钮组件
 function LongPressFinishButton({
@@ -196,10 +205,13 @@ export default function RunIndexScreen() {
     pauseTracking,
     resumeTracking,
     getCurrentRunId,
+    restoreRunningSession,
     distance,
     heading,
     routePoints,
     isPaused,
+    locationError,
+    clearLocationError,
   } = useRun();
   const runStore = useRunStore();
   const router = useRouter();
@@ -209,10 +221,12 @@ export default function RunIndexScreen() {
     stopTimer,
     pauseTimer,
     resumeTimer,
+    setInitialSeconds,
     isPaused: isTimerPaused,
   } = useTick();
   const [showCountdown, setShowCountdown] = useState<boolean>(false);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
+  const [userWeight, setUserWeight] = useState<number>(70); // 默认体重70kg
   const { startPedometer, stopPedometer } = usePedometer();
   const {
     announceStart,
@@ -230,6 +244,14 @@ export default function RunIndexScreen() {
     }
   }, [seconds, distance]);
 
+  // 监听定位错误（静默处理，只在控制台记录）
+  useEffect(() => {
+    if (locationError) {
+      console.log("[Run] 定位错误:", locationError.type, locationError.message);
+      clearLocationError();
+    }
+  }, [locationError, clearLocationError]);
+
   // 周期性语音播报检查
   useEffect(() => {
     if (seconds > 0 && distance > 0) {
@@ -237,76 +259,94 @@ export default function RunIndexScreen() {
         distance,
         duration: seconds,
         pace: runStore.pace,
-        calories: calculateCalories(distance, seconds),
+        calories: calculateCaloriesSimplified(distance, seconds, userWeight),
       });
     }
   }, [seconds, distance, runStore.pace]);
 
-  // 获取用户体重（默认70kg）
-  const getUserWeight = () => {
-    const userInfo = getStorageItem("userInfo");
-    if (userInfo) {
-      const parsed = JSON.parse(userInfo);
-      const weight = parseFloat(parsed.weight);
-      if (!isNaN(weight) && weight > 0) {
-        return weight;
+  // 加载用户体重
+  useEffect(() => {
+    const loadUserWeight = async () => {
+      try {
+        const userInfo = await getStorageItemAsync("userInfo");
+
+        // 空值检查
+        if (!userInfo) return;
+
+        // 如果已经是对象，直接使用
+        if (typeof userInfo === "object") {
+          const weight = parseFloat(userInfo.weight);
+          if (!isNaN(weight) && weight > 0) {
+            setUserWeight(weight);
+          }
+          return;
+        }
+
+        // 尝试解析 JSON
+        const parsed = JSON.parse(userInfo);
+        const weight = parseFloat(parsed.weight);
+        if (!isNaN(weight) && weight > 0) {
+          setUserWeight(weight);
+        }
+      } catch (error) {
+        console.error("[Run] 解析用户体重失败:", error);
       }
-    }
-    return 70; // 默认体重70kg
-  };
+    };
+    loadUserWeight();
+  }, []);
 
-  // 计算卡路里消耗（基于距离和时间增量）
-  const calculateCalories = (currentDistance: number, currentTime: number) => {
-    const weight = getUserWeight();
-    const lastCalc = lastCalorieCalcRef.current;
-
-    // 计算增量
-    const distanceDelta = currentDistance - lastCalc.distance; // 米
-    const timeDelta = currentTime - lastCalc.time; // 秒
-
-    // 距离增量太小，认为没运动（原地不动）
-    if (distanceDelta < 10 || timeDelta <= 0) {
-      return lastCalc.calories;
-    }
-
-    // 计算实时配速（秒/公里）
-    const pacePerKm = timeDelta / (distanceDelta / 1000);
-
-    // 根据配速确定 MET 值
-    let met = 8; // 默认值（慢跑）
-    if (pacePerKm > 720)
-      met = 4; // >12:00/km 慢走
-    else if (pacePerKm > 540)
-      met = 6; // 9:00-12:00/km 快走
-    else if (pacePerKm > 420)
-      met = 8; // 7:00-9:00/km 慢跑
-    else if (pacePerKm > 360)
-      met = 10; // 6:00-7:00/km 中速跑
-    else met = 12; // <6:00/km 快跑
-
-    // 计算增量卡路里
-    const hours = timeDelta / 3600;
-    const calorieIncrement = Math.floor(met * weight * hours);
-
-    // 更新累计值
-    const newTotalCalories = lastCalc.calories + calorieIncrement;
-    lastCalorieCalcRef.current = {
-      distance: currentDistance,
-      time: currentTime,
-      calories: newTotalCalories,
+  // 检测是否有未完成的跑步缓存
+  useEffect(() => {
+    const checkRunningCache = async () => {
+      const hasValidCache = await isRunningCacheValid();
+      if (hasValidCache) {
+        const cache = await getRunningCache();
+        if (cache) {
+          const { distance, duration } = formatRunningCacheForDisplay(cache);
+          Alert.alert(
+            t("run.continueTitle") || "继续跑步？",
+            `${t("run.continueMessage") || "检测到未完成的跑步："}\n${t("activity.distance") || "距离"}：${distance}\n${t("common.time") || "时间"}：${duration}`,
+            [
+              {
+                text: t("run.startNew") || "开始新跑步",
+                style: "cancel",
+                onPress: async () => {
+                  await clearRunningCache();
+                },
+              },
+              {
+                text: t("run.continue") || "继续跑步",
+                onPress: async () => {
+                  if (cache) {
+                    // 恢复跑步会话
+                    await restoreRunningSession(cache);
+                    // 标记已开始（跳过倒计时）
+                    setHasStarted(true);
+                    // 设置初始时间（恢复缓存的时间）
+                    setInitialSeconds(cache.duration);
+                    // 恢复配速（基于缓存数据重新计算）
+                    if (cache.distance > 0) {
+                      const pace = cache.duration / (cache.distance / 1000);
+                      runStore.setPace(pace);
+                    }
+                    // 如果不是暂停状态，开始计步
+                    if (!cache.isPaused) {
+                      startPedometer();
+                    }
+                    console.log("[Run] 用户选择继续跑步，数据已恢复", cache);
+                  }
+                },
+              },
+            ],
+          );
+        }
+      }
     };
 
-    return newTotalCalories;
-  };
+    checkRunningCache();
+  }, []);
 
   const isFinishingRef = useRef(false);
-
-  // 记录上次卡路里计算状态（用于增量计算）- 必须在 calculateCalories 之前定义
-  const lastCalorieCalcRef = useRef({
-    distance: 0,
-    time: 0,
-    calories: 0,
-  });
 
   const detailList = useMemo(() => {
     const data = [
@@ -321,7 +361,7 @@ export default function RunIndexScreen() {
       },
       {
         label: t("activity.energy"),
-        value: calculateCalories(distance, seconds),
+        value: calculateCaloriesSimplified(distance, seconds, userWeight),
         unit: t("unit.kcal"),
       },
     ];
@@ -351,9 +391,9 @@ export default function RunIndexScreen() {
     isFinishingRef.current = true;
 
     stopTimer();
-    stopPedometer();
+    // 注意：stopPedometer() 移到 stopTracking 之后，避免步数被重置为0
 
-    const calories = calculateCalories(distance, seconds);
+    const calories = calculateCaloriesSimplified(distance, seconds, userWeight);
     const runData = {
       time: seconds,
       pace: runStore.pace,
@@ -373,6 +413,9 @@ export default function RunIndexScreen() {
 
     // 先保存到数据库，等待完成后再跳转
     await stopTracking(runData);
+
+    // 保存完成后再停止计步器并重置步数
+    stopPedometer();
 
     // 只传递 runId，详情页面从数据库查询
     router.push({
@@ -396,8 +439,6 @@ export default function RunIndexScreen() {
     setShowCountdown(false);
     setHasStarted(true);
     resetAnnounceState();
-    // 重置卡路里计算状态
-    lastCalorieCalcRef.current = { distance: 0, time: 0, calories: 0 };
     startTracking();
     startPedometer();
     startTimer();
@@ -482,12 +523,22 @@ export default function RunIndexScreen() {
         >
           {detailList}
         </View>
-        <Map
-          location={location}
-          heading={heading}
-          path={routePoints}
-          style={{ flex: 1, borderRadius: 18, marginHorizontal: 10 }}
-        />
+        {/* 地图容器 - iOS 最佳圆角 20px 裁切 */}
+        <View
+          style={{
+            flex: 1,
+            marginHorizontal: 10,
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          <Map
+            location={location}
+            heading={heading}
+            path={routePoints}
+            style={{ flex: 1 }}
+          />
+        </View>
         <View className={"flex flex-row gap-4 mt-4"}>
           {!showCountdown && !hasStarted ? (
             <>

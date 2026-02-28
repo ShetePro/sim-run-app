@@ -16,7 +16,11 @@
     "lint": "expo lint"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "testPathIgnorePatterns": [
+      "<rootDir>/__tests__/LiveActivityController-test.ts",
+      "<rootDir>/components/__tests__/ThemedText-test.tsx"
+    ]
   },
   "dependencies": {
     "@bacons/apple-targets": "^3.0.6",

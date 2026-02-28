@@ -8,7 +8,7 @@ export function useRunDB() {
   // 添加跑步记录 + 轨迹
   const addRun = async (run: RunRecord) => {
     const { lastInsertRowId } = await db.runAsync(
-      `INSERT INTO runs (startTime, endTime, distance, time, pace, energy) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO runs (startTime, endTime, distance, time, pace, energy, steps, elevationGain) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         run.startTime || null,
         run.endTime || null,
@@ -16,19 +16,23 @@ export function useRunDB() {
         run.time,
         run.pace,
         run.energy,
+        run.steps || 0,
+        run.elevationGain || 0,
       ],
     );
     await updateRunTrackPoints(lastInsertRowId, run.points || []);
     return lastInsertRowId;
   };
 
-  const updateRun = async (run: Partial<RunRecord> & { title?: string; note?: string }) => {
+  const updateRun = async (
+    run: Partial<RunRecord> & { title?: string; note?: string },
+  ) => {
     if (!run.id) throw new Error("Run ID is required for update.");
-    
+
     // 构建动态更新语句
     const updates: string[] = [];
     const values: any[] = [];
-    
+
     if (run.endTime !== undefined) {
       updates.push("endTime = ?");
       values.push(run.endTime);
@@ -61,7 +65,15 @@ export function useRunDB() {
       updates.push("note = ?");
       values.push(run.note);
     }
-    
+    if (run.steps !== undefined) {
+      updates.push("steps = ?");
+      values.push(run.steps);
+    }
+    if (run.elevationGain !== undefined) {
+      updates.push("elevationGain = ?");
+      values.push(run.elevationGain);
+    }
+
     if (updates.length > 0) {
       values.push(run.id);
       await db.runAsync(
@@ -69,9 +81,16 @@ export function useRunDB() {
         values,
       );
     }
-    
+
+    // 处理轨迹点更新
     if (run.points && run.points.length > 0) {
-      await updateRunTrackPoints(run.id, run.points);
+      if (run.points.length === 1) {
+        // 只新增1个点：使用增量插入（性能优化）
+        await addTrackPoint(run.id, run.points[0]);
+      } else {
+        // 多个点：全量更新（用于初始加载或恢复）
+        await updateRunTrackPoints(run.id, run.points);
+      }
     }
   };
 
@@ -97,6 +116,23 @@ export function useRunDB() {
     await db.execAsync("COMMIT");
   };
 
+  // 添加单个轨迹点（用于实时更新，避免全量重写）
+  const addTrackPoint = async (runId: number, point: TrackPoint) => {
+    await db.runAsync(
+      `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp, steps)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        runId,
+        point.latitude,
+        point.longitude,
+        point.altitude ?? null,
+        point.heading,
+        point.timestamp,
+        point.steps ?? null,
+      ],
+    );
+  };
+
   const updateRunTrackPoints = async (runId: number, points: TrackPoint[]) => {
     if (points?.length) {
       // 用事务批量写入，提高性能
@@ -104,9 +140,17 @@ export function useRunDB() {
       try {
         for (const p of points) {
           await db.runAsync(
-            `INSERT INTO track_points (run_id, lat, lng, heading, timestamp)
-             VALUES (?, ?, ?, ?, ?)`,
-            [runId, p.lat, p.lng, p.heading, p.timestamp],
+            `INSERT INTO track_points (run_id, latitude, longitude, altitude, heading, timestamp, steps)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              runId,
+              p.latitude,
+              p.longitude,
+              p.altitude ?? null,
+              p.heading,
+              p.timestamp,
+              p.steps ?? null,
+            ],
           );
         }
         await db.execAsync("COMMIT");

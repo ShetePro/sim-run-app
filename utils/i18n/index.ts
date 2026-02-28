@@ -40,6 +40,8 @@ const resources = {
         success: "Success",
         enabled: "Enabled",
         disabled: "Disabled",
+        confirm: "Confirm",
+        userCancelled: "User cancelled",
         greeting: {
           morning: "Good morning",
           afternoon: "Good afternoon",
@@ -88,6 +90,7 @@ const resources = {
         login: "Sign in",
         register: "Sign up",
         confirmPasswordError: "The two passwords do not match",
+        welcomeBack: "Welcome back!",
       },
       home: {
         todayActivity: "Today's Activity",
@@ -96,6 +99,9 @@ const resources = {
         calories: "Calories",
         pace: "Average pace",
         stepFrequency: "Step frequency",
+        efficiency: "Efficiency",
+        totalSteps: "Total Steps",
+        steps: "steps",
         totalDistance: "Total Distance",
         totalHours: "Total Hours",
         totalRuns: "Total Runs",
@@ -162,6 +168,12 @@ const resources = {
         exportTitle: "Export Run Data",
         exportMessage: "Choose export format",
         exportError: "Failed to export run data, please try again",
+        loadFailed: "Failed to load run data",
+        saveFailed: "Failed to save run record",
+        continueTitle: "Continue Running?",
+        continueMessage: "Unfinished run detected:",
+        startNew: "Start New Run",
+        continue: "Continue",
       },
       onboarding: {
         skip: "Skip",
@@ -227,7 +239,7 @@ const resources = {
       },
       setting: {
         language: "Language",
-        darkMode: "DarkMode",
+        appearance: "Appearance",
         editProfile: "Edit Profile",
         editPlan: "Running Plan",
         cloudSync: "Cloud Sync",
@@ -237,9 +249,17 @@ const resources = {
         helps: "Help and Feedback",
         about: "About Us",
         logout: "Log out",
+        logoutConfirm: "Are you sure you want to log out?",
         preferences: "Preferences",
         tools: "Running Tools",
         other: "Others",
+      },
+      theme: {
+        title: "Appearance",
+        system: "System",
+        dark: "Dark",
+        light: "Light",
+        description: "Choose your preferred appearance",
       },
       cloudSync: {
         title: "Cloud Sync",
@@ -278,6 +298,7 @@ const resources = {
         import: "Select File",
         importSuccess: "Import Successful",
         importFailed: "Import Failed",
+        saveToDbFailed: "Failed to save data to database",
         importFromFile: "Import from File",
         importSupportedFormats: "Supports JSON, GPX formats",
       },
@@ -332,6 +353,10 @@ const resources = {
         other: "Other",
         reset: "Reset to Default",
         tips: "These settings will affect the map display during your run",
+        loading: {
+          title: "Getting Location...",
+          subtitle: "Please make sure location permission is enabled",
+        },
       },
       about: {
         title: "About Us",
@@ -450,6 +475,43 @@ const resources = {
         countdownOne: "1",
         countdownGo: "Go!",
       },
+      map: {
+        loading: {
+          title: "Loading Map...",
+          subtitle: "Getting your current location",
+        },
+      },
+      permission: {
+        title: "Permission Required",
+        locationTitle: "Background Location Required",
+        locationMessage:
+          "To ensure continuous tracking when the screen is locked, please manually grant 'Always' location permission in Settings.",
+        cancel: "Cancel",
+        goToSettings: "Go to Settings",
+        photosRequired:
+          "Photo library access is required to select a profile picture",
+      },
+      profile: {
+        editProfile: "Edit Profile",
+        saveSuccess: "Save Successful",
+        profileUpdated: "Profile updated successfully",
+        tapToChangeAvatar: "Tap to change avatar",
+        basicInfo: "Basic Info",
+        nickname: "Nickname",
+        nicknamePlaceholder: "Enter nickname",
+        signature: "Signature",
+        signaturePlaceholder: "Introduce yourself in one sentence",
+        bodyData: "Body Data",
+        gender: "Gender",
+        male: "Male",
+        female: "Female",
+        height: "Height",
+        weight: "Weight",
+        age: "Age",
+        ageUnit: "years",
+        bodyDataTip:
+          "Accurate body data helps calculate calorie consumption more precisely.",
+      },
       voiceSettings: {
         title: "Voice Coach",
         enableVoice: "Enable Voice Coach",
@@ -505,6 +567,8 @@ const resources = {
         success: "成功",
         enabled: "已开启",
         disabled: "未开启",
+        confirm: "确定",
+        userCancelled: "用户取消了选择",
         greeting: {
           morning: "早上好",
           afternoon: "下午好",
@@ -552,6 +616,7 @@ const resources = {
         login: "登陆",
         register: "注册",
         confirmPasswordError: "两次密码不一致",
+        welcomeBack: "欢迎回来!",
       },
       home: {
         todayActivity: "今日活动",
@@ -560,6 +625,9 @@ const resources = {
         calories: "运动消耗",
         pace: "平均配速",
         stepFrequency: "平均步频",
+        efficiency: "燃效",
+        totalSteps: "总步数",
+        steps: "步",
         totalDistance: "总公里",
         totalHours: "总时长",
         totalRuns: "总次数",
@@ -626,6 +694,12 @@ const resources = {
         exportTitle: "导出跑步数据",
         exportMessage: "选择导出格式",
         exportError: "导出跑步数据失败，请重试",
+        loadFailed: "加载跑步数据失败",
+        saveFailed: "保存跑步记录失败",
+        continueTitle: "继续跑步？",
+        continueMessage: "检测到未完成的跑步：",
+        startNew: "开始新跑步",
+        continue: "继续跑步",
       },
       onboarding: {
         skip: "跳过",
@@ -689,7 +763,7 @@ const resources = {
       },
       setting: {
         language: "语言/Language",
-        darkMode: "深色模式",
+        appearance: "外观",
         editPlan: "跑步计划",
         editProfile: "编辑资料",
         map: "地图设置",
@@ -699,9 +773,17 @@ const resources = {
         helps: "帮助与反馈",
         about: "关于我们",
         logout: "退出登录",
+        logoutConfirm: "确定要退出当前账号吗？",
         preferences: "偏好设置",
         tools: "跑步工具",
         other: "其他",
+      },
+      theme: {
+        title: "外观",
+        system: "跟随系统",
+        dark: "深色模式",
+        light: "浅色模式",
+        description: "选择您偏好的外观样式",
       },
       cloudSync: {
         title: "云端同步",
@@ -739,6 +821,7 @@ const resources = {
         import: "选择文件",
         importSuccess: "导入成功",
         importFailed: "导入失败",
+        saveToDbFailed: "保存数据到数据库失败",
         importFromFile: "从文件导入",
         importSupportedFormats: "支持 JSON、GPX 格式",
       },
@@ -793,6 +876,10 @@ const resources = {
         other: "其他",
         reset: "恢复默认设置",
         tips: "这些设置将影响跑步时的地图显示效果",
+        loading: {
+          title: "正在定位...",
+          subtitle: "请确保已开启定位权限",
+        },
       },
       about: {
         title: "关于我们",
@@ -908,6 +995,41 @@ const resources = {
         countdownOne: "1",
         countdownGo: "出发！",
       },
+      map: {
+        loading: {
+          title: "正在加载地图...",
+          subtitle: "正在获取您的当前位置",
+        },
+      },
+      permission: {
+        title: "需要权限",
+        locationTitle: "需要后台位置权限",
+        locationMessage:
+          "为了应用的功能正常运行，请手动在设置中授予'始终允许'位置权限。",
+        cancel: "取消",
+        goToSettings: "前往设置",
+        photosRequired: "需要访问相册权限才能选择头像",
+      },
+      profile: {
+        editProfile: "编辑资料",
+        saveSuccess: "保存成功",
+        profileUpdated: "个人资料已更新",
+        tapToChangeAvatar: "点击更换头像",
+        basicInfo: "基础信息",
+        nickname: "昵称",
+        nicknamePlaceholder: "请输入昵称",
+        signature: "个性签名",
+        signaturePlaceholder: "一句话介绍自己",
+        bodyData: "身体数据",
+        gender: "性别",
+        male: "男",
+        female: "女",
+        height: "身高",
+        weight: "体重",
+        age: "年龄",
+        ageUnit: "岁",
+        bodyDataTip: "准确的身体数据有助于更精准地计算卡路里消耗。",
+      },
       voiceSettings: {
         title: "语音播报",
         enableVoice: "开启语音播报",
@@ -965,17 +1087,34 @@ const getLanguageFromSettings = async (): Promise<string | null> => {
 
 // 初始化 i18n
 const initI18n = async () => {
+  console.log("[i18n] ========== 初始化开始 ==========");
+
+  // 打印系统语言信息
+  const locales = Localization.getLocales();
+  console.log("[i18n] System locales:", JSON.stringify(locales));
+  console.log("[i18n] System languageCode:", locales[0]?.languageCode);
+  console.log("[i18n] System regionCode:", locales[0]?.regionCode);
+
   // 首先尝试从新的 settings 存储读取
   let savedLang = await getLanguageFromSettings();
+  console.log("[i18n] Language from settings storage:", savedLang);
 
   // 如果没找到，尝试旧 key（兼容旧版本）
   if (!savedLang) {
     savedLang = (await getStorageItemAsync("app-language")) as string | null;
+    console.log("[i18n] Language from legacy storage:", savedLang);
   }
+
+  const defaultLang = getDefaultLanguage();
+  console.log("[i18n] getDefaultLanguage() returned:", defaultLang);
+
+  const finalLang = savedLang || defaultLang;
+  console.log("[i18n] Final language selected:", finalLang);
+  console.log("[i18n] ========== 初始化完成 ==========");
 
   i18n.use(initReactI18next).init({
     resources,
-    lng: savedLang || getDefaultLanguage(),
+    lng: finalLang,
     interpolation: {
       escapeValue: false, // react already safes from xss
     },

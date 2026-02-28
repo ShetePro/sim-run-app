@@ -1,0 +1,23 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "SimRun",
+    "CFBundleName": "SimRun",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "SimRun needs background location access to track your running route, calculate distance, and record your pace even when the screen is locked.",
+    "NSLocationWhenInUseUsageDescription": "SimRun needs access to your location to show your current position on the map and record your starting point.",
+    "NSMotionUsageDescription": "SimRun needs access to your motion data to count your running steps.",
+    "NSPhotoLibraryUsageDescription": "SimRun needs access to your photo library to select a profile picture.",
+    "NSCameraUsageDescription": "SimRun needs access to your camera to take photos.",
+    "NSMicrophoneUsageDescription": "SimRun needs access to your microphone for audio features.",
+    "NSFaceIDUsageDescription": "SimRun uses Face ID to secure your data."
+  },
+  "android": {
+    "app_name": "SimRun",
+    "permission_android_permission_ACCESS_FINE_LOCATION": "SimRun needs access to your location to track your running route.",
+    "permission_android_permission_ACCESS_COARSE_LOCATION": "SimRun needs access to your location to track your running route.",
+    "permission_android_permission_ACCESS_BACKGROUND_LOCATION": "SimRun needs background location access to track your route when the screen is locked.",
+    "permission_android_permission_ACTIVITY_RECOGNITION": "SimRun needs access to your motion data to count your running steps.",
+    "permission_android_permission_CAMERA": "SimRun needs access to your camera to take photos.",
+    "permission_android_permission_READ_EXTERNAL_STORAGE": "SimRun needs access to your photo library to select a profile picture.",
+    "permission_android_permission_WRITE_EXTERNAL_STORAGE": "SimRun needs access to save photos to your device."
+  }
+}

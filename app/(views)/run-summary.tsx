@@ -11,7 +11,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState, useCallback, useEffect, useRef, ReactElement } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  ReactElement,
+} from "react";
 import MapView, { Polyline, Marker, Circle } from "react-native-maps";
 import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
@@ -26,6 +32,10 @@ import {
   ExportFormats,
   ExportFormat,
 } from "@/utils/exportRun";
+import {
+  trackPointsToCoordinates,
+  filterValidCoordinates,
+} from "@/utils/map/coordinates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -38,7 +48,9 @@ export default function RunSummaryScreen() {
   const [note, setNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [routePoints, setRoutePoints] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [routePoints, setRoutePoints] = useState<
+    { latitude: number; longitude: number }[]
+  >([]);
   const [runData, setRunData] = useState<RunRecord | null>(null);
   const [mapRegion, setMapRegion] = useState({
     latitude: 30.9042,
@@ -47,6 +59,7 @@ export default function RunSummaryScreen() {
     longitudeDelta: 0.005,
   });
   const runStore = useRunStore();
+  const mapRef = useRef<MapView>(null);
 
   const runId = Number(params.runId || 0);
   const isViewMode = params.mode === "view"; // 查看模式（历史记录）
@@ -69,24 +82,42 @@ export default function RunSummaryScreen() {
         if (run.note) setNote(run.note);
       }
 
-      // 获取轨迹点
+      // 获取轨迹点并过滤无效坐标
       const points = await getTrackPoints(runId);
-      const mappedPoints = points.map(p => ({ latitude: p.lat, longitude: p.lng }));
+      const mappedPoints = trackPointsToCoordinates(points);
       setRoutePoints(mappedPoints);
 
       console.log(points);
-      // 设置地图中心为起点
+      // 设置地图适配所有坐标点
       if (mappedPoints.length > 0) {
-        setMapRegion({
-          latitude: mappedPoints[0].latitude,
-          longitude: mappedPoints[0].longitude,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
-        });
+        // 延迟一点执行 fitToCoordinates，确保 MapView 已经渲染
+        setTimeout(() => {
+          if (mapRef.current && mappedPoints.length > 0) {
+            // 过滤有效坐标
+            const validPoints = filterValidCoordinates(mappedPoints);
+            if (validPoints.length > 0) {
+              if (validPoints.length === 1) {
+                // 只有一个点，设置固定缩放
+                setMapRegion({
+                  latitude: validPoints[0].latitude,
+                  longitude: validPoints[0].longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                });
+              } else {
+                // 多个点，自动适配
+                mapRef.current.fitToCoordinates(validPoints, {
+                  edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+                  animated: true,
+                });
+              }
+            }
+          }
+        }, 100);
       }
     } catch (error) {
       console.error("加载跑步数据失败:", error);
-      Alert.alert(t("common.error"), "加载跑步数据失败");
+      Alert.alert(t("common.error"), t("run.loadFailed"));
       hasLoaded.current = false;
     } finally {
       setIsLoading(false);
@@ -128,7 +159,7 @@ export default function RunSummaryScreen() {
       router.replace("/(tabs)");
     } catch (error) {
       console.error("保存失败:", error);
-      Alert.alert(t("common.error"), "保存跑步记录失败");
+      Alert.alert(t("common.error"), t("run.saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -136,30 +167,26 @@ export default function RunSummaryScreen() {
 
   // 放弃跑步记录
   const handleDiscard = () => {
-    Alert.alert(
-      t("run.discardTitle"),
-      t("run.discardMessage"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("run.discard"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteRun(runId);
-              runStore.reset();
-              router.replace("/(tabs)");
-            } catch (error) {
-              Toast.show({
-                type: "error",
-                text1: "删除失败",
-                visibilityTime: 2000,
-              });
-            }
-          },
+    Alert.alert(t("run.discardTitle"), t("run.discardMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("run.discard"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteRun(runId);
+            runStore.reset();
+            router.replace("/(tabs)");
+          } catch (error) {
+            Toast.show({
+              type: "error",
+              text1: "删除失败",
+              visibilityTime: 2000,
+            });
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // 返回上一页
@@ -181,24 +208,23 @@ export default function RunSummaryScreen() {
     Alert.alert(
       t("run.exportTitle") || "导出跑步数据",
       t("run.exportMessage") || "选择导出格式",
-      options
+      options,
     );
   };
 
   // 执行导出
   const doExport = async (format: ExportFormat) => {
     try {
-      // 获取轨迹点
-      let points: TrackPoint[] = [];
-      if (routePoints.length > 0) {
-        points = routePoints.map((p) => ({
-          lat: p.latitude,
-          lng: p.longitude,
-          heading: 0,
-          timestamp: 0,
-        }));
-      } else {
-        points = await getTrackPoints(runId);
+      // 获取轨迹点 - 总是从数据库获取完整的 TrackPoint 数据
+      // 避免使用被简化的 routePoints（缺少 heading、timestamp、altitude）
+      const points = await getTrackPoints(runId);
+
+      if (points.length === 0) {
+        Alert.alert(
+          t("common.warning") || "无轨迹数据",
+          t("run.noTrackPoints") || "没有找到该跑步记录的轨迹数据",
+        );
+        return;
       }
 
       switch (format) {
@@ -216,14 +242,14 @@ export default function RunSummaryScreen() {
       console.error("导出失败:", error);
       Alert.alert(
         t("common.error") || "导出失败",
-        t("run.exportError") || "导出跑步数据失败，请重试"
+        t("run.exportError") || "导出跑步数据失败，请重试",
       );
     }
   };
 
   // 生成渐变色路线段
   const generateGradientRoute = (points: typeof routePoints) => {
-    if (points.length <= 1) return null;
+    if (!points || points.length <= 1) return null;
 
     const segments: ReactElement[] = [];
     const totalPoints = points.length;
@@ -233,6 +259,10 @@ export default function RunSummaryScreen() {
     for (let i = 0; i < totalPoints - 1; i += step) {
       const progress = Math.min(i / (totalPoints - 1), 1);
       const nextIndex = Math.min(i + step, totalPoints - 1);
+
+      // 获取切片并验证坐标有效性
+      const slice = points.slice(i, nextIndex + 1);
+      if (slice.length < 2) continue;
 
       // 渐变色：绿色(开始) -> 黄色(中间) -> 红色(结束)
       let color: string;
@@ -255,12 +285,12 @@ export default function RunSummaryScreen() {
       segments.push(
         <Polyline
           key={`segment-${i}`}
-          coordinates={points.slice(i, nextIndex + 1)}
+          coordinates={slice}
           strokeColor={color}
           strokeWidth={5}
           lineCap="round"
           lineJoin="round"
-        />
+        />,
       );
     }
     return segments;
@@ -270,7 +300,9 @@ export default function RunSummaryScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center items-center">
-        <Text className="text-slate-500 dark:text-slate-400">{t("common.loading")}...</Text>
+        <Text className="text-slate-500 dark:text-slate-400">
+          {t("common.loading")}...
+        </Text>
       </SafeAreaView>
     );
   }
@@ -279,7 +311,9 @@ export default function RunSummaryScreen() {
   if (!runData) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center items-center">
-        <Text className="text-slate-500 dark:text-slate-400">{t("run.notFound")}</Text>
+        <Text className="text-slate-500 dark:text-slate-400">
+          {t("run.notFound")}
+        </Text>
         <TouchableOpacity onPress={() => router.back()} className="mt-4">
           <Text className="text-indigo-600">{t("common.back")}</Text>
         </TouchableOpacity>
@@ -305,7 +339,9 @@ export default function RunSummaryScreen() {
       <MaterialCommunityIcons name={icon} size={24} color={color} />
       <Text className="text-2xl font-bold text-slate-800 dark:text-white mt-2 whitespace-nowrap">
         {value}
-        {unit && <Text className="text-sm font-normal text-slate-400"> {unit}</Text>}
+        {unit && (
+          <Text className="text-sm font-normal text-slate-400"> {unit}</Text>
+        )}
       </Text>
       <Text className="text-xs text-slate-400 mt-1">{label}</Text>
     </View>
@@ -339,8 +375,14 @@ export default function RunSummaryScreen() {
         <Text className="text-lg font-bold text-slate-800 dark:text-white">
           {t("run.summary")}
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={isSaving} className="p-2">
-          <Text className={`font-medium ${isSaving ? "text-slate-400" : "text-indigo-600"}`}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isSaving}
+          className="p-2"
+        >
+          <Text
+            className={`font-medium ${isSaving ? "text-slate-400" : "text-indigo-600"}`}
+          >
             {isSaving ? t("common.saving") : t("common.save")}
           </Text>
         </TouchableOpacity>
@@ -349,7 +391,10 @@ export default function RunSummaryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900" edges={["top"]}>
+    <SafeAreaView
+      className="flex-1 bg-gray-50 dark:bg-slate-900"
+      edges={["top"]}
+    >
       {/* 顶部导航 */}
       {renderHeader()}
 
@@ -357,6 +402,7 @@ export default function RunSummaryScreen() {
         {/* 地图区域 */}
         <View className="h-72 w-full relative">
           <MapView
+            ref={mapRef}
             style={{ width: SCREEN_WIDTH, height: 288 }}
             region={mapRegion}
             scrollEnabled={true}
@@ -371,36 +417,43 @@ export default function RunSummaryScreen() {
 
                 {/* 起点标记 */}
                 <Marker coordinate={routePoints[0]} anchor={{ x: 0.5, y: 0.5 }}>
-                  <View style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: '#22c55e',
-                    borderWidth: 3,
-                    borderColor: 'white',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 2,
-                    elevation: 4
-                  }} />
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#22c55e",
+                      borderWidth: 3,
+                      borderColor: "white",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 2,
+                      elevation: 4,
+                    }}
+                  />
                 </Marker>
 
                 {/* 终点标记 */}
-                <Marker coordinate={routePoints[routePoints.length - 1]} anchor={{ x: 0.5, y: 0.5 }}>
-                  <View style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: '#ef4444',
-                    borderWidth: 3,
-                    borderColor: 'white',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 2,
-                    elevation: 4
-                  }} />
+                <Marker
+                  coordinate={routePoints[routePoints.length - 1]}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#ef4444",
+                      borderWidth: 3,
+                      borderColor: "white",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 2,
+                      elevation: 4,
+                    }}
+                  />
                 </Marker>
 
                 {/* 起点和终点的脉冲圆圈效果 */}
@@ -423,18 +476,45 @@ export default function RunSummaryScreen() {
           {/* 日期标签 */}
           <View className="absolute top-3 left-3 bg-black/50 px-3 py-1 rounded-full">
             <Text className="text-white text-xs">
-              {dayjs(startTime).format("YYYY-MM-DD HH:mm")} - {dayjs(endTime).format("HH:mm")}
+              {dayjs(startTime).format("YYYY-MM-DD HH:mm")} -{" "}
+              {dayjs(endTime).format("HH:mm")}
             </Text>
           </View>
 
           {/* 路线图例 */}
           <View className="absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm">
             <View className="flex-row items-center">
-              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#22c55e' }} />
-              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1 mr-3">起</Text>
-              <View style={{ width: 30, height: 4, borderRadius: 2, backgroundColor: '#facc15' }} />
-              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444', marginLeft: 6 }} />
-              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1">终</Text>
+              <View
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: "#22c55e",
+                }}
+              />
+              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1 mr-3">
+                起
+              </Text>
+              <View
+                style={{
+                  width: 30,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: "#facc15",
+                }}
+              />
+              <View
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: "#ef4444",
+                  marginLeft: 6,
+                }}
+              />
+              <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1">
+                终
+              </Text>
             </View>
           </View>
         </View>
@@ -442,12 +522,16 @@ export default function RunSummaryScreen() {
         {/* 主要数据 */}
         <View className="px-4 mt-4">
           <View className="bg-indigo-600 rounded-3xl p-6 shadow-lg">
-            <Text className="text-indigo-100 text-sm text-center mb-2">{t("activity.distance")}</Text>
+            <Text className="text-indigo-100 text-sm text-center mb-2">
+              {t("activity.distance")}
+            </Text>
             <View className="flex-row items-baseline justify-center">
               <Text className="text-6xl font-bold text-white">
                 {(distance / 1000).toFixed(2)}
               </Text>
-              <Text className="text-xl text-indigo-200 ml-2">{t("unit.km")}</Text>
+              <Text className="text-xl text-indigo-200 ml-2">
+                {t("unit.km")}
+              </Text>
             </View>
           </View>
         </View>
@@ -543,10 +627,7 @@ export default function RunSummaryScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleDiscard}
-              className="py-4 mt-3"
-            >
+            <TouchableOpacity onPress={handleDiscard} className="py-4 mt-3">
               <Text className="text-red-500 text-center font-medium">
                 {t("run.discardRecord")}
               </Text>

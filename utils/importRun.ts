@@ -49,8 +49,8 @@ function parseJSONImport(content: string): {
     };
 
     const trackPoints: TrackPoint[] = data.trackPoints.map((point: any) => ({
-      lat: point.latitude || point.lat,
-      lng: point.longitude || point.lon || point.lng,
+      latitude: point.latitude || point.lat,
+      longitude: point.longitude || point.lon || point.lng,
       heading: point.heading || 0,
       timestamp: point.timestamp || Date.now(),
     }));
@@ -86,8 +86,8 @@ function parseGPXImport(content: string): {
       const timestamp = timeMatch ? dayjs(timeMatch[1]).valueOf() : Date.now();
 
       trackPoints.push({
-        lat,
-        lng: lon,
+        latitude: lat,
+        longitude: lon,
         heading: 0,
         timestamp,
       });

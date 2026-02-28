@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "name": "平路场景 - 无海拔变化",
+    "description": "用于验证无海拔时的距离计算退化为平面距离",
+    "distance_m": 1000,
+    "elevation_gain_m": 0,
+    "expected_3d_distance_m": 1000,
+    "points_count": 11,
+    "source": "数学模型生成"
+  },
+  "points": [
+    {
+      "lat": 39.9,
+      "lng": 116.4,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067200000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40117,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067210000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40234,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067220000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40351,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067230000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40468,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067240000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40585,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067250000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40702,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067260000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40819,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067270000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.40936,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067280000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.41053,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067290000
+    },
+    {
+      "lat": 39.9,
+      "lng": 116.4117,
+      "altitude": 50,
+      "heading": 90,
+      "timestamp": 1704067300000
+    }
+  ]
+}

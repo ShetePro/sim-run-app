@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "name": "45度陡坡爬山场景",
+    "description": "用于验证3D距离计算准确性 - 理论值1414.21m",
+    "horizontal_distance_m": 1000,
+    "elevation_gain_m": 1000,
+    "slope_angle_deg": 45,
+    "expected_3d_distance_m": 1414.21,
+    "points_count": 11,
+    "source": "数学模型生成"
+  },
+  "points": [
+    {
+      "lat": 40.0,
+      "lng": 116.0,
+      "altitude": 0,
+      "heading": 0,
+      "timestamp": 1704067200000,
+      "note": "起点 - 山脚"
+    },
+    {
+      "lat": 40.0009,
+      "lng": 116.0,
+      "altitude": 100,
+      "heading": 0,
+      "timestamp": 1704067210000,
+      "note": "100m水平，100m海拔"
+    },
+    {
+      "lat": 40.0018,
+      "lng": 116.0,
+      "altitude": 200,
+      "heading": 0,
+      "timestamp": 1704067220000,
+      "note": "200m水平，200m海拔"
+    },
+    {
+      "lat": 40.0027,
+      "lng": 116.0,
+      "altitude": 300,
+      "heading": 0,
+      "timestamp": 1704067230000,
+      "note": "300m水平，300m海拔"
+    },
+    {
+      "lat": 40.0036,
+      "lng": 116.0,
+      "altitude": 400,
+      "heading": 0,
+      "timestamp": 1704067240000,
+      "note": "400m水平，400m海拔"
+    },
+    {
+      "lat": 40.0045,
+      "lng": 116.0,
+      "altitude": 500,
+      "heading": 0,
+      "timestamp": 1704067250000,
+      "note": "500m水平，500m海拔 - 半山腰"
+    },
+    {
+      "lat": 40.0054,
+      "lng": 116.0,
+      "altitude": 600,
+      "heading": 0,
+      "timestamp": 1704067260000,
+      "note": "600m水平，600m海拔"
+    },
+    {
+      "lat": 40.0063,
+      "lng": 116.0,
+      "altitude": 700,
+      "heading": 0,
+      "timestamp": 1704067270000,
+      "note": "700m水平，700m海拔"
+    },
+    {
+      "lat": 40.0072,
+      "lng": 116.0,
+      "altitude": 800,
+      "heading": 0,
+      "timestamp": 1704067280000,
+      "note": "800m水平，800m海拔"
+    },
+    {
+      "lat": 40.0081,
+      "lng": 116.0,
+      "altitude": 900,
+      "heading": 0,
+      "timestamp": 1704067290000,
+      "note": "900m水平，900m海拔"
+    },
+    {
+      "lat": 40.009,
+      "lng": 116.0,
+      "altitude": 1000,
+      "heading": 0,
+      "timestamp": 1704067300000,
+      "note": "终点 - 山顶，1000m水平，1000m海拔"
+    }
+  ]
+}

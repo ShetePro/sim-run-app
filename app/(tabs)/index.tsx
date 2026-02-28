@@ -17,11 +17,11 @@ import { TodayActivityCard } from "@/components/card/TodayActivityCard";
 import { useTranslation } from "react-i18next";
 import { useRunDB } from "@/hooks/useSQLite";
 import { TodayRunData } from "@/types/runType";
-import { getPaceLabel, secondFormatHours } from "@/utils/util";
+import { secondFormatHours } from "@/utils/util";
 import { LifeCountCard } from "@/components/card/LifeCountCard";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import { RecentActivityItem } from "@/components/RecentActivityItem";
-import { getStorageItem } from "@/hooks/useStorageState";
+import { getStorageItemAsync } from "@/hooks/useStorageState";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,7 +29,10 @@ export default function HomeScreen() {
   const { getTodayRunData, getRuns } = useRunDB();
   const [today, setToday] = useState<TodayRunData | null>(null);
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
-  const [userInfo, setUserInfo] = useState<{ nickname?: string; avatar?: string }>({});
+  const [userInfo, setUserInfo] = useState<{
+    nickname?: string;
+    avatar?: string;
+  }>({});
 
   // 获取今日跑步数据和最近活动
   useEffect(() => {
@@ -43,13 +46,18 @@ export default function HomeScreen() {
         pace: 0,
         steps: 0,
       };
+      let totalSteps = 0;
       res.forEach((run, index) => {
         todayData.distance += run.distance / 1000;
         todayData.calories += run.energy;
         todayData.duration += run.time;
+        totalSteps += run.steps || 0;
       });
-      const { distance, calories, duration } = todayData;
-      todayData.pace = distance < 10 ? 0 : duration / distance / 60;
+      const { distance, calories } = todayData;
+      // 计算燃效（卡路里/公里）：总卡路里 / 总距离
+      todayData.pace = distance > 0 ? calories / distance : 0;
+      // 总步数
+      todayData.steps = totalSteps;
       todayData.distance = Number(distance.toFixed(2));
       setToday(todayData);
     });
@@ -65,15 +73,28 @@ export default function HomeScreen() {
   }, []);
 
   // 获取用户信息（包括头像）
-  const loadUserInfo = () => {
-    const storedUserInfo = getStorageItem("userInfo");
-    if (storedUserInfo) {
-      try {
-        const parsed = JSON.parse(storedUserInfo);
-        setUserInfo(parsed);
-      } catch (e) {
-        console.error("解析用户信息失败:", e);
+  const loadUserInfo = async () => {
+    try {
+      const storedUserInfo = await getStorageItemAsync("userInfo");
+
+      // 空值检查
+      if (!storedUserInfo) {
+        setUserInfo({});
+        return;
       }
+
+      // 如果已经是对象，直接使用
+      if (typeof storedUserInfo === "object") {
+        setUserInfo(storedUserInfo);
+        return;
+      }
+
+      // 尝试解析 JSON
+      const parsed = JSON.parse(storedUserInfo);
+      setUserInfo(parsed || {});
+    } catch (e) {
+      console.error("[Home] 解析用户信息失败:", e);
+      setUserInfo({});
     }
   };
 
@@ -86,7 +107,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadUserInfo();
-    }, [])
+    }, []),
   );
   // 根据时间生成问候语
   const getGreeting = () => {
@@ -108,14 +129,21 @@ export default function HomeScreen() {
             <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
               {(() => {
                 const now = dayjs();
-                const months = t("time.months", { returnObjects: true }) as string[];
-                const weekDays = t("time.week", { returnObjects: true }) as string[];
+                const months = t("time.months", {
+                  returnObjects: true,
+                }) as string[];
+                const weekDays = t("time.week", {
+                  returnObjects: true,
+                }) as string[];
                 const month = months?.[now.month()] ?? "";
                 const day = now.date();
-                const weekday = weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
+                const weekday =
+                  weekDays?.[now.day() === 0 ? 6 : now.day() - 1] ?? "";
                 // 中文格式：10月6日 周日，英文格式：Oct 6, Sun
                 const isCN = (t("common.today") as string).length <= 2;
-                return isCN ? `${month}${day}日 ${weekday}` : `${month} ${day}, ${weekday}`;
+                return isCN
+                  ? `${month}${day}日 ${weekday}`
+                  : `${month} ${day}, ${weekday}`;
               })()}
             </Text>
             <View className="flex-row items-center">
@@ -167,15 +195,16 @@ export default function HomeScreen() {
               colorHex="#f97316"
             />
             <HomeDataCard
-              label={t("home.pace")}
-              value={getPaceLabel(today.pace)}
-              icon="speedometer-outline"
+              label={t("home.efficiency")}
+              value={today.pace > 0 ? today.pace.toFixed(1) : 0}
+              unit="kcal/km"
+              icon="flash-outline"
               colorHex="#10b981"
             />
             <HomeDataCard
-              label={t("home.stepFrequency")}
-              value={today.steps}
-              unit="spm"
+              label={t("home.totalSteps")}
+              value={today.steps.toLocaleString()}
+              unit={t("home.steps")}
               icon="footsteps-outline"
               colorHex="#a855f7"
             />
@@ -205,7 +234,7 @@ export default function HomeScreen() {
               <Text className="text-slate-800 dark:text-white font-bold text-lg">
                 {t("home.recentActivities")}
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.push("/(tabs)/history")}
                 className="flex-row items-center"
               >
@@ -222,10 +251,12 @@ export default function HomeScreen() {
                   key={run.id}
                   record={run}
                   index={index}
-                  onPress={() => router.push({
-                    pathname: "/(views)/run-summary",
-                    params: { runId: String(run.id), mode: "view" }
-                  })}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(views)/run-summary",
+                      params: { runId: String(run.id), mode: "view" },
+                    })
+                  }
                 />
               ))}
             </View>

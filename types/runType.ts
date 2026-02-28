@@ -1,8 +1,10 @@
 export type TrackPoint = {
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
+  altitude?: number; // 海拔高度（米）
   heading: number;
   timestamp: number;
+  steps?: number; // 累计步数（用于后续分析）
 };
 
 export type RunRecord = {
@@ -11,6 +13,8 @@ export type RunRecord = {
   time: number;
   pace: number;
   energy: number;
+  steps: number;
+  elevationGain: number; // 累计爬升（米）
   isFinish: 0 | 1;
   points?: TrackPoint[];
   startTime?: number;
@@ -25,4 +29,4 @@ export type TodayRunData = {
   pace: number;
   calories: number;
   steps: number;
-}
+};

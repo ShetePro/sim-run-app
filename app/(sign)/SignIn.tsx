@@ -66,7 +66,7 @@ function SignIn({ t }: WithTranslation) {
             setStorageItemAsync("user", data.data);
             Toast.show({
               type: "success",
-              text1: `${data.data.userName}, 欢迎回来!`,
+              text1: `${data.data.userName}, ${t("login.welcomeBack")}`,
             });
             router.replace("/(tabs)");
           });

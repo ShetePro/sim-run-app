@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import { useTranslation } from "react-i18next";
 import { Divider } from "@/components/ui/Divider";
 import { DefaultAvatar } from "@/components/DefaultAvatar";
 import NumberInputSheet from "@/components/form/NumberInputSheet";
@@ -21,11 +22,15 @@ import {
   NumberInputControlProps,
   NumberInputSheetHandle,
 } from "@/types/formTypes";
-import { getStorageItem, setStorageItemAsync } from "@/hooks/useStorageState";
+import {
+  getStorageItemAsync,
+  setStorageItemAsync,
+} from "@/hooks/useStorageState";
 import Toast from "react-native-toast-message";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isSaving, setIsSaving] = useState(false);
   const numberSheetRef = useRef<NumberInputSheetHandle>(null);
   const [sheetConfig, setSheetConfig] = useState<NumberInputControlProps>({
@@ -38,15 +43,56 @@ export default function ProfileEditScreen() {
   const numberInputOptions: {
     [key: string]: NumberInputControlProps;
   } = {
-    height: { title: "身高", unit: "cm", key: "height", value: "0" },
-    weight: { title: "体重", unit: "kg", key: "weight", value: "0" },
-    age: { title: "年龄", unit: "岁", key: "age", value: "0" },
+    height: {
+      title: t("profile.height"),
+      unit: "cm",
+      key: "height",
+      value: "0",
+    },
+    weight: {
+      title: t("profile.weight"),
+      unit: "kg",
+      key: "weight",
+      value: "0",
+    },
+    age: {
+      title: t("profile.age"),
+      unit: t("profile.ageUnit"),
+      key: "age",
+      value: "0",
+    },
   };
-  const userInfo = getStorageItem("userInfo");
   // 表单状态
-  const [form, setForm] = useState<UserInfo>(
-    userInfo ? JSON.parse(userInfo) : {},
-  );
+  const [form, setForm] = useState<Partial<UserInfo>>({});
+
+  // 加载用户信息
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const userInfo = await getStorageItemAsync("userInfo");
+
+        // 空值检查
+        if (!userInfo) {
+          setForm({});
+          return;
+        }
+
+        // 如果已经是对象，直接使用
+        if (typeof userInfo === "object") {
+          setForm(userInfo);
+          return;
+        }
+
+        // 尝试解析 JSON
+        const parsed = JSON.parse(userInfo);
+        setForm(parsed || {});
+      } catch (error) {
+        console.error("[Profile] 解析用户信息失败:", error);
+        setForm({});
+      }
+    };
+    loadUserInfo();
+  }, []);
 
   // 处理保存
   const handleSave = async () => {
@@ -54,8 +100,8 @@ export default function ProfileEditScreen() {
     // 模拟 API 请求
     setTimeout(() => {
       setIsSaving(false);
-      Alert.alert("保存成功", "个人资料已更新", [
-        { text: "确定", onPress: () => router.back() },
+      Alert.alert(t("profile.saveSuccess"), t("profile.profileUpdated"), [
+        { text: t("common.confirm"), onPress: () => router.back() },
       ]);
     }, 1000);
   };
@@ -64,15 +110,15 @@ export default function ProfileEditScreen() {
   const updateForm = (key: string, value: string) => {
     const newForm = { ...form, [key]: value };
     setForm(newForm);
-    setStorageItemAsync('userInfo', JSON.stringify(newForm));
+    setStorageItemAsync("userInfo", JSON.stringify(newForm));
   };
 
   // 选择头像
   const pickAvatar = async () => {
     // 请求权限
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('权限 denied', '需要访问相册权限才能选择头像');
+    if (status !== "granted") {
+      Alert.alert(t("permission.title"), t("permission.photosRequired"));
       return;
     }
 
@@ -86,7 +132,7 @@ export default function ProfileEditScreen() {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const selectedImageUri = result.assets[0].uri;
-      updateForm('avatar', selectedImageUri);
+      updateForm("avatar", selectedImageUri);
     }
   };
   const openNumberInputSheet = (key: string) => {
@@ -102,11 +148,11 @@ export default function ProfileEditScreen() {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
       <Stack.Screen
         options={{
-          headerTitle: "编辑资料",
+          headerTitle: t("profile.editProfile"),
           headerTitleStyle: { color: "#0f172a" },
           headerStyle: { backgroundColor: "#fff" },
           headerShadowVisible: false,
-          headerBackTitle: "取消",
+          headerBackTitle: t("common.cancel"),
           headerRight: () => (
             <TouchableOpacity
               onPress={handleSave}
@@ -117,7 +163,7 @@ export default function ProfileEditScreen() {
                 <ActivityIndicator size="small" color="#6366f1" />
               ) : (
                 <Text className="text-indigo-600 font-bold text-base">
-                  保存
+                  {t("common.save")}
                 </Text>
               )}
             </TouchableOpacity>
@@ -148,18 +194,20 @@ export default function ProfileEditScreen() {
               <Ionicons name="camera" size={16} color="white" />
             </View>
           </TouchableOpacity>
-          <Text className="text-slate-400 text-sm mt-2">点击更换头像</Text>
+          <Text className="text-slate-400 text-sm mt-2">
+            {t("profile.tapToChangeAvatar")}
+          </Text>
         </View>
 
         <Text className="text-slate-500 text-xs font-bold uppercase mb-2 ml-2">
-          基础信息
+          {t("profile.basicInfo")}
         </Text>
         <View className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden mb-6 shadow-sm">
-          <FormItem label="昵称">
+          <FormItem label={t("profile.nickname")}>
             <TextInput
               value={form.nickname}
               onChangeText={(t) => updateForm("nickname", t)}
-              placeholder="请输入昵称"
+              placeholder={t("profile.nicknamePlaceholder")}
               className="flex-1 text-right text-slate-800 dark:text-white font-medium h-full"
               placeholderTextColor="#94a3b8"
             />
@@ -167,11 +215,11 @@ export default function ProfileEditScreen() {
 
           <Divider />
 
-          <FormItem label="个性签名">
+          <FormItem label={t("profile.signature")}>
             <TextInput
               value={form.signature}
               onChangeText={(t) => updateForm("signature", t)}
-              placeholder="一句话介绍自己"
+              placeholder={t("profile.signaturePlaceholder")}
               maxLength={30}
               className="flex-1 text-right text-slate-800 dark:text-white font-medium h-full"
               placeholderTextColor="#94a3b8"
@@ -180,23 +228,23 @@ export default function ProfileEditScreen() {
         </View>
 
         <Text className="text-slate-500 text-xs font-bold uppercase mb-2 ml-2">
-          身体数据
+          {t("profile.bodyData")}
         </Text>
         <View className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden mb-8 shadow-sm">
           {/* 性别选择器 */}
           <View className="flex-row items-center justify-between p-4 min-h-[56px]">
             <Text className="text-slate-600 dark:text-slate-300 text-base font-medium">
-              性别
+              {t("profile.gender")}
             </Text>
             <View className="flex-row bg-gray-100 dark:bg-slate-700 rounded-lg p-1">
               <GenderOption
-                label="男"
+                label={t("profile.male")}
                 value="male"
                 selected={form.gender === "male"}
                 onSelect={() => updateForm("gender", "male")}
               />
               <GenderOption
-                label="女"
+                label={t("profile.female")}
                 value="female"
                 selected={form.gender === "female"}
                 onSelect={() => updateForm("gender", "female")}
@@ -206,7 +254,7 @@ export default function ProfileEditScreen() {
 
           <Divider />
 
-          <FormItem label="身高">
+          <FormItem label={t("profile.height")}>
             <TouchableOpacity
               className="flex-row items-center justify-end flex-1"
               onPress={() => openNumberInputSheet("height")}
@@ -221,7 +269,7 @@ export default function ProfileEditScreen() {
           <Divider />
 
           {/* 体重 */}
-          <FormItem label="体重">
+          <FormItem label={t("profile.weight")}>
             <TouchableOpacity
               className="flex-row items-center justify-end flex-1"
               onPress={() => openNumberInputSheet("weight")}
@@ -236,7 +284,7 @@ export default function ProfileEditScreen() {
           <Divider />
 
           {/* 年龄 */}
-          <FormItem label="年龄">
+          <FormItem label={t("profile.age")}>
             <TouchableOpacity
               className="flex-row items-center justify-end flex-1"
               onPress={() => openNumberInputSheet("age")}
@@ -251,7 +299,7 @@ export default function ProfileEditScreen() {
 
         {/* 底部提示 */}
         <Text className="text-center text-slate-400 text-xs mb-10">
-          准确的身体数据有助于更精准地计算卡路里消耗。
+          {t("profile.bodyDataTip")}
         </Text>
       </ScrollView>
       <NumberInputSheet
