@@ -122,3 +122,32 @@ __tests__/        - Jest test files
 - Zustand ^5.0.9
 - NativeWind 4.2 (Tailwind for RN)
 - i18next + react-i18next for localization
+
+## Data Format
+
+### Pace (配速)
+
+**SQLite Storage Format:**
+
+- Type: `REAL`
+- Unit: seconds per kilometer (跑1公里所需的秒数)
+- Example: `360` = 6 minutes/km (6'00")
+
+**Usage:**
+
+```typescript
+// 直接使用，不要除以 60
+const pace = getPaceLabel(record.pace); // ✓ 正确
+
+// 错误用法
+const pace = getPaveLabel(record.pace / 60); // ✗ 错误
+```
+
+**Calculation:**
+
+```typescript
+// 计算配速：总时间(秒) / 距离(公里)
+pace = timeSeconds / distanceKm;
+```
+
+**Note:** `getPaceLabel()` expects seconds per kilometer as input. Do NOT divide by 60.
