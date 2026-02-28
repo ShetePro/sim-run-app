@@ -95,8 +95,9 @@
 - **路径动画**: ✅ **已修复** - 使用 requestAnimationFrame 替代 Animated API
   - 使用 `requestAnimationFrame` 实现平滑动画循环
   - 添加缓动函数 `easeOut` 实现自然减速效果
-  - 优化状态更新：只有当点数量变化时才更新（防抖）
-  - 修复了 Animated API 导致的 React 渲染时序问题
+  - **使用 `useRef` 分离动画逻辑和 React state**，避免 useEffect 依赖数组问题导致的动画中断
+  - `isAnimatingRef` 和 `visibleCountRef` 跟踪动画状态，不触发重渲染
+  - 修复路径不显示和动画失效问题
 - **地图类型切换**:
   - 右上角浮动胶囊按钮组（标准 | 卫星 | 混合）
   - 本地状态管理，不影响全局设置
