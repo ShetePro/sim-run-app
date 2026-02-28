@@ -1,8 +1,7 @@
 import { View, Text, ScrollView } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import HistoryItem from "@/components/HistoryItem";
+import { HistoryItem } from "@/components/HistoryItem";
 import { EmptyState } from "@/components/EmptyState";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useEffect, useState } from "react";
@@ -13,16 +12,18 @@ type HistoryRecord = {
   dateTime: number;
   list: any[];
 };
+
 export default function HistoryScreen() {
   const { getRuns, deleteRun } = useRunDB();
   const [historyRecords, setHistoryRecords] = useState<HistoryRecord[]>([]);
   const { t } = useTranslation();
+
   useEffect(() => {
     getRuns().then((runs) => {
       const recordsMap: {
         [key: string]: HistoryRecord;
       } = {};
-      console.log(runs, "runs");
+
       runs.forEach((item) => {
         if (item.startTime) {
           const date = getDateLabel(item.startTime);
@@ -35,12 +36,11 @@ export default function HistoryScreen() {
           };
         }
       });
+
       const recordsList = Object.values(recordsMap).sort(
         (a, b) => b.dateTime - a.dateTime,
       );
       setHistoryRecords(recordsList);
-      // const list = runs.filter((record) => record.time === 0);
-      // deleteHistory(list);
     });
   }, []);
 
@@ -51,6 +51,7 @@ export default function HistoryScreen() {
       }
     }
   }
+
   function getDateLabel(dateTime: number) {
     const diffDay = diffDayNum(dateTime);
     if (diffDay === 0) {
@@ -61,10 +62,10 @@ export default function HistoryScreen() {
       return dateFormat(dateTime);
     }
   }
+
   const handleDeleteRecord = async (id: number) => {
     try {
       await deleteRun(id);
-      // 更新本地状态，移除已删除的记录
       setHistoryRecords((prevRecords) => {
         const updatedRecords = prevRecords
           .map((record) => ({
@@ -79,15 +80,55 @@ export default function HistoryScreen() {
     }
   };
 
+  // 计算某天的统计数据
+  const getDayStats = (records: any[]) => {
+    const totalDistance = records.reduce(
+      (sum, item) => sum + (item.distance || 0) / 1000,
+      0,
+    );
+    const totalDuration = records.reduce(
+      (sum, item) => sum + (item.time || 0),
+      0,
+    );
+    const totalCalories = records.reduce(
+      (sum, item) => sum + (item.energy || 0),
+      0,
+    );
+
+    return {
+      distance: totalDistance.toFixed(2),
+      duration: Math.floor(totalDuration / 60),
+      calories: totalCalories,
+    };
+  };
+
   function renderItem() {
     return historyRecords.map((record) => {
+      const stats = getDayStats(record.list);
+
       return (
-        <View key={record.date}>
-          <ThemedText style={{ fontSize: 20, lineHeight: 50 }}>
-            {record.date}
-          </ThemedText>
+        <View key={record.date} className="mb-8">
+          {/* 日期分组头部 */}
+          <View className="flex-row items-center justify-between mb-4 px-1">
+            <View className="flex-row items-center">
+              <View className="w-1 h-6 bg-indigo-500 rounded-full mr-3" />
+              <Text className="text-xl font-bold text-slate-800 dark:text-white">
+                {record.date}
+              </Text>
+            </View>
+
+            {/* 当天统计摘要 */}
+            <View className="flex-row items-center">
+              <Text className="text-sm text-slate-500">
+                {record.list.length} {t("history.activities")} ·{" "}
+                {stats.distance} {t("unit.km")}
+              </Text>
+            </View>
+          </View>
+
+          {/* 跑步记录列表 */}
           <View>
-            {record.list.map((item) => (
+            {record.list.map((item, index) => (
               <HistoryItem
                 key={item.id}
                 record={item}
@@ -127,8 +168,8 @@ export default function HistoryScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        className="flex-1 pl-5 pr-5"
-        contentContainerStyle={{ paddingBottom: 80 }}
+        className="flex-1 px-5"
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 80 }}
       >
         {renderItem()}
       </ScrollView>
