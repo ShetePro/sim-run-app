@@ -1,14 +1,7 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Dimensions,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, Dimensions, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { useColorScheme } from "nativewind";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, {
@@ -16,12 +9,15 @@ import React, {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
   ReactElement,
 } from "react";
-import MapView, { Polyline, Marker, Circle } from "react-native-maps";
+import MapView, { Polyline, Marker, Circle, MapType } from "react-native-maps";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useRunStore } from "@/store/runStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import { secondFormatHours, getPaceLabel } from "@/utils/util";
 import { RunRecord, TrackPoint } from "@/types/runType";
 import Toast from "react-native-toast-message";
@@ -29,7 +25,6 @@ import {
   exportRunAsJSON,
   exportRunAsGPX,
   exportRunAsCSV,
-  ExportFormats,
   ExportFormat,
 } from "@/utils/exportRun";
 import {
@@ -59,11 +54,31 @@ export default function RunSummaryScreen() {
     longitudeDelta: 0.005,
   });
   const runStore = useRunStore();
+  const settingsStore = useSettingsStore();
   const mapRef = useRef<MapView>(null);
+
+  // 本地地图类型（不影响全局设置）
+  const [localMapType, setLocalMapType] = useState<MapType>(
+    settingsStore.settings.map.mapType as MapType,
+  );
+
+  // 路径动画状态
+  const [visibleRoutePoints, setVisibleRoutePoints] = useState<
+    { latitude: number; longitude: number }[]
+  >([]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animationRef = useRef<number | null>(null);
+
+  // BottomSheet 引用和配置
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ["25%", "50%", "95%"], []);
 
   const runId = Number(params.runId || 0);
   const isViewMode = params.mode === "view"; // 查看模式（历史记录）
   const hasLoaded = useRef(false);
+
+  // 获取当前颜色模式
+  const { colorScheme } = useColorScheme();
 
   // 加载跑步数据和轨迹
   const loadRunData = useCallback(async () => {
@@ -128,6 +143,110 @@ export default function RunSummaryScreen() {
   useEffect(() => {
     loadRunData();
   }, [loadRunData]);
+
+  // 路径动画效果 - 使用 requestAnimationFrame
+  useEffect(() => {
+    // 需要至少2个点才启动动画
+    if (
+      routePoints.length >= 2 &&
+      !isAnimating &&
+      visibleRoutePoints.length === 0
+    ) {
+      setIsAnimating(true);
+
+      const totalPoints = routePoints.length;
+      const duration = 2000; // 2秒
+      const startTime = Date.now();
+
+      // 缓动函数：ease-out
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeOut(progress);
+
+        // 计算可见点数量，至少2个点
+        const visibleCount = Math.max(
+          2,
+          Math.floor(easedProgress * totalPoints),
+        );
+        const newPoints = routePoints.slice(0, visibleCount);
+
+        // 只有当点数量变化时才更新状态
+        setVisibleRoutePoints((prev) => {
+          if (prev.length !== newPoints.length) {
+            return newPoints;
+          }
+          return prev;
+        });
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          // 动画完成，显示所有点
+          setVisibleRoutePoints(routePoints);
+          setIsAnimating(false);
+        }
+      };
+
+      animationRef.current = requestAnimationFrame(animate);
+
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      };
+    }
+  }, [routePoints, isAnimating, visibleRoutePoints.length]);
+
+  // 重播路径动画
+  const replayAnimation = () => {
+    if (routePoints.length >= 2 && !isAnimating) {
+      // 重置状态
+      setVisibleRoutePoints([]);
+      setIsAnimating(false);
+
+      // 使用 setTimeout 确保状态更新后再启动动画
+      setTimeout(() => {
+        setIsAnimating(true);
+
+        const totalPoints = routePoints.length;
+        const duration = 2000;
+        const startTime = Date.now();
+
+        const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easedProgress = easeOut(progress);
+
+          const visibleCount = Math.max(
+            2,
+            Math.floor(easedProgress * totalPoints),
+          );
+          const newPoints = routePoints.slice(0, visibleCount);
+
+          setVisibleRoutePoints((prev) => {
+            if (prev.length !== newPoints.length) {
+              return newPoints;
+            }
+            return prev;
+          });
+
+          if (progress < 1) {
+            animationRef.current = requestAnimationFrame(animate);
+          } else {
+            setVisibleRoutePoints(routePoints);
+            setIsAnimating(false);
+          }
+        };
+
+        animationRef.current = requestAnimationFrame(animate);
+      }, 50);
+    }
+  };
 
   // 从数据库数据计算显示值
   const distance = runData?.distance || 0;
@@ -398,25 +517,37 @@ export default function RunSummaryScreen() {
       {/* 顶部导航 */}
       {renderHeader()}
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* 地图区域 */}
-        <View className="h-72 w-full relative">
+      {/* 主要内容区域 - 使用 Flex 布局 */}
+      <View className="flex-1">
+        {/* 地图区域 - 全屏，BottomSheet 会覆盖在上方 */}
+        <View className="absolute inset-0">
           <MapView
             ref={mapRef}
-            style={{ width: SCREEN_WIDTH, height: 288 }}
+            style={{ width: SCREEN_WIDTH, height: "100%" }}
             region={mapRegion}
+            mapType={localMapType}
             scrollEnabled={true}
             zoomEnabled={true}
             rotateEnabled={true}
             pitchEnabled={true}
           >
-            {routePoints.length > 0 && (
+            {/* 路径和标记 - 使用动画控制的可见点 */}
+            {visibleRoutePoints.length > 0 && (
               <>
-                {/* 渐变路线 - 从绿色(起点)渐变到红色(终点) */}
-                {generateGradientRoute(routePoints)}
+                {/* 动画路线 */}
+                <Polyline
+                  coordinates={visibleRoutePoints}
+                  strokeColor="#6366f1"
+                  strokeWidth={4}
+                  lineCap="round"
+                  lineJoin="round"
+                />
 
                 {/* 起点标记 */}
-                <Marker coordinate={routePoints[0]} anchor={{ x: 0.5, y: 0.5 }}>
+                <Marker
+                  coordinate={visibleRoutePoints[0]}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
                   <View
                     style={{
                       width: 20,
@@ -425,50 +556,30 @@ export default function RunSummaryScreen() {
                       backgroundColor: "#22c55e",
                       borderWidth: 3,
                       borderColor: "white",
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 2,
-                      elevation: 4,
                     }}
                   />
                 </Marker>
 
-                {/* 终点标记 */}
-                <Marker
-                  coordinate={routePoints[routePoints.length - 1]}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                >
-                  <View
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      backgroundColor: "#ef4444",
-                      borderWidth: 3,
-                      borderColor: "white",
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 2,
-                      elevation: 4,
-                    }}
-                  />
-                </Marker>
-
-                {/* 起点和终点的脉冲圆圈效果 */}
-                <Circle
-                  center={routePoints[0]}
-                  radius={30}
-                  strokeColor="rgba(34, 197, 94, 0.3)"
-                  fillColor="rgba(34, 197, 94, 0.1)"
-                />
-                <Circle
-                  center={routePoints[routePoints.length - 1]}
-                  radius={30}
-                  strokeColor="rgba(239, 68, 68, 0.3)"
-                  fillColor="rgba(239, 68, 68, 0.1)"
-                />
+                {/* 终点标记 - 只在动画完成或至少2个点时显示 */}
+                {visibleRoutePoints.length > 1 && (
+                  <Marker
+                    coordinate={
+                      visibleRoutePoints[visibleRoutePoints.length - 1]
+                    }
+                    anchor={{ x: 0.5, y: 0.5 }}
+                  >
+                    <View
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 10,
+                        backgroundColor: "#ef4444",
+                        borderWidth: 3,
+                        borderColor: "white",
+                      }}
+                    />
+                  </Marker>
+                )}
               </>
             )}
           </MapView>
@@ -482,7 +593,7 @@ export default function RunSummaryScreen() {
           </View>
 
           {/* 路线图例 */}
-          <View className="absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm">
+          <View className="absolute bottom-16 right-3 bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg shadow-sm">
             <View className="flex-row items-center">
               <View
                 style={{
@@ -517,124 +628,155 @@ export default function RunSummaryScreen() {
               </Text>
             </View>
           </View>
+
+          {/* 地图类型切换按钮 */}
+          <View
+            className="absolute top-3 right-3 flex-row bg-white/90 dark:bg-slate-800/90 rounded-full shadow-sm overflow-hidden"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 4,
+            }}
+          >
+            {(["standard", "satellite", "hybrid"] as MapType[]).map(
+              (type, index) => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setLocalMapType(type)}
+                  className={`px-3 py-2 ${index !== 2 ? "border-r border-slate-200 dark:border-slate-700" : ""}`}
+                  style={{
+                    backgroundColor:
+                      localMapType === type ? "#6366f1" : "transparent",
+                  }}
+                >
+                  <Text
+                    className={`text-xs font-medium ${
+                      localMapType === type
+                        ? "text-white"
+                        : "text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    {t(`map.type.${type}`) ||
+                      (type === "standard"
+                        ? "标准"
+                        : type === "satellite"
+                          ? "卫星"
+                          : "混合")}
+                  </Text>
+                </TouchableOpacity>
+              ),
+            )}
+          </View>
+
+          {/* 重播动画按钮 */}
+          <TouchableOpacity
+            onPress={replayAnimation}
+            className="absolute bottom-16 left-3 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-sm"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 4,
+            }}
+          >
+            <Ionicons name="play-outline" size={20} color="#6366f1" />
+          </TouchableOpacity>
         </View>
 
-        {/* 主要数据 */}
-        <View className="px-4 mt-4">
-          <View className="bg-indigo-600 rounded-3xl p-6 shadow-lg">
-            <Text className="text-indigo-100 text-sm text-center mb-2">
-              {t("activity.distance")}
-            </Text>
-            <View className="flex-row items-baseline justify-center">
-              <Text className="text-6xl font-bold text-white">
+        {/* 可拖动的底部数据卡片 - BottomSheet */}
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enablePanDownToClose={false}
+          enableOverDrag={false}
+          backgroundStyle={{
+            backgroundColor: colorScheme === "dark" ? "#1e293b" : "#ffffff",
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }}
+          handleIndicatorStyle={{
+            backgroundColor: colorScheme === "dark" ? "#475569" : "#cbd5e1",
+            width: 36,
+            height: 5,
+            borderRadius: 3,
+          }}
+        >
+          <BottomSheetView className="flex-1 px-4 pt-2 pb-8">
+            {/* 距离 - 大字体突出显示 */}
+            <View className="items-center mb-6">
+              <Text
+                className="text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
                 {(distance / 1000).toFixed(2)}
               </Text>
-              <Text className="text-xl text-indigo-200 ml-2">
+              <Text className="text-base text-slate-500 dark:text-slate-400 mt-1 font-medium">
                 {t("unit.km")}
               </Text>
             </View>
-          </View>
-        </View>
 
-        {/* 统计数据网格 */}
-        <View className="px-4 mt-6">
-          <View className="flex-row">
-            <StatCard
-              icon="clock-outline"
-              value={secondFormatHours(duration)}
-              label={t("common.time")}
-              color="#3b82f6"
-            />
-            <StatCard
-              icon="speedometer"
-              value={getPaceLabel(pace)}
-              unit={`/km`}
-              label={t("activity.pace")}
-              color="#10b981"
-            />
-            <StatCard
-              icon="fire"
-              value={calories}
-              unit={t("unit.kcal")}
-              label={t("activity.energy")}
-              color="#f97316"
-            />
-          </View>
-        </View>
-
-        {/* 信息区域 */}
-        <View className="px-4 mt-6 mb-8">
-          <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2">
-            {isViewMode ? t("run.info") : t("run.editInfo")}
-          </Text>
-
-          {/* 标题 */}
-          <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 mb-3">
-            {isViewMode ? (
-              <Text className="text-base text-slate-800 dark:text-white">
-                {title || defaultTitle}
-              </Text>
-            ) : (
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder={defaultTitle}
-                placeholderTextColor="#9ca3af"
-                className="text-base text-slate-800 dark:text-white"
-                maxLength={50}
-              />
-            )}
-          </View>
-
-          {/* 备注 */}
-          <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3">
-            {isViewMode ? (
-              note ? (
-                <Text className="text-base text-slate-800 dark:text-white">
-                  {note}
+            {/* 统计数据网格 */}
+            <View className="flex-row justify-between px-2">
+              <View className="items-center flex-1">
+                <Ionicons name="time-outline" size={20} color="#6366f1" />
+                <Text className="text-lg font-semibold text-slate-800 dark:text-white mt-1">
+                  {secondFormatHours(duration)}
                 </Text>
-              ) : (
-                <Text className="text-base text-slate-400 italic">
-                  {t("run.noNote")}
+                <Text className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("common.time")}
                 </Text>
-              )
-            ) : (
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder={t("run.addNote")}
-                placeholderTextColor="#9ca3af"
-                className="text-base text-slate-800 dark:text-white"
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                maxLength={200}
-              />
+              </View>
+              <View className="items-center flex-1">
+                <Ionicons
+                  name="speedometer-outline"
+                  size={20}
+                  color="#10b981"
+                />
+                <Text className="text-lg font-semibold text-slate-800 dark:text-white mt-1">
+                  {getPaceLabel(pace)}
+                </Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("activity.pace")}
+                </Text>
+              </View>
+              <View className="items-center flex-1">
+                <Ionicons name="flame-outline" size={20} color="#f97316" />
+                <Text className="text-lg font-semibold text-slate-800 dark:text-white mt-1">
+                  {calories}
+                </Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("activity.energy")}
+                </Text>
+              </View>
+            </View>
+
+            {/* 编辑模式按钮 */}
+            {!isViewMode && (
+              <View className="mt-4 space-y-2">
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={isSaving}
+                  className={`py-3 rounded-xl ${isSaving ? "bg-indigo-400" : "bg-indigo-600"}`}
+                >
+                  <Text className="text-white text-center font-bold text-base">
+                    {isSaving ? t("common.saving") : t("common.save")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleDiscard} className="py-3">
+                  <Text className="text-red-500 text-center font-medium">
+                    {t("run.discard")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
-          </View>
-        </View>
-
-        {/* 底部按钮 - 仅在编辑模式显示 */}
-        {!isViewMode && (
-          <View className="px-4 pb-8">
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isSaving}
-              className={`py-4 rounded-xl ${isSaving ? "bg-indigo-400" : "bg-indigo-600"}`}
-            >
-              <Text className="text-white text-center font-bold text-lg">
-                {isSaving ? t("common.saving") : t("run.saveRecord")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleDiscard} className="py-4 mt-3">
-              <Text className="text-red-500 text-center font-medium">
-                {t("run.discardRecord")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+          </BottomSheetView>
+        </BottomSheet>
+      </View>
     </SafeAreaView>
   );
 }
