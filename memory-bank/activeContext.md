@@ -112,7 +112,25 @@
   - 支持手势拖动上下滑动
   - 编辑模式按钮在展开状态下可见
 - **重播按钮**: ✅ **已恢复** - 点击可重新播放路径动画
-- **翻译**: 新增 `map.type.*` 翻译键（standard/satellite/hybrid）
+- **详细统计**: ✅ **已添加** - 基于 SQLite 数据的科学分析
+  - 步频分析：steps / time × 60，显示 spm（steps per minute）
+  - 步幅计算：distance / steps，显示米/步
+  - 海拔统计：从 track_points 计算最高、最低、累计爬升/下降
+  - **始终显示**：移除条件限制，数据为空时显示 "--"
+- **分段配速**: ✅ **已添加** - 每公里配速列表，带可视化进度条
+  - 仅在 `lapPaces.length > 0` 时显示（需要足够的轨迹点）
+- **Note 显示**: ✅ **已添加** - 在 BottomSheet 中显示跑步备注
+  - 仅在有备注内容时显示
+- **数据图表**: ✅ **已添加** - 使用 victory-native 可视化跑步数据
+  - **配速趋势折线图**: 使用 `VictoryLine` 显示配速随距离变化
+  - **海拔剖面面积图**: 使用 `VictoryArea` 显示海拔高度变化（带渐变填充）
+  - **分段配速柱状图**: 使用 `VictoryBar` 对比每公里配速
+  - **图表特性**:
+    - 响应式设计，适配暗色/亮色模式
+    - 动画效果（加载时渐变显示）
+    - 采样优化（每 50 个点取一个，避免性能问题）
+    - 坐标轴标签和网格线自动适配主题色
+- **翻译**: 新增 `map.type.*`、`run.detailedStats`、`run.cadence`、`run.stride`、`run.elevation`、`run.lapPace`、`run.km`、`run.note`、`run.charts`、`run.paceTrend`、`run.altitudeProfile`、`run.lapPaceChart`、`run.distance`、`run.pace`、`run.altitude` 翻译键
 
 ## 🚧 下一步计划 (Next Steps)
 

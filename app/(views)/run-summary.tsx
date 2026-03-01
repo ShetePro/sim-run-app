@@ -1,4 +1,11 @@
-import { View, Text, TouchableOpacity, Dimensions, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
@@ -27,6 +34,7 @@ import {
   exportRunAsCSV,
   ExportFormat,
 } from "@/utils/exportRun";
+import RunCharts from "@/components/RunCharts";
 import {
   trackPointsToCoordinates,
   filterValidCoordinates,
@@ -44,7 +52,12 @@ export default function RunSummaryScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [routePoints, setRoutePoints] = useState<
-    { latitude: number; longitude: number }[]
+    {
+      latitude: number;
+      longitude: number;
+      timestamp?: number;
+      altitude?: number;
+    }[]
   >([]);
   const [runData, setRunData] = useState<RunRecord | null>(null);
   const [mapRegion, setMapRegion] = useState({
@@ -265,6 +278,203 @@ export default function RunSummaryScreen() {
   const calories = runData?.energy || 0;
   const startTime = runData?.startTime || Date.now();
   const endTime = runData?.endTime || Date.now();
+  const totalSteps = runData?.steps || 0;
+  const elevationGain = runData?.elevationGain || 0;
+
+  // 计算详细统计数据
+  // 步频 (steps per minute)
+  const cadence =
+    totalSteps > 0 && duration > 0
+      ? Math.round((totalSteps / duration) * 60)
+      : 0;
+
+  // 步幅 (米/步)
+  const strideLength =
+    totalSteps > 0 && distance > 0
+      ? (distance / totalSteps / 1000).toFixed(2)
+      : "0.00";
+
+  // 计算海拔数据 (从 track_points)
+  const altitudeStats = useMemo(() => {
+    if (!routePoints || routePoints.length === 0) {
+      return { max: 0, min: 0, gain: elevationGain, loss: 0 };
+    }
+
+    let maxAlt = -Infinity;
+    let minAlt = Infinity;
+    let gain = 0;
+    let loss = 0;
+    let prevAlt: number | null = null;
+
+    routePoints.forEach((point: any) => {
+      const alt = point.altitude;
+      if (alt != null && !isNaN(alt)) {
+        maxAlt = Math.max(maxAlt, alt);
+        minAlt = Math.min(minAlt, alt);
+
+        if (prevAlt !== null) {
+          const diff = alt - prevAlt;
+          if (diff > 0) gain += diff;
+          else loss += Math.abs(diff);
+        }
+        prevAlt = alt;
+      }
+    });
+
+    return {
+      max: maxAlt === -Infinity ? 0 : Math.round(maxAlt),
+      min: minAlt === Infinity ? 0 : Math.round(minAlt),
+      gain: Math.round(gain) || elevationGain,
+      loss: Math.round(loss),
+    };
+  }, [routePoints, elevationGain]);
+
+  // 计算图表数据
+  const chartData = useMemo(() => {
+    if (!routePoints || routePoints.length < 2) {
+      return { paceTrend: [], altitudeProfile: [], paceDistribution: [] };
+    }
+
+    const paceTrend: { x: number; y: number }[] = [];
+    const altitudeProfile: { x: number; y: number }[] = [];
+    const paceDistribution: { x: string; y: number }[] = [];
+
+    let accumulatedDist = 0;
+    let lastPoint = routePoints[0];
+    let lastTimestamp = lastPoint.timestamp || startTime;
+
+    // 采样点（每隔 N 个点取一个，避免数据过多）
+    const sampleInterval = Math.max(1, Math.floor(routePoints.length / 50));
+
+    routePoints.forEach((point: any, index: number) => {
+      if (index % sampleInterval === 0) {
+        const currentTimestamp = point.timestamp || lastTimestamp;
+        const timeDiff = (currentTimestamp - lastTimestamp) / 1000; // 秒
+
+        if (index > 0 && timeDiff > 0) {
+          // 计算距离
+          const R = 6371000;
+          const lat1 = (lastPoint.latitude * Math.PI) / 180;
+          const lat2 = (point.latitude * Math.PI) / 180;
+          const deltaLat =
+            ((point.latitude - lastPoint.latitude) * Math.PI) / 180;
+          const deltaLon =
+            ((point.longitude - lastPoint.longitude) * Math.PI) / 180;
+          const a =
+            Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+            Math.cos(lat1) *
+              Math.cos(lat2) *
+              Math.sin(deltaLon / 2) *
+              Math.sin(deltaLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const dist = R * c;
+
+          accumulatedDist += dist;
+
+          // 瞬时配速（秒/公里）
+          const instantPace = dist > 0 ? timeDiff / (dist / 1000) : 0;
+          if (instantPace > 0 && instantPace < 600) {
+            // 过滤异常值（< 10分钟/公里）
+            paceTrend.push({
+              x: Math.round(accumulatedDist / 100) / 10, // 距离（公里，保留1位小数）
+              y: Math.round(instantPace),
+            });
+          }
+        }
+
+        // 海拔数据
+        if (point.altitude != null && !isNaN(point.altitude)) {
+          altitudeProfile.push({
+            x: Math.round(accumulatedDist / 100) / 10,
+            y: Math.round(point.altitude),
+          });
+        }
+
+        lastPoint = point;
+        lastTimestamp = currentTimestamp;
+      }
+    });
+
+    return { paceTrend, altitudeProfile, paceDistribution };
+  }, [routePoints, startTime]);
+
+  // 计算分段配速（每公里）
+  const lapPaces = useMemo(() => {
+    if (!routePoints || routePoints.length < 2 || distance <= 0) {
+      return [];
+    }
+
+    // 计算两点间距离（米）- 在 useMemo 内部定义
+    const calculateDistance = (p1: any, p2: any): number => {
+      const R = 6371000; // 地球半径（米）
+      const lat1 = (p1.latitude * Math.PI) / 180;
+      const lat2 = (p2.latitude * Math.PI) / 180;
+      const deltaLat = ((p2.latitude - p1.latitude) * Math.PI) / 180;
+      const deltaLon = ((p2.longitude - p1.longitude) * Math.PI) / 180;
+
+      const a =
+        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+        Math.cos(lat1) *
+          Math.cos(lat2) *
+          Math.sin(deltaLon / 2) *
+          Math.sin(deltaLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    };
+
+    const laps: { km: number; pace: number; time: number }[] = [];
+    const totalKm = distance / 1000;
+    let currentKm = 1;
+    let lastPoint = routePoints[0];
+    let accumulatedDist = 0;
+    let accumulatedTime = 0;
+
+    for (let i = 1; i < routePoints.length; i++) {
+      const point = routePoints[i];
+
+      // 检查 timestamp 是否存在
+      if (!point.timestamp || !lastPoint.timestamp) {
+        lastPoint = point;
+        continue;
+      }
+
+      const dist = calculateDistance(lastPoint, point);
+      const time = (point.timestamp - lastPoint.timestamp) / 1000; // 转换为秒
+
+      accumulatedDist += dist;
+      accumulatedTime += time;
+
+      // 每累积1公里记录一次
+      while (accumulatedDist >= 1000 && currentKm <= Math.floor(totalKm)) {
+        const pace = accumulatedTime / (accumulatedDist / 1000); // 秒/公里
+        laps.push({
+          km: currentKm,
+          pace: Math.round(pace),
+          time: accumulatedTime,
+        });
+
+        accumulatedDist -= 1000;
+        accumulatedTime = 0;
+        currentKm++;
+      }
+
+      lastPoint = point;
+    }
+
+    // 处理剩余距离（最后一小段）
+    if (accumulatedDist > 100 && currentKm <= Math.ceil(totalKm)) {
+      const remainingKm = accumulatedDist / 1000;
+      const pace = accumulatedTime / remainingKm;
+      laps.push({
+        km: currentKm,
+        pace: Math.round(pace),
+        time: accumulatedTime,
+      });
+    }
+
+    return laps;
+  }, [routePoints, distance]);
 
   const defaultTitle = `${t("history.outdoorRun")}`;
 
@@ -767,6 +977,103 @@ export default function RunSummaryScreen() {
                   {t("activity.energy")}
                 </Text>
               </View>
+            </View>
+
+            {/* 详细统计区域 - 始终显示 */}
+            <View className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3">
+                {t("run.detailedStats") || "详细统计"}
+              </Text>
+              <View className="flex-row justify-between">
+                {/* 步频 */}
+                <View className="items-center flex-1">
+                  <Text className="text-xl font-bold text-slate-800 dark:text-white">
+                    {cadence > 0 ? cadence : "--"}
+                  </Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t("run.cadence") || "步频"}
+                  </Text>
+                  <Text className="text-xs text-slate-400">spm</Text>
+                </View>
+                {/* 步幅 */}
+                <View className="items-center flex-1">
+                  <Text className="text-xl font-bold text-slate-800 dark:text-white">
+                    {cadence > 0 ? strideLength : "--"}
+                  </Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t("run.stride") || "步幅"}
+                  </Text>
+                  <Text className="text-xs text-slate-400">m</Text>
+                </View>
+                {/* 海拔 */}
+                <View className="items-center flex-1">
+                  <Text className="text-xl font-bold text-slate-800 dark:text-white">
+                    {altitudeStats.gain > 0 ? altitudeStats.gain : "--"}
+                  </Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t("run.elevation") || "爬升"}
+                  </Text>
+                  <Text className="text-xs text-slate-400">m</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* 分段配速列表 */}
+            {lapPaces.length > 0 && (
+              <View className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3">
+                  {t("run.lapPace") || "分段配速"}
+                </Text>
+                <View className="space-y-2">
+                  {lapPaces.map((lap, index) => (
+                    <View
+                      key={index}
+                      className="flex-row items-center justify-between"
+                    >
+                      <View className="flex-row items-center">
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 w-16">
+                          {t("run.km") || "公里"} {lap.km}
+                        </Text>
+                        <View
+                          className="h-2 bg-indigo-500 rounded-full"
+                          style={{
+                            width: Math.min((240 / lap.pace) * 100, 100), // 以 4'00" 为 100%
+                            opacity: 0.6 + (index % 2) * 0.2,
+                          }}
+                        />
+                      </View>
+                      <Text className="text-sm font-semibold text-slate-800 dark:text-white">
+                        {getPaceLabel(lap.pace)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* 图表区域 */}
+            <RunCharts
+              paceTrend={chartData.paceTrend}
+              altitudeProfile={chartData.altitudeProfile}
+              lapPaces={lapPaces}
+              colorScheme={colorScheme as "light" | "dark"}
+              t={t}
+            />
+
+            {/* Note 显示模块 */}
+            <View className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
+                {t("run.note") || "备注"}
+              </Text>
+              {note && note.length > 0 ? (
+                <Text className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {note}
+                </Text>
+              ) : (
+                <Text className="text-sm text-slate-400 dark:text-slate-500 italic">
+                  {t("run.noNote") || "暂无备注"}
+                </Text>
+              )}
             </View>
 
             {/* 编辑模式按钮 */}
