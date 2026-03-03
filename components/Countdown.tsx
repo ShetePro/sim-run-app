@@ -8,24 +8,20 @@ import Animated, {
   Easing,
   runOnJS,
 } from "react-native-reanimated";
+import * as Speech from "expo-speech";
 
 interface CountdownProps {
   onFinish?: () => void;
   onCountChange?: (count: number) => Promise<void> | void; // 支持异步回调
-  minDuration?: number; // 每个数字显示的最短时间（毫秒）
 }
 
 const { width, height } = Dimensions.get("window");
-const DEFAULT_MIN_DURATION = 800; // 默认最少显示 800ms
 
-export default function Countdown({
-  onFinish,
-  onCountChange,
-  minDuration = DEFAULT_MIN_DURATION,
-}: CountdownProps) {
+export default function Countdown({ onFinish, onCountChange }: CountdownProps) {
   // 使用 ref 替代 state 追踪计数，避免 useEffect 依赖问题
   const currentCountRef = useRef(3);
   const hasStartedRef = useRef(false);
+  const isInitializedRef = useRef(false);
 
   const [displayCount, setDisplayCount] = useState(3);
   const scale = useSharedValue(1);
@@ -62,7 +58,7 @@ export default function Countdown({
       setDisplayCount(count);
       runAnimation();
 
-      // 触发回调（语音播报）
+      // 触发回调（语音播报）- 等待语音完成
       if (onCountChange) {
         await onCountChange(count);
       }
@@ -70,15 +66,44 @@ export default function Countdown({
       // 递减计数
       currentCountRef.current = count - 1;
 
-      // 延迟后执行下一个
-      setTimeout(processNext, minDuration);
+      // 直接执行下一个，由语音回调驱动节奏（移除固定延迟）
+      processNext();
     };
 
-    processNext();
+    // TTS 预初始化 - 静默播放以消除冷启动延迟
+    const initTTS = async () => {
+      if (isInitializedRef.current) return;
+
+      // 停止任何正在进行的语音
+      Speech.stop();
+
+      // 预初始化：静默播放一个空字符串或极短内容
+      await new Promise<void>((resolve) => {
+        Speech.speak("", {
+          volume: 0, // 静音
+          rate: 0.5, // 极快语速，最小化时间
+          onDone: () => {
+            isInitializedRef.current = true;
+            resolve();
+          },
+          onError: () => {
+            // 即使有错误也继续，避免卡住
+            isInitializedRef.current = true;
+            resolve();
+          },
+        });
+      });
+
+      // TTS 初始化完成后开始倒计时
+      processNext();
+    };
+
+    initTTS();
 
     // 清理函数
     return () => {
       hasStartedRef.current = false;
+      Speech.stop();
     };
   }, []); // 空依赖，只执行一次
 
