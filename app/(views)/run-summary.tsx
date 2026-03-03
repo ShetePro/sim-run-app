@@ -5,6 +5,7 @@ import {
   Dimensions,
   Alert,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,12 +21,12 @@ import React, {
   ReactElement,
 } from "react";
 import MapView, { Polyline, Marker, Circle, MapType } from "react-native-maps";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import dayjs from "dayjs";
 import { useRunDB } from "@/hooks/useSQLite";
 import { useRunStore } from "@/store/runStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { secondFormatHours, getPaceLabel } from "@/utils/util";
+import { secondFormatHours, getPaceLabel, debounceFn } from "@/utils/util";
 import { RunRecord, TrackPoint } from "@/types/runType";
 import Toast from "react-native-toast-message";
 import {
@@ -34,7 +35,7 @@ import {
   exportRunAsCSV,
   ExportFormat,
 } from "@/utils/exportRun";
-import RunCharts from "@/components/RunCharts";
+import RunDetailCharts from "@/components/charts/RunDetailCharts";
 import {
   trackPointsToCoordinates,
   filterValidCoordinates,
@@ -124,8 +125,6 @@ export default function RunSummaryScreen() {
       const points = await getTrackPoints(runId);
       const mappedPoints = trackPointsToCoordinates(points);
       setRoutePoints(mappedPoints);
-
-      console.log(points);
       // 设置地图适配所有坐标点
       if (mappedPoints.length > 0) {
         // 延迟一点执行 fitToCoordinates，确保 MapView 已经渲染
@@ -329,82 +328,21 @@ export default function RunSummaryScreen() {
     };
   }, [routePoints, elevationGain]);
 
-  // 计算图表数据
-  const chartData = useMemo(() => {
-    if (!routePoints || routePoints.length < 2) {
-      return { paceTrend: [], altitudeProfile: [], paceDistribution: [] };
-    }
-
-    const paceTrend: { x: number; y: number }[] = [];
-    const altitudeProfile: { x: number; y: number }[] = [];
-    const paceDistribution: { x: string; y: number }[] = [];
-
-    let accumulatedDist = 0;
-    let lastPoint = routePoints[0];
-    let lastTimestamp = lastPoint.timestamp || startTime;
-
-    // 采样点（每隔 N 个点取一个，避免数据过多）
-    const sampleInterval = Math.max(1, Math.floor(routePoints.length / 50));
-
-    routePoints.forEach((point: any, index: number) => {
-      if (index % sampleInterval === 0) {
-        const currentTimestamp = point.timestamp || lastTimestamp;
-        const timeDiff = (currentTimestamp - lastTimestamp) / 1000; // 秒
-
-        if (index > 0 && timeDiff > 0) {
-          // 计算距离
-          const R = 6371000;
-          const lat1 = (lastPoint.latitude * Math.PI) / 180;
-          const lat2 = (point.latitude * Math.PI) / 180;
-          const deltaLat =
-            ((point.latitude - lastPoint.latitude) * Math.PI) / 180;
-          const deltaLon =
-            ((point.longitude - lastPoint.longitude) * Math.PI) / 180;
-          const a =
-            Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-            Math.cos(lat1) *
-              Math.cos(lat2) *
-              Math.sin(deltaLon / 2) *
-              Math.sin(deltaLon / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          const dist = R * c;
-
-          accumulatedDist += dist;
-
-          // 瞬时配速（秒/公里）
-          const instantPace = dist > 0 ? timeDiff / (dist / 1000) : 0;
-          if (instantPace > 0 && instantPace < 600) {
-            // 过滤异常值（< 10分钟/公里）
-            paceTrend.push({
-              x: Math.round(accumulatedDist / 100) / 10, // 距离（公里，保留1位小数）
-              y: Math.round(instantPace),
-            });
-          }
-        }
-
-        // 海拔数据
-        if (point.altitude != null && !isNaN(point.altitude)) {
-          altitudeProfile.push({
-            x: Math.round(accumulatedDist / 100) / 10,
-            y: Math.round(point.altitude),
-          });
-        }
-
-        lastPoint = point;
-        lastTimestamp = currentTimestamp;
-      }
-    });
-
-    return { paceTrend, altitudeProfile, paceDistribution };
-  }, [routePoints, startTime]);
-
-  // 计算分段配速（每公里）
+  // 计算每公里配速（包括最后不足1公里的段落）
   const lapPaces = useMemo(() => {
+    console.log(
+      "[LapPace Debug] routePoints count:",
+      routePoints?.length,
+      "distance:",
+      distance,
+    );
+
     if (!routePoints || routePoints.length < 2 || distance <= 0) {
+      console.log("[LapPace Debug] Not enough data for lap paces");
       return [];
     }
 
-    // 计算两点间距离（米）- 在 useMemo 内部定义
+    // 计算两点间距离（米）
     const calculateDistance = (p1: any, p2: any): number => {
       const R = 6371000; // 地球半径（米）
       const lat1 = (p1.latitude * Math.PI) / 180;
@@ -425,10 +363,24 @@ export default function RunSummaryScreen() {
 
     const laps: { km: number; pace: number; time: number }[] = [];
     const totalKm = distance / 1000;
+    const totalFullKm = Math.floor(totalKm); // 完整公里数
+    const hasPartialKm = totalKm > totalFullKm; // 是否有不足1公里的段落
+
     let currentKm = 1;
     let lastPoint = routePoints[0];
-    let accumulatedDist = 0;
-    let accumulatedTime = 0;
+    let accumulatedDist = 0; // 当前公里段内累积的距离
+    let accumulatedTime = 0; // 当前公里段内累积的时间
+
+    console.log("[LapPace Debug] ========== 开始计算 ==========");
+    console.log(
+      "[LapPace Debug] totalKm:",
+      totalKm,
+      "totalFullKm:",
+      totalFullKm,
+      "hasPartialKm:",
+      hasPartialKm,
+    );
+    console.log("[LapPace Debug] routePoints.length:", routePoints.length);
 
     for (let i = 1; i < routePoints.length; i++) {
       const point = routePoints[i];
@@ -445,38 +397,191 @@ export default function RunSummaryScreen() {
       accumulatedDist += dist;
       accumulatedTime += time;
 
-      // 每累积1公里记录一次
-      while (accumulatedDist >= 1000 && currentKm <= Math.floor(totalKm)) {
-        const pace = accumulatedTime / (accumulatedDist / 1000); // 秒/公里
+      // 调试：显示每次迭代的状态
+      if (accumulatedDist >= 500 || i % 50 === 0) {
+        console.log(
+          `[LapPace Debug] i=${i}, dist=${dist.toFixed(2)}m, accDist=${accumulatedDist.toFixed(2)}m, accTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}`,
+        );
+      }
+
+      // 当累积距离达到或超过1公里，且还有完整公里要记录时
+      let whileLoopCount = 0;
+      while (accumulatedDist >= 1000 && currentKm <= totalFullKm) {
+        whileLoopCount++;
+        console.log(
+          `[LapPace Debug] >>> WHILE 循环 #${whileLoopCount} 开始 - accumulatedDist=${accumulatedDist.toFixed(2)}m, currentKm=${currentKm}, totalFullKm=${totalFullKm}`,
+        );
+
+        // 计算这一公里的配速（使用实际累积的时间和距离）
+        const pace = accumulatedTime / (accumulatedDist / 1000);
         laps.push({
           km: currentKm,
           pace: Math.round(pace),
-          time: accumulatedTime,
+          time: Math.round(accumulatedTime),
         });
+        console.log(
+          `[LapPace Debug] >>> 记录第 ${currentKm} 公里配速: ${Math.round(pace)}s/km, 时间: ${Math.round(accumulatedTime)}s`,
+        );
 
-        accumulatedDist -= 1000;
-        accumulatedTime = 0;
+        // 重置累积器（减去1000米对应的时间和距离）
+        const ratio = 1000 / accumulatedDist;
+        const removedTime = accumulatedTime * ratio;
+        accumulatedTime = accumulatedTime - removedTime;
+        accumulatedDist = accumulatedDist - 1000;
         currentKm++;
+
+        console.log(
+          `[LapPace Debug] >>> 重置后 - accumulatedDist=${accumulatedDist.toFixed(2)}m, accumulatedTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}`,
+        );
+        console.log(
+          `[LapPace Debug] >>> 继续while循环? accumulatedDist>=1000: ${accumulatedDist >= 1000}, currentKm<=totalFullKm: ${currentKm <= totalFullKm}`,
+        );
       }
 
       lastPoint = point;
     }
 
-    // 处理剩余距离（最后一小段）
-    if (accumulatedDist > 100 && currentKm <= Math.ceil(totalKm)) {
+    // 循环结束后显示最终状态
+    console.log("[LapPace Debug] ========== 循环结束 ==========");
+    console.log(
+      `[LapPace Debug] 最终状态: accumulatedDist=${accumulatedDist.toFixed(2)}m, accumulatedTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}, totalFullKm=${totalFullKm}`,
+    );
+    console.log(
+      `[LapPace Debug] 条件检查: accumulatedDist>0: ${accumulatedDist > 0}, hasPartialKm: ${hasPartialKm}`,
+    );
+
+    // 处理最后一小段（不足1公里或剩余的距离）
+    if (accumulatedDist > 0 && hasPartialKm) {
       const remainingKm = accumulatedDist / 1000;
       const pace = accumulatedTime / remainingKm;
       laps.push({
         km: currentKm,
         pace: Math.round(pace),
-        time: accumulatedTime,
+        time: Math.round(accumulatedTime),
+      });
+      console.log("[LapPace Debug] Added partial lap:", {
+        km: currentKm,
+        distance: remainingKm.toFixed(2) + "km",
+        pace: Math.round(pace),
+      });
+    }
+
+    console.log("[LapPace Debug] Generated laps count:", laps.length);
+    console.log("[LapPace Debug] Laps:", laps);
+
+    // 如果没有生成分段但距离>0，使用整体平均配速生成一个虚拟分段
+    if (laps.length === 0 && distance > 0 && duration > 0) {
+      const avgPace = duration / (distance / 1000);
+      laps.push({
+        km: 1,
+        pace: Math.round(avgPace),
+        time: duration,
+      });
+      console.log("[LapPace Debug] Added fallback lap:", {
+        km: 1,
+        pace: Math.round(avgPace),
+        time: duration,
       });
     }
 
     return laps;
-  }, [routePoints, distance]);
+  }, [routePoints, distance, duration]);
+
+  // 计算图表数据
+  const chartData = useMemo(() => {
+    console.log("[Chart Debug] routePoints count:", routePoints?.length);
+    console.log("[Chart Debug] lapPaces count:", lapPaces.length);
+
+    // 配速趋势直接使用 lapPaces 的数据（每公里一个点）
+    const paceTrend: { distance: number; pace: number }[] = lapPaces.map(
+      (lap) => ({
+        distance: lap.km,
+        pace: lap.pace,
+      }),
+    );
+
+    const altitudeProfile: { distance: number; altitude: number }[] = [];
+    const paceDistribution: { x: string; y: number }[] = [];
+
+    let accumulatedDist = 0;
+
+    // 采样点（每隔 N 个点取一个，避免数据过多）
+    const sampleInterval = Math.max(
+      1,
+      Math.floor((routePoints?.length || 0) / 50),
+    );
+
+    // 计算海拔数据
+    if (routePoints && routePoints.length >= 2) {
+      for (let i = 1; i < routePoints.length; i++) {
+        const point = routePoints[i];
+        const prevPoint = routePoints[i - 1];
+
+        // 计算距离
+        const R = 6371000;
+        const lat1 = (prevPoint.latitude * Math.PI) / 180;
+        const lat2 = (point.latitude * Math.PI) / 180;
+        const deltaLat =
+          ((point.latitude - prevPoint.latitude) * Math.PI) / 180;
+        const deltaLon =
+          ((point.longitude - prevPoint.longitude) * Math.PI) / 180;
+        const a =
+          Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+          Math.cos(lat1) *
+            Math.cos(lat2) *
+            Math.sin(deltaLon / 2) *
+            Math.sin(deltaLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const dist = R * c;
+
+        accumulatedDist += dist;
+
+        // 采样点（每隔 N 个点记录一次）
+        if (i % sampleInterval === 0) {
+          // 海拔数据
+          if (point.altitude != null && !isNaN(point.altitude)) {
+            altitudeProfile.push({
+              distance: Math.round(accumulatedDist / 100) / 10,
+              altitude: Math.round(point.altitude),
+            });
+          }
+        }
+      }
+    }
+
+    console.log("[Chart Debug] Final - paceTrend count:", paceTrend.length);
+    console.log("[Chart Debug] paceTrend:", paceTrend);
+    console.log(
+      "[Chart Debug] Final - altitudeProfile count:",
+      altitudeProfile.length,
+    );
+
+    return { paceTrend, altitudeProfile, paceDistribution };
+  }, [lapPaces, routePoints]);
 
   const defaultTitle = `${t("history.outdoorRun")}`;
+
+  // 防抖保存 note 到数据库
+  const debouncedSaveNote = useMemo(
+    () =>
+      debounceFn(async (newNote: string) => {
+        try {
+          await updateRun({
+            id: runId,
+            note: newNote,
+          });
+          console.log("[Note] 自动保存成功");
+        } catch (error) {
+          console.error("[Note] 自动保存失败:", error);
+          Toast.show({
+            type: "error",
+            text1: t("common.error"),
+            text2: t("run.saveFailed"),
+          });
+        }
+      }, 1000),
+    [runId, updateRun, t],
+  );
 
   // 保存跑步记录
   const handleSave = async () => {
@@ -660,32 +765,6 @@ export default function RunSummaryScreen() {
     );
   }
 
-  // 统计数据卡片
-  const StatCard = ({
-    icon,
-    value,
-    unit,
-    label,
-    color = "#6366f1",
-  }: {
-    icon: keyof typeof MaterialCommunityIcons.glyphMap;
-    value: string | number;
-    unit?: string;
-    label: string;
-    color?: string;
-  }) => (
-    <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex-1 mx-1 items-center">
-      <MaterialCommunityIcons name={icon} size={24} color={color} />
-      <Text className="text-2xl font-bold text-slate-800 dark:text-white mt-2 whitespace-nowrap">
-        {value}
-        {unit && (
-          <Text className="text-sm font-normal text-slate-400"> {unit}</Text>
-        )}
-      </Text>
-      <Text className="text-xs text-slate-400 mt-1">{label}</Text>
-    </View>
-  );
-
   // 渲染顶部导航栏
   const renderHeader = () => {
     if (isViewMode) {
@@ -827,7 +906,7 @@ export default function RunSummaryScreen() {
                 }}
               />
               <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1 mr-3">
-                起
+                {t("run.startPoint")}
               </Text>
               <View
                 style={{
@@ -847,7 +926,7 @@ export default function RunSummaryScreen() {
                 }}
               />
               <Text className="text-xs text-slate-600 dark:text-slate-300 ml-1">
-                终
+                {t("run.endPoint")}
               </Text>
             </View>
           </View>
@@ -930,7 +1009,7 @@ export default function RunSummaryScreen() {
             borderRadius: 3,
           }}
         >
-          <BottomSheetView className="flex-1 px-4 pt-2 pb-8">
+          <BottomSheetScrollView className="flex-1 px-4 pt-2">
             {/* 距离 - 大字体突出显示 */}
             <View className="items-center mb-6">
               <Text
@@ -1052,28 +1131,40 @@ export default function RunSummaryScreen() {
             )}
 
             {/* 图表区域 */}
-            <RunCharts
+            <RunDetailCharts
               paceTrend={chartData.paceTrend}
               altitudeProfile={chartData.altitudeProfile}
-              lapPaces={lapPaces}
               colorScheme={colorScheme as "light" | "dark"}
               t={t}
             />
 
-            {/* Note 显示模块 */}
-            <View className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            {/* Note 显示/编辑模块 */}
+            <View className="mt-6 pt-6 pb-6 border-t border-slate-200 dark:border-slate-700">
               <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
                 {t("run.note") || "备注"}
               </Text>
-              {note && note.length > 0 ? (
-                <Text className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {note}
-                </Text>
-              ) : (
-                <Text className="text-sm text-slate-400 dark:text-slate-500 italic">
-                  {t("run.noNote") || "暂无备注"}
-                </Text>
-              )}
+              <TextInput
+                className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 min-h-[60px]"
+                value={note}
+                onChangeText={(text) => {
+                  if (text.length <= 200) {
+                    setNote(text);
+                    debouncedSaveNote(text);
+                  }
+                }}
+                placeholder={t("run.addNote") || "添加备注..."}
+                placeholderTextColor={
+                  colorScheme === "dark" ? "#64748b" : "#94a3b8"
+                }
+                multiline={true}
+                numberOfLines={3}
+                maxLength={200}
+                textAlignVertical="top"
+                style={{ height: 60 }}
+              />
+              <Text className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-right">
+                {note.length}/200
+              </Text>
             </View>
 
             {/* 编辑模式按钮 */}
@@ -1096,7 +1187,7 @@ export default function RunSummaryScreen() {
                 </TouchableOpacity>
               </View>
             )}
-          </BottomSheetView>
+          </BottomSheetScrollView>
         </BottomSheet>
       </View>
     </SafeAreaView>
