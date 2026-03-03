@@ -330,15 +330,8 @@ export default function RunSummaryScreen() {
 
   // 计算每公里配速（包括最后不足1公里的段落）
   const lapPaces = useMemo(() => {
-    console.log(
-      "[LapPace Debug] routePoints count:",
-      routePoints?.length,
-      "distance:",
-      distance,
-    );
 
     if (!routePoints || routePoints.length < 2 || distance <= 0) {
-      console.log("[LapPace Debug] Not enough data for lap paces");
       return [];
     }
 
@@ -371,16 +364,6 @@ export default function RunSummaryScreen() {
     let accumulatedDist = 0; // 当前公里段内累积的距离
     let accumulatedTime = 0; // 当前公里段内累积的时间
 
-    console.log("[LapPace Debug] ========== 开始计算 ==========");
-    console.log(
-      "[LapPace Debug] totalKm:",
-      totalKm,
-      "totalFullKm:",
-      totalFullKm,
-      "hasPartialKm:",
-      hasPartialKm,
-    );
-    console.log("[LapPace Debug] routePoints.length:", routePoints.length);
 
     for (let i = 1; i < routePoints.length; i++) {
       const point = routePoints[i];
@@ -397,20 +380,11 @@ export default function RunSummaryScreen() {
       accumulatedDist += dist;
       accumulatedTime += time;
 
-      // 调试：显示每次迭代的状态
-      if (accumulatedDist >= 500 || i % 50 === 0) {
-        console.log(
-          `[LapPace Debug] i=${i}, dist=${dist.toFixed(2)}m, accDist=${accumulatedDist.toFixed(2)}m, accTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}`,
-        );
-      }
 
       // 当累积距离达到或超过1公里，且还有完整公里要记录时
       let whileLoopCount = 0;
       while (accumulatedDist >= 1000 && currentKm <= totalFullKm) {
         whileLoopCount++;
-        console.log(
-          `[LapPace Debug] >>> WHILE 循环 #${whileLoopCount} 开始 - accumulatedDist=${accumulatedDist.toFixed(2)}m, currentKm=${currentKm}, totalFullKm=${totalFullKm}`,
-        );
 
         // 计算这一公里的配速（使用实际累积的时间和距离）
         const pace = accumulatedTime / (accumulatedDist / 1000);
@@ -419,9 +393,6 @@ export default function RunSummaryScreen() {
           pace: Math.round(pace),
           time: Math.round(accumulatedTime),
         });
-        console.log(
-          `[LapPace Debug] >>> 记录第 ${currentKm} 公里配速: ${Math.round(pace)}s/km, 时间: ${Math.round(accumulatedTime)}s`,
-        );
 
         // 重置累积器（减去1000米对应的时间和距离）
         const ratio = 1000 / accumulatedDist;
@@ -430,25 +401,11 @@ export default function RunSummaryScreen() {
         accumulatedDist = accumulatedDist - 1000;
         currentKm++;
 
-        console.log(
-          `[LapPace Debug] >>> 重置后 - accumulatedDist=${accumulatedDist.toFixed(2)}m, accumulatedTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}`,
-        );
-        console.log(
-          `[LapPace Debug] >>> 继续while循环? accumulatedDist>=1000: ${accumulatedDist >= 1000}, currentKm<=totalFullKm: ${currentKm <= totalFullKm}`,
-        );
       }
 
       lastPoint = point;
     }
 
-    // 循环结束后显示最终状态
-    console.log("[LapPace Debug] ========== 循环结束 ==========");
-    console.log(
-      `[LapPace Debug] 最终状态: accumulatedDist=${accumulatedDist.toFixed(2)}m, accumulatedTime=${accumulatedTime.toFixed(2)}s, currentKm=${currentKm}, totalFullKm=${totalFullKm}`,
-    );
-    console.log(
-      `[LapPace Debug] 条件检查: accumulatedDist>0: ${accumulatedDist > 0}, hasPartialKm: ${hasPartialKm}`,
-    );
 
     // 处理最后一小段（不足1公里或剩余的距离）
     if (accumulatedDist > 0 && hasPartialKm) {
@@ -459,25 +416,13 @@ export default function RunSummaryScreen() {
         pace: Math.round(pace),
         time: Math.round(accumulatedTime),
       });
-      console.log("[LapPace Debug] Added partial lap:", {
-        km: currentKm,
-        distance: remainingKm.toFixed(2) + "km",
-        pace: Math.round(pace),
-      });
     }
 
-    console.log("[LapPace Debug] Generated laps count:", laps.length);
-    console.log("[LapPace Debug] Laps:", laps);
 
     // 如果没有生成分段但距离>0，使用整体平均配速生成一个虚拟分段
     if (laps.length === 0 && distance > 0 && duration > 0) {
       const avgPace = duration / (distance / 1000);
       laps.push({
-        km: 1,
-        pace: Math.round(avgPace),
-        time: duration,
-      });
-      console.log("[LapPace Debug] Added fallback lap:", {
         km: 1,
         pace: Math.round(avgPace),
         time: duration,
@@ -489,8 +434,6 @@ export default function RunSummaryScreen() {
 
   // 计算图表数据
   const chartData = useMemo(() => {
-    console.log("[Chart Debug] routePoints count:", routePoints?.length);
-    console.log("[Chart Debug] lapPaces count:", lapPaces.length);
 
     // 配速趋势直接使用 lapPaces 的数据（每公里一个点）
     const paceTrend: { distance: number; pace: number }[] = lapPaces.map(
@@ -549,12 +492,6 @@ export default function RunSummaryScreen() {
       }
     }
 
-    console.log("[Chart Debug] Final - paceTrend count:", paceTrend.length);
-    console.log("[Chart Debug] paceTrend:", paceTrend);
-    console.log(
-      "[Chart Debug] Final - altitudeProfile count:",
-      altitudeProfile.length,
-    );
 
     return { paceTrend, altitudeProfile, paceDistribution };
   }, [lapPaces, routePoints]);
@@ -570,7 +507,6 @@ export default function RunSummaryScreen() {
             id: runId,
             note: newNote,
           });
-          console.log("[Note] 自动保存成功");
         } catch (error) {
           console.error("[Note] 自动保存失败:", error);
           Toast.show({
