@@ -1,6 +1,7 @@
 import { isNumber, isObject } from "@/utils/is";
 import dayjs from "dayjs";
 import { RunRecord } from "@/types/runType";
+import debounce from "lodash.debounce";
 
 export function deepMerge<T = any>(src: any = {}, target: any = {}): T {
   let key: string;
@@ -260,4 +261,17 @@ export function jsonParse(text: string | null) {
   } catch (e) {
     console.error(e);
   }
+}
+
+/**
+ * 防抖函数
+ * @param func 要执行的函数
+ * @param wait 延迟时间（毫秒），默认 1000ms
+ * @returns 防抖后的函数
+ */
+export function debounceFn<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number = 1000,
+) {
+  return debounce(func, wait);
 }
