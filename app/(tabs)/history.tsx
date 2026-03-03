@@ -127,7 +127,7 @@ export default function HistoryScreen() {
           </View>
 
           {/* 跑步记录列表 */}
-          <View>
+          <View className={'flex flex-col gap-4'}>
             {record.list.map((item, index) => (
               <HistoryItem
                 key={item.id}

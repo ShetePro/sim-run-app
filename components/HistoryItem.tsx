@@ -43,26 +43,49 @@ export function HistoryItem({ record, onDelete }: HistoryItemProps) {
 
   // 右滑显示的删除按钮
   const renderRightActions = (progress: any, dragX: any) => {
-    const scale = dragX.interpolate({
+    // 弹性展开动画 - 从0弹性展开到1
+    const scaleX = dragX.interpolate({
       inputRange: [-100, 0],
       outputRange: [1, 0],
       extrapolate: "clamp",
     });
 
+    // 透明度动画 - 非线性渐变
+    const opacity = dragX.interpolate({
+      inputRange: [-100, -20, 0],
+      outputRange: [1, 0.3, 0],
+      extrapolate: "clamp",
+    });
+
+    // 图标缩放动画 - 滞后于容器展开
+    const iconScale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.6, 0],
+      extrapolate: "clamp",
+    });
+
     return (
-      <View className="flex-row items-center h-full">
+      <Animated.View
+        style={{
+          position: "relative",
+          left: 20,
+          transform: [{ scaleX }],
+          transformOrigin: "left",
+          height: "100%",
+          opacity,
+          width: 100,
+        }}
+        className="flex-row items-center"
+      >
         <TouchableOpacity
           onPress={handleDelete}
-          className="bg-red-500 justify-center items-center w-20 h-full rounded-r-3xl"
+          className="bg-red-500 justify-center items-center w-full h-full rounded-r-3xl"
         >
-          <Animated.View style={{ transform: [{ scale }] }}>
+          <Animated.View style={{ transform: [{ scale: iconScale }] }}>
             <Ionicons name="trash-outline" size={24} color="white" />
-            <Text className="text-white text-xs mt-1">
-              {t("common.delete")}
-            </Text>
           </Animated.View>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     );
   };
 
@@ -76,7 +99,7 @@ export function HistoryItem({ record, onDelete }: HistoryItemProps) {
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.9}
-        className="bg-white dark:bg-slate-800 rounded-3xl p-5 mb-4"
+        className="bg-white dark:bg-slate-800 rounded-3xl p-5"
         style={{
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
