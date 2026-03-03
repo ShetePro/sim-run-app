@@ -187,6 +187,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
         speed: rawPoint.coords.speed,
         heading: rawPoint.coords.heading,
         isPaused: isPaused, // 添加暂停状态
+        timestamp: Date.now(),
       });
     }
   }

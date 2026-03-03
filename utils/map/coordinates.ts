@@ -6,6 +6,8 @@
 export interface MapCoordinate {
   latitude: number;
   longitude: number;
+  timestamp?: number;
+  altitude?: number;
 }
 
 /**
@@ -62,16 +64,34 @@ export function filterValidCoordinates(coordinates: any[]): MapCoordinate[] {
 export function trackPointToCoordinate(trackPoint: {
   latitude?: number;
   longitude?: number;
+  timestamp?: number;
+  altitude?: number;
   [key: string]: any;
 }): MapCoordinate | null {
   if (!trackPoint) {
     return null;
   }
 
-  const coord = {
-    latitude: trackPoint.latitude,
-    longitude: trackPoint.longitude,
+  // 确保经纬度有有效值
+  const latitude = trackPoint.latitude;
+  const longitude = trackPoint.longitude;
+
+  if (latitude === undefined || longitude === undefined) {
+    return null;
+  }
+
+  const coord: MapCoordinate = {
+    latitude,
+    longitude,
   };
+
+  // 只在有值时添加可选字段
+  if (trackPoint.timestamp !== undefined && trackPoint.timestamp !== null) {
+    coord.timestamp = trackPoint.timestamp;
+  }
+  if (trackPoint.altitude !== undefined && trackPoint.altitude !== null) {
+    coord.altitude = trackPoint.altitude;
+  }
 
   return isValidCoordinate(coord) ? coord : null;
 }
@@ -82,7 +102,7 @@ export function trackPointToCoordinate(trackPoint: {
  * @returns 有效的 MapCoordinate 数组
  */
 export function trackPointsToCoordinates(
-  trackPoints: Array<{ latitude?: number; longitude?: number }>,
+  trackPoints: { latitude?: number; longitude?: number }[],
 ): MapCoordinate[] {
   if (!Array.isArray(trackPoints)) {
     return [];
