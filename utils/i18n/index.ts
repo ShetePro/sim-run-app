@@ -189,6 +189,11 @@ const resources = {
         distance: "Distance (km)",
         pace: "Pace (s/km)",
         altitude: "Altitude (m)",
+        noChartData: "No chart data",
+        noChartDataDesc:
+          "Insufficient track points or missing time/altitude data",
+        startPoint: "Start",
+        endPoint: "End",
       },
       onboarding: {
         skip: "Skip",
@@ -735,6 +740,10 @@ const resources = {
         distance: "距离 (km)",
         pace: "配速 (s/km)",
         altitude: "海拔 (m)",
+        noChartData: "暂无图表数据",
+        noChartDataDesc: "轨迹点数量不足或缺少时间/海拔数据",
+        startPoint: "起",
+        endPoint: "终",
       },
       onboarding: {
         skip: "跳过",
