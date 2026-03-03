@@ -54,7 +54,6 @@ export function HistoryItem({ record, onDelete }: HistoryItemProps) {
         <TouchableOpacity
           onPress={handleDelete}
           className="bg-red-500 justify-center items-center w-20 h-full rounded-r-3xl"
-          style={{ marginLeft: -20 }}
         >
           <Animated.View style={{ transform: [{ scale }] }}>
             <Ionicons name="trash-outline" size={24} color="white" />
