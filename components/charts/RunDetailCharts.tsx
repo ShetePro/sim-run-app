@@ -1,4 +1,4 @@
-import { Dimensions, View, Text } from "react-native";
+import { Dimensions, View, Text, ScrollView } from "react-native";
 import {
   VictoryChart,
   VictoryTooltip,
@@ -74,6 +74,12 @@ export function RunDetailCharts({
     (_, i) => i + 1,
   );
 
+  // 动态计算配速趋势图宽度（避免刻度挤压）
+  const paceChartWidth = Math.max(
+    CHART_WIDTH,
+    paceTrend.length * 50, // 每个数据点至少50px宽度
+  );
+
   // 计算Y轴刻度（按最长时间5等分，向上取整到5的倍数）
   const maxPaceSeconds =
     paceTrend.length > 0 ? Math.max(...paceTrend.map((d) => d.pace)) : 0;
@@ -122,66 +128,68 @@ export function RunDetailCharts({
           <Text className="text-xs text-slate-500 dark:text-slate-400 mb-2 px-4">
             {t("run.paceTrend")}
           </Text>
-          <VictoryChart
-            width={CHART_WIDTH}
-            height={200}
-            padding={{ top: 10, bottom: 30, left: paceLabelWidth, right: 20 }}
-            domainPadding={{ x: 20 }}
-          >
-            <VictoryAxis
-              style={theme.axis.style}
-              tickValues={paceTickValues}
-              tickFormat={(tick: number) => tick.toString()}
-            />
-            <VictoryAxis
-              dependentAxis
-              style={theme.axis.style}
-              tickValues={yAxisTickValues}
-              tickFormat={(tick: number) => `${Math.round(tick / 60)}'`}
-              domain={{ y: [0, yAxisMaxMinutes * 60] }}
-            />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <VictoryChart
+              width={paceChartWidth}
+              height={200}
+              padding={{ top: 10, bottom: 30, left: paceLabelWidth, right: 20 }}
+              domainPadding={{ x: 20 }}
+            >
+              <VictoryAxis
+                style={theme.axis.style}
+                tickValues={paceTickValues}
+                tickFormat={(tick: number) => tick.toString()}
+              />
+              <VictoryAxis
+                dependentAxis
+                style={theme.axis.style}
+                tickValues={yAxisTickValues}
+                tickFormat={(tick: number) => `${Math.round(tick / 60)}'`}
+                domain={{ y: [0, yAxisMaxMinutes * 60] }}
+              />
 
-            {/* 折线 - 直线连接，无填充 */}
-            <VictoryLine
-              data={paceTrend}
-              x="distance"
-              y="pace"
-              domain={{ y: [0, yAxisMaxMinutes * 60] }}
-              style={{
-                data: {
-                  stroke: COLORS.pace,
-                  strokeWidth: 3,
-                },
-              }}
-            />
-
-            {/* 数据点圆点 */}
-            <VictoryScatter
-              data={paceTrend}
-              x="distance"
-              y="pace"
-              size={5}
-              labels={({ datum }: any) => getPaceLabel(datum.pace)}
-              labelComponent={
-                <VictoryTooltip
-                  renderInPortal={theme.tooltip.renderInPortal}
-                  constrainToVisibleArea={true}
-                  flyoutStyle={{
-                    fill: isDark ? "#1e293b" : "white",
+              {/* 折线 - 直线连接，无填充 */}
+              <VictoryLine
+                data={paceTrend}
+                x="distance"
+                y="pace"
+                domain={{ y: [0, yAxisMaxMinutes * 60] }}
+                style={{
+                  data: {
                     stroke: COLORS.pace,
-                  }}
-                  style={{ fill: isDark ? "white" : "#334155" }}
-                />
-              }
-              style={{
-                data: {
-                  fill: COLORS.pace,
-                  stroke: "white",
-                  strokeWidth: 2,
-                },
-              }}
-            />
-          </VictoryChart>
+                    strokeWidth: 3,
+                  },
+                }}
+              />
+
+              {/* 数据点圆点 */}
+              <VictoryScatter
+                data={paceTrend}
+                x="distance"
+                y="pace"
+                size={5}
+                labels={({ datum }: any) => getPaceLabel(datum.pace)}
+                labelComponent={
+                  <VictoryTooltip
+                    renderInPortal={theme.tooltip.renderInPortal}
+                    constrainToVisibleArea={true}
+                    flyoutStyle={{
+                      fill: isDark ? "#1e293b" : "white",
+                      stroke: COLORS.pace,
+                    }}
+                    style={{ fill: isDark ? "white" : "#334155" }}
+                  />
+                }
+                style={{
+                  data: {
+                    fill: COLORS.pace,
+                    stroke: "white",
+                    strokeWidth: 2,
+                  },
+                }}
+              />
+            </VictoryChart>
+          </ScrollView>
         </View>
       )}
 
