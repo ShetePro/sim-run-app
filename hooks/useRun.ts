@@ -424,6 +424,9 @@ export function useRun() {
     // 恢复后台任务
     await resumeLocationTask();
 
+    // 启动 Live Activity（继续跑步也需要显示）
+    await LiveActivity.start();
+
     console.log("[useRun] 跑步会话已恢复");
   };
 
