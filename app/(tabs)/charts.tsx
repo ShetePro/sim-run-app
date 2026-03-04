@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import RunBarChart from "@/components/charts/RunBarChart";
@@ -66,13 +67,26 @@ export default function StatsNewScreen() {
     return groupRunsByDay(statsData, timeRange);
   }, [statsData, timeRange]);
 
-  useEffect(() => {
+  // 根据时间范围获取数据
+  const fetchStatsData = useCallback(() => {
     const startDay = dayjs().startOf(timeRange).format("YYYY-MM-DD");
     setStartDate(startDay);
     queryStatisticsByTime({ date: startDay }).then((res) => {
       setStatsData(res);
     });
-  }, [timeRange]);
+  }, [timeRange, queryStatisticsByTime]);
+
+  // 时间范围变化时获取数据
+  useEffect(() => {
+    fetchStatsData();
+  }, [fetchStatsData]);
+
+  // 页面获得焦点时刷新数据
+  useFocusEffect(
+    useCallback(() => {
+      fetchStatsData();
+    }, [fetchStatsData]),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900">
@@ -82,7 +96,8 @@ export default function StatsNewScreen() {
             {t("charts.title")}
           </Text>
           <Text className="text-slate-500 dark:text-slate-400 text-sm">
-            {startDate}{t("charts.sinceDate")}
+            {startDate}
+            {t("charts.sinceDate")}
           </Text>
         </View>
         <TimeRangeSelector selected={timeRange} onSelect={changeDate} t={t} />

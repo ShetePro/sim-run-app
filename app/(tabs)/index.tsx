@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -34,44 +34,6 @@ export default function HomeScreen() {
     avatar?: string;
   }>({});
 
-  // 获取今日跑步数据和最近活动
-  useEffect(() => {
-    // 获取今日数据
-    getTodayRunData().then((res) => {
-      console.log(res, "获取的今日数据");
-      const todayData: TodayRunData = {
-        distance: 0,
-        calories: 0,
-        duration: 0,
-        pace: 0,
-        steps: 0,
-      };
-      let totalSteps = 0;
-      res.forEach((run, index) => {
-        todayData.distance += run.distance / 1000;
-        todayData.calories += run.energy;
-        todayData.duration += run.time;
-        totalSteps += run.steps || 0;
-      });
-      const { distance, duration } = todayData;
-      // 计算平均配速（秒/公里）：总时长(秒) / 总距离(公里)
-      todayData.pace = distance > 0 ? duration / distance : 0;
-      // 总步数
-      todayData.steps = totalSteps;
-      todayData.distance = Number(distance.toFixed(2));
-      setToday(todayData);
-    });
-
-    // 获取最近3条跑步记录
-    getRuns().then((runs) => {
-      const sorted = runs
-        .filter((run) => run.isFinish === 1)
-        .sort((a, b) => (b.startTime || 0) - (a.startTime || 0))
-        .slice(0, 3);
-      setRecentRuns(sorted);
-    });
-  }, []);
-
   // 获取用户信息（包括头像）
   const loadUserInfo = async () => {
     try {
@@ -98,16 +60,46 @@ export default function HomeScreen() {
     }
   };
 
-  // 页面加载时获取用户信息
-  useEffect(() => {
-    loadUserInfo();
-  }, []);
-
-  // 页面获得焦点时刷新用户信息（从个人资料页返回时）
+  // 页面获得焦点时刷新数据
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
+      // 获取今日跑步数据
+      getTodayRunData().then((res) => {
+        const todayData: TodayRunData = {
+          distance: 0,
+          calories: 0,
+          duration: 0,
+          pace: 0,
+          steps: 0,
+        };
+        let totalSteps = 0;
+        res.forEach((run) => {
+          todayData.distance += run.distance / 1000;
+          todayData.calories += run.energy;
+          todayData.duration += run.time;
+          totalSteps += run.steps || 0;
+        });
+        const { distance, duration } = todayData;
+        // 计算平均配速（秒/公里）：总时长(秒) / 总距离(公里)
+        todayData.pace = distance > 0 ? duration / distance : 0;
+        // 总步数
+        todayData.steps = totalSteps;
+        todayData.distance = Number(distance.toFixed(2));
+        setToday(todayData);
+      });
+
+      // 获取最近3条跑步记录
+      getRuns().then((runs) => {
+        const sorted = runs
+          .filter((run) => run.isFinish === 1)
+          .sort((a, b) => (b.startTime || 0) - (a.startTime || 0))
+          .slice(0, 3);
+        setRecentRuns(sorted);
+      });
+
+      // 获取用户信息
       loadUserInfo();
-    }, []),
+    }, [getTodayRunData, getRuns]),
   );
   // 根据时间生成问候语
   const getGreeting = () => {
