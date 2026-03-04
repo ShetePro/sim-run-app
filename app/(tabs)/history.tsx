@@ -4,8 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { HistoryItem } from "@/components/HistoryItem";
 import { EmptyState } from "@/components/EmptyState";
 import { useRunDB } from "@/hooks/useSQLite";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { dateFormat, diffDayNum } from "@/utils/util";
+import { useFocusEffect } from "expo-router";
 
 type HistoryRecord = {
   date: string;
@@ -18,31 +19,33 @@ export default function HistoryScreen() {
   const [historyRecords, setHistoryRecords] = useState<HistoryRecord[]>([]);
   const { t } = useTranslation();
 
-  useEffect(() => {
-    getRuns().then((runs) => {
-      const recordsMap: {
-        [key: string]: HistoryRecord;
-      } = {};
+  useFocusEffect(
+    useCallback(() => {
+      getRuns().then((runs) => {
+        const recordsMap: {
+          [key: string]: HistoryRecord;
+        } = {};
 
-      runs.forEach((item) => {
-        if (item.startTime) {
-          const date = getDateLabel(item.startTime);
-          recordsMap[date] = {
-            date,
-            dateTime: item.startTime,
-            list: recordsMap[date]?.list
-              ? [...recordsMap[date].list, item]
-              : [item],
-          };
-        }
+        runs.forEach((item) => {
+          if (item.startTime) {
+            const date = getDateLabel(item.startTime);
+            recordsMap[date] = {
+              date,
+              dateTime: item.startTime,
+              list: recordsMap[date]?.list
+                ? [...recordsMap[date].list, item]
+                : [item],
+            };
+          }
+        });
+
+        const recordsList = Object.values(recordsMap).sort(
+          (a, b) => b.dateTime - a.dateTime,
+        );
+        setHistoryRecords(recordsList);
       });
-
-      const recordsList = Object.values(recordsMap).sort(
-        (a, b) => b.dateTime - a.dateTime,
-      );
-      setHistoryRecords(recordsList);
-    });
-  }, []);
+    }, [getRuns]),
+  );
 
   async function deleteHistory(records: any) {
     for (const record of records) {
@@ -127,7 +130,7 @@ export default function HistoryScreen() {
           </View>
 
           {/* 跑步记录列表 */}
-          <View className={'flex flex-col gap-4'}>
+          <View className={"flex flex-col gap-4"}>
             {record.list.map((item, index) => (
               <HistoryItem
                 key={item.id}
