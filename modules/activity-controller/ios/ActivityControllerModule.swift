@@ -80,20 +80,27 @@ public class ActivityControllerModule: Module {
   @objc
   private func handleAppKill() {
     if #available(iOS 16.1, *) {
-      Task {
-        // 1. 这里的关键是：直接遍历 Activity<RunAttributes>.activities
-        // 这样即使 self.currentActivity 丢了，也能关掉锁屏上的“僵尸”活动
-        for activity in Activity<RunAttributes>.activities {
-          print("🛑 正在关闭活动 ID: \(activity.id)")
+      // 1. 创建一个信号量，初始值为 0
+      let semaphore = DispatchSemaphore(value: 0)
 
-          // 2. 使用 .immediate 策略：立即从锁屏和灵动岛移除，不留痕迹
-          await activity.end(dismissalPolicy: .immediate)
+      Task {
+        // 2. 遍历并关闭所有活动
+        for activity in Activity<RunAttributes>.activities {
+          print("🛑 正在同步关闭活动 ID: \(activity.id)")
+          // 这里必须传入当前的 contentState 作为最终状态，否则有时会报错
+          await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
         }
 
-        // 3. 清理本地变量
         self.currentActivity = nil
         print("✅ 所有灵动岛及锁屏通知已彻底清理")
+
+        // 3. 异步任务执行完毕，发送信号（+1）
+        semaphore.signal()
       }
+
+      // 4. 关键：强行阻塞主线程，等待 Task 完成。
+      // 设置一个合理的超时时间（如 2 秒），防止死锁导致 App 崩溃无法退出
+      _ = semaphore.wait(timeout: .now() + 2.0)
     }
   }
 }
