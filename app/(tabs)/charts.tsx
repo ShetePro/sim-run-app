@@ -43,7 +43,7 @@ export default function StatsNewScreen() {
     0,
   );
   const avgPace =
-    totalDistance > 0.01 ? getPaceLabel(totalTime / totalDistance / 60) : "0";
+    totalDistance > 0.01 ? getPaceLabel(totalTime / totalDistance) : "0";
 
   function changeDate(key: "isoWeek" | "month" | "year") {
     setTimeRange(key);
@@ -67,25 +67,15 @@ export default function StatsNewScreen() {
     return groupRunsByDay(statsData, timeRange);
   }, [statsData, timeRange]);
 
-  // 根据时间范围获取数据
-  const fetchStatsData = useCallback(() => {
-    const startDay = dayjs().startOf(timeRange).format("YYYY-MM-DD");
-    setStartDate(startDay);
-    queryStatisticsByTime({ date: startDay }).then((res) => {
-      setStatsData(res);
-    });
-  }, [timeRange, queryStatisticsByTime]);
-
-  // 时间范围变化时获取数据
-  useEffect(() => {
-    fetchStatsData();
-  }, [fetchStatsData]);
-
   // 页面获得焦点时刷新数据
   useFocusEffect(
     useCallback(() => {
-      fetchStatsData();
-    }, [fetchStatsData]),
+      const startDay = dayjs().startOf(timeRange).format("YYYY-MM-DD");
+      setStartDate(startDay);
+      queryStatisticsByTime({ date: startDay }).then((res) => {
+        setStatsData(res);
+      });
+    }, [timeRange, queryStatisticsByTime]),
   );
 
   return (
