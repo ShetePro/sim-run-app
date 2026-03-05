@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Alert,
   SafeAreaView,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,7 @@ import { useFocusEffect } from "expo-router";
 import { importRunFromFile, ImportResult } from "@/utils/importRun";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
+import { RestoreResult, RestoredRunItem } from "@/utils/backup";
 
 export default function CloudSyncScreen() {
   const router = useRouter();
@@ -49,6 +51,12 @@ export default function CloudSyncScreen() {
   const { addRun, updateRun } = useRunDB();
 
   const formattedSyncTime = useFormattedSyncTime();
+
+  // 恢复结果弹窗状态
+  const [showRestoreResult, setShowRestoreResult] = useState(false);
+  const [restoreResult, setRestoreResult] = useState<RestoreResult | null>(
+    null,
+  );
 
   // 初始化
   useEffect(() => {
@@ -80,29 +88,131 @@ export default function CloudSyncScreen() {
   const handleRestore = () => {
     Alert.alert(
       t("cloudSync.restoreTitle") || "恢复数据",
-      t("cloudSync.restoreConfirm") ||
-        "这将用云端备份覆盖当前设备上的所有数据。确定要继续吗？",
+      metadata.exists
+        ? `发现云端备份\n备份时间: ${new Date(metadata.modificationTime || 0).toLocaleString()}\n记录数: 请查看详情`
+        : "暂无云端备份数据",
       [
         {
           text: t("common.cancel") || "取消",
           style: "cancel",
         },
         {
-          text: t("cloudSync.restore") || "恢复",
-          style: "destructive",
+          text: "增量恢复（推荐）",
           onPress: async () => {
             resetState();
-            const success = await performRestore();
-            if (success) {
-              Alert.alert(
-                t("cloudSync.restoreSuccess") || "恢复成功",
-                t("cloudSync.restoreSuccessMessage") ||
-                  "数据已成功恢复，请重启应用以应用更改。",
-              );
+            const result = await performRestore("incremental");
+            setRestoreResult(result);
+            if (result.success) {
+              setShowRestoreResult(true);
             }
           },
         },
+        {
+          text: "强制覆盖",
+          style: "destructive",
+          onPress: () => {
+            // 二次确认
+            Alert.alert(
+              "确认强制覆盖",
+              "这将删除本地所有数据，用云端备份完全替换。确定要继续吗？",
+              [
+                { text: "取消", style: "cancel" },
+                {
+                  text: "确认覆盖",
+                  style: "destructive",
+                  onPress: async () => {
+                    resetState();
+                    const result = await performRestore("force");
+                    setRestoreResult(result);
+                    if (result.success) {
+                      setShowRestoreResult(true);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
       ],
+    );
+  };
+
+  // 渲染恢复结果弹窗
+  const renderRestoreResultModal = () => {
+    if (!restoreResult) return null;
+
+    return (
+      <Modal
+        visible={showRestoreResult}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowRestoreResult(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white dark:bg-slate-800 rounded-2xl p-6 m-4 max-h-[80%] w-[90%]">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-bold text-slate-800 dark:text-white">
+                恢复完成
+              </Text>
+              <TouchableOpacity onPress={() => setShowRestoreResult(false)}>
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={isDark ? "#94a3b8" : "#64748b"}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="max-h-[400px]">
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  恢复模式:{" "}
+                  {restoreResult.mode === "incremental"
+                    ? "增量恢复"
+                    : "强制覆盖"}
+                </Text>
+                <Text className="text-base text-slate-600 dark:text-slate-400">
+                  新增记录: {restoreResult.restoredRuns.length} 条
+                </Text>
+                {restoreResult.skippedCount > 0 && (
+                  <Text className="text-base text-slate-600 dark:text-slate-400">
+                    跳过记录: {restoreResult.skippedCount} 条（本地已存在）
+                  </Text>
+                )}
+              </View>
+
+              {restoreResult.restoredRuns.length > 0 && (
+                <View>
+                  <Text className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    恢复的跑步记录:
+                  </Text>
+                  {restoreResult.restoredRuns.map((run, index) => (
+                    <View
+                      key={index}
+                      className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 mb-2"
+                    >
+                      <Text className="text-slate-800 dark:text-slate-200">
+                        {run.date} · {run.distance} km ·{" "}
+                        {Math.floor(run.duration / 60)} min
+                      </Text>
+                      <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {run.isNew ? "新恢复" : "强制覆盖"}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              className="bg-indigo-500 rounded-xl py-3 mt-4"
+              onPress={() => setShowRestoreResult(false)}
+            >
+              <Text className="text-white text-center font-semibold">确定</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -468,6 +578,9 @@ export default function CloudSyncScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* 恢复结果弹窗 */}
+      {renderRestoreResultModal()}
     </SafeAreaView>
   );
 }

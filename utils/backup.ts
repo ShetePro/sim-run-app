@@ -9,6 +9,76 @@ import { Platform } from "react-native";
 const DB_NAME = "simrun.db";
 const BACKUP_FILE_NAME = "simrun_backup.db";
 
+// ==================== 类型定义 ====================
+
+export interface RunRecord {
+  id?: number;
+  startTime: number;
+  endTime: number;
+  distance: number;
+  time: number;
+  pace: number;
+  energy: number;
+  steps: number;
+  elevationGain: number;
+  note?: string;
+  isFinish: number;
+}
+
+export interface TrackPoint {
+  id?: number;
+  runId: number;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  timestamp?: number;
+  heading?: number;
+}
+
+export interface RestoreResult {
+  success: boolean;
+  mode: "incremental" | "force";
+  restoredRuns: RestoredRunItem[];
+  skippedCount: number;
+  error?: string;
+}
+
+export interface RestoredRunItem {
+  date: string;
+  distance: number;
+  duration: number;
+  isNew: boolean;
+}
+
+// ==================== 辅助函数 ====================
+
+import * as SQLite from "expo-sqlite";
+
+/**
+ * 获取数据库连接
+ */
+async function getDatabase() {
+  return await SQLite.openDatabaseAsync(DB_NAME);
+}
+
+/**
+ * 格式化日期
+ */
+function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+/**
+ * 将距离从米转换为公里
+ */
+function metersToKm(meters: number): number {
+  return Number((meters / 1000).toFixed(2));
+}
+
 /**
  * 获取数据库文件的完整路径
  */
@@ -41,7 +111,7 @@ export async function checkDatabaseExists(): Promise<boolean> {
 /**
  * 备份 SQLite 数据库到 FileSystem.documentDirectory
  * 这样可以利用 iCloud 自动备份功能
- * 
+ *
  * iOS 说明：
  * - DocumentDirectory 中的文件默认会被 iCloud 备份
  * - 这是苹果推荐的存储用户数据的位置
@@ -79,11 +149,11 @@ export async function backupDatabase(): Promise<void> {
 
 /**
  * 从备份恢复数据库（如果需要）
- * 
+ *
  * 使用场景：
  * - 应用重新安装后恢复数据
  * - 从 iCloud 恢复设备后恢复数据
- * 
+ *
  * 注意：只有在数据库不存在时才会恢复，避免覆盖现有数据
  */
 export async function restoreDatabase(): Promise<void> {
@@ -190,12 +260,271 @@ export async function getDatabaseInfo(): Promise<{
   try {
     const dbPath = getDatabasePath();
     const fileInfo = await getInfoAsync(dbPath);
-    return {
-      exists: fileInfo.exists,
-      size: fileInfo.size,
-      modificationTime: fileInfo.modificationTime,
-    };
+    if (fileInfo.exists) {
+      return {
+        exists: true,
+        size: (fileInfo as any).size,
+        modificationTime: (fileInfo as any).modificationTime,
+      };
+    }
+    return { exists: false };
   } catch {
     return { exists: false };
   }
+}
+
+// ==================== 增量同步功能 ====================
+
+/**
+ * 读取云端备份数据库中的数据
+ * @returns 备份中的跑步记录和轨迹点
+ */
+export async function readCloudBackup(): Promise<{
+  runs: RunRecord[];
+  trackPoints: TrackPoint[];
+} | null> {
+  try {
+    const backupPath = getBackupPath();
+    const backupFileInfo = await getInfoAsync(backupPath);
+
+    if (!backupFileInfo.exists) {
+      console.log("⚠️ 备份文件不存在");
+      return null;
+    }
+
+    // 打开备份数据库（只读）
+    const backupDb = await SQLite.openDatabaseAsync(BACKUP_FILE_NAME);
+
+    // 读取所有跑步记录
+    const runs = await backupDb.getAllAsync<RunRecord>(
+      `SELECT * FROM runs WHERE isFinish = 1 ORDER BY startTime DESC`,
+    );
+
+    // 读取所有轨迹点
+    const trackPoints = await backupDb.getAllAsync<TrackPoint>(
+      `SELECT * FROM track_points ORDER BY timestamp ASC`,
+    );
+
+    await backupDb.closeAsync();
+
+    console.log(
+      `📖 读取备份数据: ${runs.length} 条记录, ${trackPoints.length} 个轨迹点`,
+    );
+
+    return { runs, trackPoints };
+  } catch (error) {
+    console.error("❌ 读取备份数据失败:", error);
+    return null;
+  }
+}
+
+/**
+ * 获取本地所有跑步记录（用于对比）
+ */
+async function getLocalRuns(): Promise<RunRecord[]> {
+  try {
+    const db = await getDatabase();
+    const runs = await db.getAllAsync<RunRecord>(
+      `SELECT * FROM runs WHERE isFinish = 1`,
+    );
+    return runs;
+  } catch (error) {
+    console.error("❌ 获取本地记录失败:", error);
+    return [];
+  }
+}
+
+/**
+ * 判断两条记录是否为同一条（基于开始和结束时间戳）
+ */
+function isSameRecord(local: RunRecord, cloud: RunRecord): boolean {
+  return local.startTime === cloud.startTime && local.endTime === cloud.endTime;
+}
+
+/**
+ * 插入跑步记录到本地数据库
+ */
+async function insertRun(
+  db: SQLite.SQLiteDatabase,
+  run: RunRecord,
+): Promise<number> {
+  const result = await db.runAsync(
+    `INSERT INTO runs (startTime, endTime, distance, time, pace, energy, steps, elevationGain, note, isFinish)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      run.startTime,
+      run.endTime,
+      run.distance,
+      run.time,
+      run.pace,
+      run.energy,
+      run.steps,
+      run.elevationGain,
+      run.note || null,
+      run.isFinish,
+    ],
+  );
+  return result.lastInsertRowId;
+}
+
+/**
+ * 插入轨迹点到本地数据库
+ */
+async function insertTrackPoints(
+  db: SQLite.SQLiteDatabase,
+  points: TrackPoint[],
+  runId: number,
+): Promise<void> {
+  for (const point of points) {
+    await db.runAsync(
+      `INSERT INTO track_points (runId, latitude, longitude, altitude, timestamp, heading)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        runId,
+        point.latitude,
+        point.longitude,
+        point.altitude || null,
+        point.timestamp || null,
+        point.heading || null,
+      ],
+    );
+  }
+}
+
+/**
+ * 增量恢复数据（只恢复本地不存在的记录）
+ */
+export async function incrementalRestore(): Promise<RestoreResult> {
+  const result: RestoreResult = {
+    success: false,
+    mode: "incremental",
+    restoredRuns: [],
+    skippedCount: 0,
+  };
+
+  try {
+    // 1. 读取云端备份
+    const cloudData = await readCloudBackup();
+    if (!cloudData) {
+      result.error = "备份文件不存在";
+      return result;
+    }
+
+    // 2. 获取本地记录
+    const localRuns = await getLocalRuns();
+
+    // 3. 筛选出需要恢复的记录
+    const runsToRestore: RunRecord[] = [];
+    for (const cloudRun of cloudData.runs) {
+      const exists = localRuns.some((local) => isSameRecord(local, cloudRun));
+      if (!exists) {
+        runsToRestore.push(cloudRun);
+      } else {
+        result.skippedCount++;
+      }
+    }
+
+    if (runsToRestore.length === 0) {
+      result.success = true;
+      console.log("ℹ️ 没有新记录需要恢复");
+      return result;
+    }
+
+    // 4. 批量插入（使用事务）
+    const db = await getDatabase();
+
+    await db.withTransactionAsync(async () => {
+      for (const run of runsToRestore) {
+        // 插入跑步记录
+        const newRunId = await insertRun(db, run);
+
+        // 查找并插入关联的轨迹点
+        const relatedPoints = cloudData.trackPoints.filter(
+          (p) => p.runId === run.id,
+        );
+        if (relatedPoints.length > 0) {
+          await insertTrackPoints(db, relatedPoints, newRunId);
+        }
+
+        // 添加到结果列表
+        result.restoredRuns.push({
+          date: formatDate(run.startTime),
+          distance: metersToKm(run.distance),
+          duration: run.time,
+          isNew: true,
+        });
+      }
+    });
+
+    result.success = true;
+    console.log(
+      `✅ 增量恢复完成: 新增 ${result.restoredRuns.length} 条记录, 跳过 ${result.skippedCount} 条`,
+    );
+  } catch (error) {
+    console.error("❌ 增量恢复失败:", error);
+    result.error = error instanceof Error ? error.message : "恢复失败";
+  }
+
+  return result;
+}
+
+/**
+ * 强制恢复数据（覆盖本地所有数据）
+ */
+export async function forceRestore(): Promise<RestoreResult> {
+  const result: RestoreResult = {
+    success: false,
+    mode: "force",
+    restoredRuns: [],
+    skippedCount: 0,
+  };
+
+  try {
+    // 1. 读取云端备份
+    const cloudData = await readCloudBackup();
+    if (!cloudData) {
+      result.error = "备份文件不存在";
+      return result;
+    }
+
+    // 2. 获取本地记录数量（用于显示）
+    const localRuns = await getLocalRuns();
+    result.skippedCount = localRuns.length; // 被覆盖的记录数
+
+    // 3. 清空本地数据
+    const db = await getDatabase();
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(`DELETE FROM track_points`);
+      await db.runAsync(`DELETE FROM runs`);
+    });
+
+    // 4. 插入所有云端记录
+    await db.withTransactionAsync(async () => {
+      for (const run of cloudData.runs) {
+        const newRunId = await insertRun(db, run);
+
+        const relatedPoints = cloudData.trackPoints.filter(
+          (p) => p.runId === run.id,
+        );
+        if (relatedPoints.length > 0) {
+          await insertTrackPoints(db, relatedPoints, newRunId);
+        }
+
+        result.restoredRuns.push({
+          date: formatDate(run.startTime),
+          distance: metersToKm(run.distance),
+          duration: run.time,
+          isNew: false, // 强制恢复的记录标记为已存在
+        });
+      }
+    });
+
+    result.success = true;
+    console.log(`✅ 强制恢复完成: 恢复 ${result.restoredRuns.length} 条记录`);
+  } catch (error) {
+    console.error("❌ 强制恢复失败:", error);
+    result.error = error instanceof Error ? error.message : "恢复失败";
+  }
+
+  return result;
 }

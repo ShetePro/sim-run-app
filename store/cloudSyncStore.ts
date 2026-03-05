@@ -7,7 +7,9 @@ import {
   getBackupInfo,
   getDatabaseInfo,
   backupDatabase,
-  restoreDatabase,
+  incrementalRestore,
+  forceRestore,
+  RestoreResult,
 } from "@/utils/backup";
 // Note: Using process.env.EXPO_OS as per Expo best practices instead of Platform.OS
 import * as Network from "expo-network";
@@ -108,7 +110,7 @@ interface CloudSyncState {
   performSync: () => Promise<boolean>;
 
   // 执行恢复（下载）
-  performRestore: () => Promise<boolean>;
+  performRestore: (mode?: "incremental" | "force") => Promise<RestoreResult>;
 
   // 检查网络状态
   checkNetworkStatus: () => Promise<void>;
@@ -295,7 +297,7 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
     }
   },
 
-  performRestore: async () => {
+  performRestore: async (mode: "incremental" | "force" = "incremental") => {
     const { checkNetworkStatus } = get();
 
     await checkNetworkStatus();
@@ -306,6 +308,8 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
         progress: 0,
       },
     });
+
+    let result: RestoreResult;
 
     try {
       // 模拟进度
@@ -318,25 +322,40 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
         }));
       }, 100);
 
-      // 执行恢复
-      await restoreDatabase();
+      // 根据模式执行不同的恢复策略
+      if (mode === "force") {
+        result = await forceRestore();
+      } else {
+        result = await incrementalRestore();
+      }
+
       clearInterval(progressInterval);
 
       // 刷新元数据
       await get().refreshBackupInfo();
 
-      set({
-        syncState: {
-          status: "success",
-          progress: 100,
-        },
-      });
+      if (result.success) {
+        set({
+          syncState: {
+            status: "success",
+            progress: 100,
+          },
+        });
+      } else {
+        set({
+          syncState: {
+            status: "error",
+            errorMessage: result.error || "恢复失败",
+            progress: 0,
+          },
+        });
+      }
 
       setTimeout(() => {
         set({ syncState: { status: "idle", progress: 0 } });
       }, 3000);
 
-      return true;
+      return result;
     } catch (error) {
       console.error("Restore failed:", error);
       set({
@@ -346,7 +365,13 @@ export const useCloudSyncStore = create<CloudSyncState>((set, get) => ({
           progress: 0,
         },
       });
-      return false;
+      return {
+        success: false,
+        mode,
+        restoredRuns: [],
+        skippedCount: 0,
+        error: error instanceof Error ? error.message : "恢复失败",
+      };
     }
   },
 
