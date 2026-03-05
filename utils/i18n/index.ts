@@ -431,6 +431,7 @@ const resources = {
           placeholder:
             "Please describe your problem or suggestion in detail...",
           submit: "Submit Feedback",
+          github: "Submit feedback on GitHub",
         },
         feedbackEmpty: "Please enter feedback content",
         feedbackSent:
@@ -977,6 +978,7 @@ const resources = {
           content: "反馈内容",
           placeholder: "请详细描述您的问题或建议...",
           submit: "提交反馈",
+          github: "在 GitHub 提交反馈",
         },
         feedbackEmpty: "请输入反馈内容",
         feedbackSent: "感谢您的反馈！我们会尽快处理。",
