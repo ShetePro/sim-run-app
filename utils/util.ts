@@ -227,28 +227,33 @@ export function groupRunsByDay(
   const list: any = {};
   runs.forEach((run) => {
     const date = dayjs(run.endTime);
-    const dateKey =
-      type === "isoWeek"
-        ? date.format("ddd")
-        : type === "month"
-          ? date.format("D")
-          : date.format("MMM");
+    // 使用数字索引作为 key，与语言无关
+    // ISO Week: 周一=0, 周二=1, ..., 周日=6
+    // Month: 日期 1-31
+    // Year: 月份 0-11
+    let dateIndex: number;
+    if (type === "isoWeek") {
+      const day = date.day(); // 0=周日, 1=周一, ..., 6=周六
+      dateIndex = day === 0 ? 6 : day - 1; // 转为 ISO 周：周一=0
+    } else if (type === "month") {
+      dateIndex = date.date() - 1; // 1-31 转为 0-30
+    } else {
+      dateIndex = date.month(); // 0-11
+    }
     const distance = Number((run.distance / 1000).toFixed(2));
-    if (!list[dateKey]) {
-      list[dateKey] = {
-        date: dateKey,
-        day: dateKey,
-        dateTime: run.endTime,
+    if (!list[dateIndex]) {
+      list[dateIndex] = {
+        day: dateIndex, // 数字索引，用于匹配 axis labels
         distance,
         time: run.time,
         energy: run.energy,
       };
     } else {
-      list[dateKey].distance = Number(
-        (list[dateKey].distance + distance).toFixed(2),
+      list[dateIndex].distance = Number(
+        (list[dateIndex].distance + distance).toFixed(2),
       );
-      list[dateKey].time += run.time;
-      list[dateKey].energy += run.energy;
+      list[dateIndex].time += run.time;
+      list[dateIndex].energy += run.energy;
     }
   });
   return Object.values(list) || [];

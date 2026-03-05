@@ -11,11 +11,13 @@ const CHART_WIDTH = screenWidth - 60;
 const primaryColor = "#6366f1";
 export default function RunBarChart({
   chartData,
-  axisX,
+  tickValues,
+  tickFormat,
   type = "isoWeek",
 }: {
   chartData?: any[];
-  axisX?: string[];
+  tickValues?: number[];
+  tickFormat?: string[];
   type: "isoWeek" | "month" | "year";
 }) {
   const theme = useColorScheme();
@@ -58,8 +60,8 @@ export default function RunBarChart({
           <VictoryAxis
             style={customTheme.axis.style}
             minDomain={1}
-            tickValues={axisX}
-            tickFormat={axisX}
+            tickValues={tickValues}
+            tickFormat={tickFormat}
           />
           <VictoryAxis
             dependentAxis

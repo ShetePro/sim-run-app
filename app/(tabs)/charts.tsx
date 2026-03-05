@@ -18,12 +18,9 @@ import { useRunStatistics } from "@/hooks/useRunStatistics";
 import { RunRecord } from "@/types/runType";
 import { getPaceLabel, groupRunsByDay } from "@/utils/util";
 
-const screenWidth = Dimensions.get("window").width;
-
 export default function StatsNewScreen() {
   const { t, i18n } = useTranslation();
   const theme = useColorScheme();
-  const isDark = theme === "dark";
   const [timeRange, setTimeRange] = useState<"isoWeek" | "month" | "year">(
     "isoWeek",
   );
@@ -49,19 +46,32 @@ export default function StatsNewScreen() {
     setTimeRange(key);
   }
 
-  // 获取本地化的时间标签
-  const getAxisLabels = () => {
+  // 获取 X 轴刻度值（数字索引）和标签
+  const getAxisConfig = () => {
     if (timeRange === "isoWeek") {
-      return t("time.week", { returnObjects: true }) as string[];
+      const labels = t("time.week", { returnObjects: true }) as string[];
+      return {
+        tickValues: [0, 1, 2, 3, 4, 5, 6],
+        tickFormat: labels,
+      };
     } else if (timeRange === "month") {
       const daysInMonth = dayjs().daysInMonth();
-      return Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+      return {
+        tickValues: Array.from({ length: daysInMonth }, (_, i) => i),
+        tickFormat: Array.from({ length: daysInMonth }, (_, i) =>
+          (i + 1).toString(),
+        ),
+      };
     } else {
-      return t("time.months", { returnObjects: true }) as string[];
+      const labels = t("time.months", { returnObjects: true }) as string[];
+      return {
+        tickValues: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        tickFormat: labels,
+      };
     }
   };
 
-  const axisLabels = useMemo(() => getAxisLabels(), [timeRange, i18n.language]);
+  const axisConfig = useMemo(() => getAxisConfig(), [timeRange, i18n.language]);
 
   const chartData = useMemo(() => {
     return groupRunsByDay(statsData, timeRange);
@@ -73,9 +83,10 @@ export default function StatsNewScreen() {
       const startDay = dayjs().startOf(timeRange).format("YYYY-MM-DD");
       setStartDate(startDay);
       queryStatisticsByTime({ date: startDay }).then((res) => {
+        console.log(res);
         setStatsData(res);
       });
-    }, [timeRange, queryStatisticsByTime]),
+    }, [timeRange]),
   );
 
   return (
@@ -128,7 +139,8 @@ export default function StatsNewScreen() {
         <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-8">
           <RunBarChart
             chartData={chartData}
-            axisX={axisLabels}
+            tickValues={axisConfig.tickValues}
+            tickFormat={axisConfig.tickFormat}
             type={timeRange}
           />
         </View>
@@ -140,7 +152,8 @@ export default function StatsNewScreen() {
         <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-10">
           <KcalChart
             chartData={chartData}
-            axisX={axisLabels}
+            tickValues={axisConfig.tickValues}
+            tickFormat={axisConfig.tickFormat}
             type={timeRange}
           />
         </View>

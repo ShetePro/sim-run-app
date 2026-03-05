@@ -99,7 +99,7 @@ export default function HomeScreen() {
 
       // 获取用户信息
       loadUserInfo();
-    }, [getTodayRunData, getRuns]),
+    }, []),
   );
   // 根据时间生成问候语
   const getGreeting = () => {

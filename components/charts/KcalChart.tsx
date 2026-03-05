@@ -12,11 +12,13 @@ const primaryColor = "#6366f1"; // 每日跑量颜色
 const secondaryColor = "#f97316"; // 卡路里消耗颜色
 export default function KcalChart({
   chartData,
-  axisX,
+  tickValues,
+  tickFormat,
   type = "isoWeek",
 }: {
   chartData?: any[];
-  axisX?: string[];
+  tickValues?: number[];
+  tickFormat?: string[];
   type: "isoWeek" | "month" | "year";
 }) {
   // const theme = useColorScheme();
@@ -54,7 +56,11 @@ export default function KcalChart({
           padding={{ top: 10, bottom: 20, left: labelWidth, right: 20 }}
         >
           {/* X 轴 */}
-          <VictoryAxis style={customTheme.axis.style} tickValues={axisX} />
+          <VictoryAxis
+            style={customTheme.axis.style}
+            tickValues={tickValues}
+            tickFormat={tickFormat}
+          />
           {/* Y 轴 (带网格线) */}
           <VictoryAxis
             dependentAxis

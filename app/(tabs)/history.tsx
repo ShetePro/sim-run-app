@@ -44,7 +44,7 @@ export default function HistoryScreen() {
         );
         setHistoryRecords(recordsList);
       });
-    }, [getRuns]),
+    }, []),
   );
 
   async function deleteHistory(records: any) {
