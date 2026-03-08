@@ -312,6 +312,11 @@ const resources = {
         backupSize: "Backup Size",
         cloudProvider: "Cloud Provider",
         tips: "Backups are stored in iCloud and can be restored when switching devices. iCloud backup usually happens automatically when the device is charging and connected to WiFi.",
+        howItWorks: "iCloud Backup Mechanism",
+        howItWorksDesc:
+          "Data has been saved locally and will be automatically uploaded to iCloud when the device is charging, connected to WiFi, and locked. This may take several hours to a day.",
+        prepareBackup: "Prepare Backup",
+        restoreFromICloud: "Restore from iCloud",
         importTitle: "Import Data",
         importMessage:
           "Import running records from JSON or GPX files. Supports SimRun data files exported from other devices.",
@@ -860,6 +865,11 @@ const resources = {
         backupSize: "备份大小",
         cloudProvider: "云服务",
         tips: "备份文件存储在 iCloud 中，可在更换设备时恢复数据。iCloud 备份通常在设备充电且连接 WiFi 时自动进行。",
+        howItWorks: "iCloud 备份机制",
+        howItWorksDesc:
+          "数据已保存到本地，将在设备充电、连接 WiFi 且锁屏时自动上传到 iCloud。这可能需要几小时到一天时间。",
+        prepareBackup: "准备备份",
+        restoreFromICloud: "从 iCloud 恢复",
         importTitle: "导入数据",
         importMessage:
           "从 JSON 或 GPX 文件导入跑步记录。支持从其他设备导出的 SimRun 数据文件。",

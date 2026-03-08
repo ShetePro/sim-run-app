@@ -1,8 +1,4 @@
-import {
-  copyAsync,
-  getInfoAsync,
-  documentDirectory,
-} from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system";
 import ExpoSQLite from "expo-sqlite/build/ExpoSQLite";
 import { Platform } from "react-native";
 
@@ -92,7 +88,7 @@ export function getDatabasePath(): string {
  * 获取备份文件路径
  */
 export function getBackupPath(): string {
-  return `${documentDirectory}${BACKUP_FILE_NAME}`;
+  return `${FileSystem.documentDirectory}${BACKUP_FILE_NAME}`;
 }
 
 /**
@@ -101,7 +97,7 @@ export function getBackupPath(): string {
 export async function checkDatabaseExists(): Promise<boolean> {
   try {
     const dbPath = getDatabasePath();
-    const fileInfo = await getInfoAsync(dbPath);
+    const fileInfo = await FileSystem.getInfoAsync(dbPath);
     return fileInfo.exists;
   } catch {
     return false;
@@ -123,21 +119,28 @@ export async function backupDatabase(): Promise<void> {
     const backupPath = getBackupPath();
 
     // 检查数据库文件是否存在
-    const dbFileInfo = await getInfoAsync(dbPath);
+    const dbFileInfo = await FileSystem.getInfoAsync(dbPath);
     if (!dbFileInfo.exists) {
       console.log("⚠️ 数据库文件不存在，跳过备份");
       return;
     }
 
     // 复制数据库文件到 documentDirectory
-    await copyAsync({
+    await FileSystem.copyAsync({
       from: dbPath,
       to: backupPath,
     });
 
-    // iOS: 确保文件会被 iCloud 备份（documentDirectory 默认会被备份）
+    // iOS: 确保文件会被 iCloud 备份
     if (Platform.OS === "ios") {
-      console.log("✅ 数据库已备份到 iCloud 可备份目录:", backupPath);
+      try {
+        // 设置文件允许 iCloud 备份
+        await FileSystem.setFileBackupAsync(backupPath, true);
+        console.log("✅ 数据库已备份并设置 iCloud 备份属性:", backupPath);
+      } catch (backupError) {
+        console.warn("⚠️ 设置 iCloud 备份属性失败:", backupError);
+        // 备份成功但设置属性失败，不影响主要功能
+      }
     } else {
       console.log("✅ 数据库已备份到:", backupPath);
     }
@@ -162,21 +165,21 @@ export async function restoreDatabase(): Promise<void> {
     const backupPath = getBackupPath();
 
     // 检查备份文件是否存在
-    const backupFileInfo = await getInfoAsync(backupPath);
+    const backupFileInfo = await FileSystem.getInfoAsync(backupPath);
     if (!backupFileInfo.exists) {
       console.log("⚠️ 备份文件不存在，无法恢复");
       return;
     }
 
     // 检查数据库文件是否已存在
-    const dbFileInfo = await getInfoAsync(dbPath);
+    const dbFileInfo = await FileSystem.getInfoAsync(dbPath);
     if (dbFileInfo.exists) {
       console.log("ℹ️ 数据库已存在，跳过恢复以避免覆盖现有数据");
       return;
     }
 
     // 复制备份文件到数据库路径
-    await copyAsync({
+    await FileSystem.copyAsync({
       from: backupPath,
       to: dbPath,
     });
@@ -197,14 +200,14 @@ export async function forceRestoreDatabase(): Promise<void> {
     const backupPath = getBackupPath();
 
     // 检查备份文件是否存在
-    const backupFileInfo = await getInfoAsync(backupPath);
+    const backupFileInfo = await FileSystem.getInfoAsync(backupPath);
     if (!backupFileInfo.exists) {
       console.log("⚠️ 备份文件不存在，无法恢复");
       return;
     }
 
     // 复制备份文件到数据库路径（覆盖现有文件）
-    await copyAsync({
+    await FileSystem.copyAsync({
       from: backupPath,
       to: dbPath,
     });
@@ -221,7 +224,7 @@ export async function forceRestoreDatabase(): Promise<void> {
 export async function checkBackupExists(): Promise<boolean> {
   try {
     const backupPath = getBackupPath();
-    const fileInfo = await getInfoAsync(backupPath);
+    const fileInfo = await FileSystem.getInfoAsync(backupPath);
     return fileInfo.exists;
   } catch {
     return false;
@@ -238,7 +241,7 @@ export async function getBackupInfo(): Promise<{
 }> {
   try {
     const backupPath = getBackupPath();
-    const fileInfo = await getInfoAsync(backupPath);
+    const fileInfo = await FileSystem.getInfoAsync(backupPath);
     return {
       exists: fileInfo.exists,
       size: fileInfo.size,
@@ -259,7 +262,7 @@ export async function getDatabaseInfo(): Promise<{
 }> {
   try {
     const dbPath = getDatabasePath();
-    const fileInfo = await getInfoAsync(dbPath);
+    const fileInfo = await FileSystem.getInfoAsync(dbPath);
     if (fileInfo.exists) {
       return {
         exists: true,
@@ -285,7 +288,7 @@ export async function readCloudBackup(): Promise<{
 } | null> {
   try {
     const backupPath = getBackupPath();
-    const backupFileInfo = await getInfoAsync(backupPath);
+    const backupFileInfo = await FileSystem.getInfoAsync(backupPath);
 
     if (!backupFileInfo.exists) {
       console.log("⚠️ 备份文件不存在");

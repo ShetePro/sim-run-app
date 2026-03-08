@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
@@ -21,7 +21,6 @@ import {
   useFormattedSyncTime,
   formatFileSize,
 } from "@/store/cloudSyncStore";
-import { useFocusEffect } from "expo-router";
 import { importRunFromFile, ImportResult } from "@/utils/importRun";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
@@ -426,6 +425,27 @@ export default function CloudSyncScreen() {
           </View>
         </View>
 
+        {/* --- 备份状态说明卡片 --- */}
+        <View className="mx-4 mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+          <View className="flex-row items-start">
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color="#6366f1"
+              className="mt-0.5"
+            />
+            <View className="ml-2 flex-1">
+              <Text className="text-indigo-800 dark:text-indigo-200 font-medium text-sm mb-1">
+                {t("cloudSync.howItWorks") || "iCloud 备份机制"}
+              </Text>
+              <Text className="text-indigo-600 dark:text-indigo-300 text-xs leading-relaxed">
+                {t("cloudSync.howItWorksDesc") ||
+                  "数据已保存到本地，将在设备充电、连接WiFi且锁屏时自动上传到iCloud。这可能需要几小时到一天时间。"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* --- 操作按钮 --- */}
         <View className="mx-4 mt-4 flex-row gap-3">
           <TouchableOpacity
@@ -443,7 +463,7 @@ export default function CloudSyncScreen() {
           >
             <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
             <Text className="ml-2 text-white font-semibold">
-              {t("cloudSync.upload") || "立即备份"}
+              {t("cloudSync.prepareBackup") || "准备备份"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -463,7 +483,7 @@ export default function CloudSyncScreen() {
           >
             <Ionicons name="cloud-download-outline" size={20} color="#fff" />
             <Text className="ml-2 text-white font-semibold">
-              {t("cloudSync.restore") || "恢复数据"}
+              {t("cloudSync.restoreFromICloud") || "从iCloud恢复"}
             </Text>
           </TouchableOpacity>
         </View>
