@@ -225,6 +225,93 @@ export async function checkBackupExists(): Promise<boolean> {
 }
 
 /**
+ * 验证备份文件有效性
+ * @returns 验证结果和详细信息
+ */
+export async function validateBackupFile(): Promise<{
+  valid: boolean;
+  exists: boolean;
+  size: number;
+  readable: boolean;
+  hasData: boolean;
+  recordCount: number;
+  error?: string;
+}> {
+  const result: {
+    valid: boolean;
+    exists: boolean;
+    size: number;
+    readable: boolean;
+    hasData: boolean;
+    recordCount: number;
+    error?: string;
+  } = {
+    valid: false,
+    exists: false,
+    size: 0,
+    readable: false,
+    hasData: false,
+    recordCount: 0,
+  };
+
+  try {
+    const backupPath = getBackupPath();
+
+    // 1. 检查文件是否存在
+    const fileInfo = await FileSystem.getInfoAsync(backupPath);
+    if (!fileInfo.exists) {
+      result.error = "备份文件不存在";
+      return result;
+    }
+    result.exists = true;
+
+    // 2. 检查文件大小
+    const fileSize = (fileInfo as any).size || 0;
+    result.size = fileSize;
+    if (fileSize === 0) {
+      result.error = "备份文件为空";
+      return result;
+    }
+    if (fileSize < 1024) {
+      // 小于1KB可能是损坏的文件
+      result.error = "备份文件过小，可能已损坏";
+      return result;
+    }
+
+    // 3. 尝试读取并验证数据库内容
+    try {
+      const backupDb = await SQLite.openDatabaseAsync(BACKUP_FILE_NAME);
+      result.readable = true;
+
+      // 查询 runs 表记录数
+      const countResult = await backupDb.getFirstAsync<{ count: number }>(
+        "SELECT COUNT(*) as count FROM runs WHERE isFinish = 1",
+      );
+      const recordCount = countResult?.count || 0;
+      result.recordCount = recordCount;
+
+      if (recordCount > 0) {
+        result.hasData = true;
+        result.valid = true;
+      } else {
+        result.error = "备份文件中未找到有效的跑步记录";
+      }
+
+      await backupDb.closeAsync();
+    } catch (dbError) {
+      result.error = "无法读取备份文件，文件可能已损坏";
+      console.error("验证备份文件数据库错误:", dbError);
+    }
+
+    return result;
+  } catch (error) {
+    result.error = "验证备份文件时发生错误";
+    console.error("验证备份文件失败:", error);
+    return result;
+  }
+}
+
+/**
  * 获取备份文件信息
  */
 export async function getBackupInfo(): Promise<{

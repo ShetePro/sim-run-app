@@ -19,7 +19,7 @@ import { useCloudSyncStore } from "@/store/cloudSyncStore";
 import { importRunFromFile, ImportResult } from "@/utils/importRun";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
-import { RestoreResult } from "@/utils/backup";
+import { RestoreResult, validateBackupFile } from "@/utils/backup";
 
 export default function CloudSyncScreen() {
   const router = useRouter();
@@ -76,12 +76,24 @@ export default function CloudSyncScreen() {
   };
 
   // 处理恢复按钮
-  const handleRestore = () => {
+  const handleRestore = async () => {
+    // 先验证备份文件有效性
+    const validation = await validateBackupFile();
+
+    if (!validation.valid) {
+      // 文件无效，显示错误信息
+      Alert.alert(
+        t("cloudSync.restoreTitle") || "恢复数据",
+        validation.error || "备份文件无效或已损坏",
+        [{ text: t("common.ok") || "确定", style: "default" }],
+      );
+      return;
+    }
+
+    // 文件有效，显示恢复选项
     Alert.alert(
       t("cloudSync.restoreTitle") || "恢复数据",
-      metadata.exists
-        ? `发现云端备份\n备份时间: ${new Date(metadata.modificationTime || 0).toLocaleString()}\n记录数: 请查看详情`
-        : "暂无云端备份数据",
+      `发现云端备份\n文件大小: ${(validation.size / 1024).toFixed(2)} KB\n记录数: ${validation.recordCount} 条`,
       [
         {
           text: t("common.cancel") || "取消",
