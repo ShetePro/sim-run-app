@@ -13,18 +13,13 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "nativewind";
-import { MenuItem } from "@/components/ui/MenuItem";
 import { Divider } from "@/components/ui/Divider";
 import { SwitchItem } from "@/components/ui/SwitchItem";
-import {
-  useCloudSyncStore,
-  useFormattedSyncTime,
-  formatFileSize,
-} from "@/store/cloudSyncStore";
+import { useCloudSyncStore } from "@/store/cloudSyncStore";
 import { importRunFromFile, ImportResult } from "@/utils/importRun";
 import { useRunDB } from "@/hooks/useSQLite";
 import { RunRecord } from "@/types/runType";
-import { RestoreResult, RestoredRunItem } from "@/utils/backup";
+import { RestoreResult } from "@/utils/backup";
 
 export default function CloudSyncScreen() {
   const router = useRouter();
@@ -37,7 +32,6 @@ export default function CloudSyncScreen() {
     metadata,
     syncState,
     isLoaded,
-    isWifiConnected,
     initialize,
     refreshBackupInfo,
     updateSettings,
@@ -48,8 +42,6 @@ export default function CloudSyncScreen() {
   } = useCloudSyncStore();
 
   const { addRun, updateRun } = useRunDB();
-
-  const formattedSyncTime = useFormattedSyncTime();
 
   // 恢复结果弹窗状态
   const [showRestoreResult, setShowRestoreResult] = useState(false);
@@ -357,74 +349,6 @@ export default function CloudSyncScreen() {
           <View className="w-8" />
         </View>
 
-        {/* --- 同步状态卡片 --- */}
-        <View className="mx-4 mt-4 p-5 bg-white dark:bg-slate-800 rounded-2xl shadow-sm">
-          <View className="flex-row items-center">
-            <View
-              className="w-14 h-14 rounded-full items-center justify-center"
-              style={{ backgroundColor: `${getStatusColor()}20` }}
-            >
-              {syncState.status === "uploading" ||
-              syncState.status === "downloading" ? (
-                <ActivityIndicator size="small" color={getStatusColor()} />
-              ) : (
-                <Ionicons
-                  name={getStatusIcon()}
-                  size={28}
-                  color={getStatusColor()}
-                />
-              )}
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-lg font-semibold text-slate-800 dark:text-white">
-                iCloud
-              </Text>
-              <Text className="text-sm text-slate-500 dark:text-slate-400">
-                {getStatusText()}
-              </Text>
-            </View>
-            {syncState.status === "uploading" ||
-            syncState.status === "downloading" ? (
-              <Text className="text-sm font-medium text-blue-500">
-                {syncState.progress}%
-              </Text>
-            ) : null}
-          </View>
-
-          {/* 进度条 */}
-          {(syncState.status === "uploading" ||
-            syncState.status === "downloading") && (
-            <View className="mt-4 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <View
-                className="h-full bg-blue-500 rounded-full"
-                style={{ width: `${syncState.progress}%` }}
-              />
-            </View>
-          )}
-
-          {/* 同步时间信息 */}
-          <View className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-sm text-slate-500 dark:text-slate-400">
-                {t("cloudSync.lastSync") || "上次同步"}
-              </Text>
-              <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {formattedSyncTime}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center mt-2">
-              <Text className="text-sm text-slate-500 dark:text-slate-400">
-                {t("cloudSync.backupStatus") || "备份状态"}
-              </Text>
-              <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {metadata.exists
-                  ? t("cloudSync.backupExists") || "已备份"
-                  : t("cloudSync.noBackup") || "未备份"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* --- 备份状态说明卡片 --- */}
         <View className="mx-4 mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
           <View className="flex-row items-start">
@@ -540,48 +464,6 @@ export default function CloudSyncScreen() {
               onValueChange={toggleWifiOnly}
               colorScheme="primary"
             />
-          </View>
-        </View>
-
-        {/* --- 存储信息 --- */}
-        <View className="px-5 mt-4 mb-2">
-          <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase mb-2 ml-2">
-            {t("cloudSync.storageInfo") || "存储信息"}
-          </Text>
-          <View className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
-            <View className="p-4">
-              <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-sm text-slate-500 dark:text-slate-400">
-                  {t("cloudSync.databaseSize") || "数据库大小"}
-                </Text>
-                <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {formatFileSize(metadata.dbSize)}
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-sm text-slate-500 dark:text-slate-400">
-                  {t("cloudSync.backupSize") || "备份大小"}
-                </Text>
-                <Text className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {formatFileSize(metadata.size)}
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-slate-500 dark:text-slate-400">
-                  {t("cloudSync.cloudProvider") || "云服务"}
-                </Text>
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="logo-apple"
-                    size={14}
-                    color={isDark ? "#9CA3AF" : "#6B7280"}
-                  />
-                  <Text className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
-                    iCloud
-                  </Text>
-                </View>
-              </View>
-            </View>
           </View>
         </View>
 
