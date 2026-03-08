@@ -1,5 +1,5 @@
-import * as FileSystem from "expo-file-system";
-import ExpoSQLite from "expo-sqlite/build/ExpoSQLite";
+import * as FileSystem from "expo-file-system/legacy";
+import { defaultDatabaseDirectory } from "expo-sqlite";
 import { Platform } from "react-native";
 
 const DB_NAME = "simrun.db";
@@ -80,7 +80,7 @@ function metersToKm(meters: number): number {
  */
 export function getDatabasePath(): string {
   // 使用 expo-sqlite 的默认数据库目录
-  const dbDirectory = ExpoSQLite.defaultDatabaseDirectory;
+  const dbDirectory = defaultDatabaseDirectory;
   return `${dbDirectory}/${DB_NAME}`;
 }
 
@@ -131,16 +131,9 @@ export async function backupDatabase(): Promise<void> {
       to: backupPath,
     });
 
-    // iOS: 确保文件会被 iCloud 备份
+    // iOS: documentDirectory 中的文件默认会被 iCloud 备份
     if (Platform.OS === "ios") {
-      try {
-        // 设置文件允许 iCloud 备份
-        await FileSystem.setFileBackupAsync(backupPath, true);
-        console.log("✅ 数据库已备份并设置 iCloud 备份属性:", backupPath);
-      } catch (backupError) {
-        console.warn("⚠️ 设置 iCloud 备份属性失败:", backupError);
-        // 备份成功但设置属性失败，不影响主要功能
-      }
+      console.log("✅ 数据库已备份到 iCloud 可备份目录:", backupPath);
     } else {
       console.log("✅ 数据库已备份到:", backupPath);
     }
@@ -244,8 +237,8 @@ export async function getBackupInfo(): Promise<{
     const fileInfo = await FileSystem.getInfoAsync(backupPath);
     return {
       exists: fileInfo.exists,
-      size: fileInfo.size,
-      modificationTime: fileInfo.modificationTime,
+      size: (fileInfo as any).size,
+      modificationTime: (fileInfo as any).modificationTime,
     };
   } catch {
     return { exists: false };
