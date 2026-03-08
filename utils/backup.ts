@@ -283,7 +283,18 @@ export async function validateBackupFile(): Promise<{
       const backupDb = await SQLite.openDatabaseAsync(BACKUP_FILE_NAME);
       result.readable = true;
 
-      // 查询 runs 表记录数
+      // 3.1 先检查 runs 表是否存在
+      const tableInfo = await backupDb.getFirstAsync<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'",
+      );
+
+      if (!tableInfo) {
+        result.error = "备份文件尚未初始化，请完成一次跑步记录后再试";
+        await backupDb.closeAsync();
+        return result;
+      }
+
+      // 3.2 查询 runs 表记录数
       const countResult = await backupDb.getFirstAsync<{ count: number }>(
         "SELECT COUNT(*) as count FROM runs WHERE isFinish = 1",
       );
